@@ -25,4 +25,4 @@
 
 - No certificate pinning in Phase 1
 - No end-to-end encryption for optional cloud sync
-- Android VPN module not yet implemented — see `docs/threat-model.md`
+- Android VPN is a metadata-only POC with documented limitations — see [ADR-002](decisions/ADR-002-android-vpn.md)

@@ -23,15 +23,15 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 
 ## Capabilities
 
-| Capability | Supported | Notes |
-|------------|-----------|-------|
-| Domain from DNS (UDP/53) | Yes | QNAME extracted; answer payloads discarded |
-| Byte counts per flow | Yes | Summed from IP packet sizes |
-| Protocol (TCP/UDP) | Yes | From IP header |
-| App attribution | Partial | Requires Android 10+; fails for some flows |
-| HTTPS payload inspection | **No** | TLS encrypted — by design |
-| Per-domain blocking | **Best-effort** | Full enforcement needs maintained routing rules |
-| iOS | **No** | Network Extension not implemented |
+| Capability               | Supported       | Notes                                           |
+| ------------------------ | --------------- | ----------------------------------------------- |
+| Domain from DNS (UDP/53) | Yes             | QNAME extracted; answer payloads discarded      |
+| Byte counts per flow     | Yes             | Summed from IP packet sizes                     |
+| Protocol (TCP/UDP)       | Yes             | From IP header                                  |
+| App attribution          | Partial         | Requires Android 10+; fails for some flows      |
+| HTTPS payload inspection | **No**          | TLS encrypted — by design                       |
+| Per-domain blocking      | **Best-effort** | Full enforcement needs maintained routing rules |
+| iOS                      | **No**          | Network Extension not implemented               |
 
 ## Limitations
 
@@ -73,4 +73,4 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 ## References
 
 - [Android VpnService documentation](https://developer.android.com/reference/android/net/VpnService)
-- [Connection ownership (API 29+)](https://developer.android.com/reference/android/net/ConnectivityManager#getConnectionOwnerUid(int,%20java.net.InetSocketAddress,%20java.net.InetSocketAddress))
+- [Connection ownership (API 29+)](<https://developer.android.com/reference/android/net/ConnectivityManager#getConnectionOwnerUid(int,%20java.net.InetSocketAddress,%20java.net.InetSocketAddress)>)

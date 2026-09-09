@@ -32,14 +32,7 @@ export async function loadApps(db: SQLite.SQLiteDatabase): Promise<App[]> {
 export async function upsertApp(db: SQLite.SQLiteDatabase, app: App): Promise<void> {
   await db.runAsync(
     'INSERT OR REPLACE INTO apps (id, package_name, display_name, category, is_system, trust_level) VALUES (?, ?, ?, ?, ?, ?)',
-    [
-      app.id,
-      app.packageName,
-      app.displayName,
-      app.category,
-      app.isSystem ? 1 : 0,
-      app.trustLevel,
-    ],
+    [app.id, app.packageName, app.displayName, app.category, app.isSystem ? 1 : 0, app.trustLevel],
   );
 }
 

@@ -20,10 +20,7 @@ export function getNotificationPolicy(level: RiskLevel): NotificationPolicy {
   }
 }
 
-export function generateAlertsFromAssessments(
-  apps: App[],
-  assessments: RiskAssessment[],
-): Alert[] {
+export function generateAlertsFromAssessments(apps: App[], assessments: RiskAssessment[]): Alert[] {
   return assessments
     .filter((a) => a.level !== RiskLevel.SAFE)
     .map((assessment) => {

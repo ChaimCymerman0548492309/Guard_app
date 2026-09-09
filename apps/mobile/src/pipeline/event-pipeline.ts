@@ -222,7 +222,13 @@ export async function seedSimulatorData(
     for (const event of events) {
       await db.runAsync(
         'INSERT OR REPLACE INTO events (id, app_id, type, metadata, timestamp) VALUES (?, ?, ?, ?, ?)',
-        [event.id, event.appId, event.type, JSON.stringify(event.metadata), event.timestamp.toISOString()],
+        [
+          event.id,
+          event.appId,
+          event.type,
+          JSON.stringify(event.metadata),
+          event.timestamp.toISOString(),
+        ],
       );
     }
     await pipeline['reassessAffectedApps']([events[0]?.appId ?? '']);

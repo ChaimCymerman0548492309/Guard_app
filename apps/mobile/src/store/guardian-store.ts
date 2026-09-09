@@ -10,11 +10,7 @@ import type {
 import { AlertAction, VpnStatus, SimulatorScenario } from '@guardian/shared';
 import { createSimulator, generateEvents } from '@guardian/simulator';
 import { getDatabase, clearDatabase } from '../db/database';
-import {
-  computeRiskCounts,
-  loadAlerts,
-  upsertAlert,
-} from '../db/repositories';
+import { computeRiskCounts, loadAlerts, upsertAlert } from '../db/repositories';
 import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
 import { getGuardianVpnService } from '../native/guardian-vpn';
 import { applyAlertAction } from '../services/alert-service';
@@ -87,7 +83,9 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
     const vpn = getGuardianVpnService();
     const isSupported = await vpn.isSupported();
-    const vpnStatus = isSupported ? await vpn.getStatus() : { status: VpnStatus.UNSUPPORTED, isSupported: false };
+    const vpnStatus = isSupported
+      ? await vpn.getStatus()
+      : { status: VpnStatus.UNSUPPORTED, isSupported: false };
 
     await clearDatabase();
     const pipe = await getPipeline();
@@ -95,8 +93,14 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     if (isSimulator) {
       const sim = createSimulator();
       const { apps } = sim.run();
-      const networkEventsByApp = new Map<string, ReturnType<typeof generateEvents>['networkEvents']>();
-      const securityEventsByApp = new Map<string, ReturnType<typeof generateEvents>['securityEvents']>();
+      const networkEventsByApp = new Map<
+        string,
+        ReturnType<typeof generateEvents>['networkEvents']
+      >();
+      const securityEventsByApp = new Map<
+        string,
+        ReturnType<typeof generateEvents>['securityEvents']
+      >();
 
       for (const app of apps) {
         const scenario = SCENARIO_MAP[app.id] ?? SimulatorScenario.NORMAL;

@@ -6,16 +6,16 @@ Guardian is a **local-first** mobile security monitoring application. It analyze
 
 ### Stack
 
-| Layer                | Technology           | Notes                                            |
-| -------------------- | -------------------- | ------------------------------------------------ |
-| Mobile               | React Native (Expo)  | Dashboard + Kotlin VPN module (Android)          |
-| Native (Android)     | Kotlin VpnService    | Metadata-only network capture POC                |
-| API                  | Express (optional)   | Sync/backup; Prisma + simulator fallback         |
-| Business logic       | TypeScript           | Risk engine, baselines, aggregation, alerts      |
-| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, baselines, timeline, alerts        |
-| Persistence (API)    | PostgreSQL + Prisma  | Optional cloud sync                              |
-| Validation           | Zod                  | Runtime schemas shared across packages           |
-| Logging              | Pino                 | Structured API logging                           |
+| Layer                | Technology           | Notes                                       |
+| -------------------- | -------------------- | ------------------------------------------- |
+| Mobile               | React Native (Expo)  | Dashboard + Kotlin VPN module (Android)     |
+| Native (Android)     | Kotlin VpnService    | Metadata-only network capture POC           |
+| API                  | Express (optional)   | Sync/backup; Prisma + simulator fallback    |
+| Business logic       | TypeScript           | Risk engine, baselines, aggregation, alerts |
+| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, baselines, timeline, alerts   |
+| Persistence (API)    | PostgreSQL + Prisma  | Optional cloud sync                         |
+| Validation           | Zod                  | Runtime schemas shared across packages      |
+| Logging              | Pino                 | Structured API logging                      |
 
 ### Design Principles
 
@@ -94,21 +94,21 @@ The simulator generates realistic seed scenarios (Photo Cleaner high-risk demo) 
 
 ## Android VPN Module
 
-| Component | Location | Role |
-|-----------|----------|------|
-| `GuardianVpnService` | `android/.../vpn/` | TUN interface, DNS/domain parsing, foreground service |
-| `GuardianVpnModule` | `android/.../vpn/` | React Native bridge (start/stop/status/events) |
-| `guardian-vpn.ts` | `apps/mobile/src/native/` | TypeScript interface + platform fallback |
+| Component            | Location                  | Role                                                  |
+| -------------------- | ------------------------- | ----------------------------------------------------- |
+| `GuardianVpnService` | `android/.../vpn/`        | TUN interface, DNS/domain parsing, foreground service |
+| `GuardianVpnModule`  | `android/.../vpn/`        | React Native bridge (start/stop/status/events)        |
+| `guardian-vpn.ts`    | `apps/mobile/src/native/` | TypeScript interface + platform fallback              |
 
 See [ADR-002](decisions/ADR-002-android-vpn.md) for platform limitations.
 
 ## Alert Notification Policy
 
-| Risk Level | User label   | Notification behavior        |
-|------------|--------------|------------------------------|
-| SAFE       | Safe         | Silent                       |
-| UNUSUAL    | Unusual      | Occasional (non-immediate)   |
-| SUSPICIOUS | Suspicious   | Immediate + block option     |
+| Risk Level | User label | Notification behavior      |
+| ---------- | ---------- | -------------------------- |
+| SAFE       | Safe       | Silent                     |
+| UNUSUAL    | Unusual    | Occasional (non-immediate) |
+| SUSPICIOUS | Suspicious | Immediate + block option   |
 
 ## Phase Status
 

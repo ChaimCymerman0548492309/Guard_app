@@ -5,7 +5,16 @@ import { AppCategory, RiskLevel, TrustLevel } from '@guardian/shared';
 describe('alert-service', () => {
   it('skips SAFE assessments', () => {
     const alerts = generateAlertsFromAssessments(
-      [{ id: 'a1', packageName: 'com.test', displayName: 'Test', category: AppCategory.UTILITY, isSystem: false, trustLevel: TrustLevel.NEUTRAL }],
+      [
+        {
+          id: 'a1',
+          packageName: 'com.test',
+          displayName: 'Test',
+          category: AppCategory.UTILITY,
+          isSystem: false,
+          trustLevel: TrustLevel.NEUTRAL,
+        },
+      ],
       [
         {
           id: 'r1',
@@ -23,7 +32,16 @@ describe('alert-service', () => {
 
   it('creates immediate alerts for suspicious activity', () => {
     const alerts = generateAlertsFromAssessments(
-      [{ id: 'a1', packageName: 'com.test', displayName: 'Test', category: AppCategory.UTILITY, isSystem: false, trustLevel: TrustLevel.NEUTRAL }],
+      [
+        {
+          id: 'a1',
+          packageName: 'com.test',
+          displayName: 'Test',
+          category: AppCategory.UTILITY,
+          isSystem: false,
+          trustLevel: TrustLevel.NEUTRAL,
+        },
+      ],
       [
         {
           id: 'r1',
