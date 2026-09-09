@@ -102,8 +102,12 @@
     "stop": "Stop monitoring",
     "startHint": "Opens the Android VPN permission dialog",
     "continue": "Continue to dashboard",
-    "unsupported": "Network monitoring is not available on this device. Use demo mode to explore Guardian.",
-    "simulatorNote": "Demo mode uses simulated events \u2014 no VPN permission needed."
+    "unsupported": "Network monitoring is not available on this device.",
+    "simulatorNote": "Demo mode uses simulated events \u2014 no VPN permission needed.",
+    "vpnDenied": "VPN permission was denied. Tap Start monitoring again and choose OK in the Android dialog.",
+    "vpnRevoked": "VPN permission was revoked. Open Monitoring setup to re-enable.",
+    "vpnNoActivity": "Could not open the permission dialog. Close and reopen the app, then try again.",
+    "vpnFailed": "Could not start network monitoring. Restart the app and try again."
   },
   "risk": {
     "SAFE": "Safe",
@@ -127,6 +131,18 @@
     "restartHint": "Restart the app for layout direction to apply.",
     "export": "Export my data",
     "exportHint": "Download a JSON copy of your local data",
-    "exportError": "Could not export data"
+    "exportError": "Could not export data",
+    "legal": "Legal"
+  },
+  "legal": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "viewOnline": "View online privacy policy"
+  },
+  "about": {
+    "title": "About",
+    "version": "Version {{version}}",
+    "description": "Guardian helps you understand what your apps do on the network \u2014 locally on your device, with no account required.",
+    "copyright": "\u00a9 2026 Guardian. All rights reserved."
   }
 }

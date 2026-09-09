@@ -7,7 +7,6 @@ import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
 
 const STEPS = ['welcome', 'privacy', 'monitoring', 'done'] as const;
-type OnboardingStep = (typeof STEPS)[number];
 
 export function OnboardingScreen() {
   const { t } = useTranslation();

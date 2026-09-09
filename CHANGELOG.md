@@ -2,6 +2,28 @@
 
 All notable changes to Guardian are documented in this file.
 
+## [1.0.0] - 2026-03-09
+
+### Play Store release
+
+- Version bump to 1.0.0 (`versionCode` 100)
+- Production build config via `app.config.ts` and complete `eas.json` profiles
+- Dev features hidden in production: demo button and simulator banner require `__DEV__` + `EXPO_PUBLIC_DEV_SIMULATOR=true`
+- `EXPO_PUBLIC_DEV_SIMULATOR` defaults to `false` in production/preview EAS profiles
+- Privacy Policy and Terms of Use screens (in-app, en/he) with configurable `EXPO_PUBLIC_PRIVACY_POLICY_URL`
+- About screen with version and legal links
+- Settings screen wired into navigation with legal section
+- Friendly VPN error messages in English and Hebrew (permission denied, revoked, failed)
+- Release APK build script: `./scripts/build-release-apk.sh`
+- Store listing copy and asset specs in `store-listing/`
+- Install guide: `docs/INSTALL-ON-PHONE.md` (English + Hebrew)
+- Complete Play Store submission checklist in `docs/play-store.md`
+
+### Tests
+
+- Production flag tests (`app-flags.test.ts`)
+- VPN error mapping tests (`vpn-errors.test.ts`)
+
 ## [0.1.1] - 2026-03-09
 
 ### Added

@@ -8,6 +8,9 @@ import { AppDetailsScreen } from '../screens/AppDetailsScreen';
 import { AlertScreen } from '../screens/AlertScreen';
 import { TimelineScreen } from '../screens/TimelineScreen';
 import { PermissionsScreen } from '../screens/PermissionsScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
+import { AboutScreen } from '../screens/AboutScreen';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
 
@@ -49,6 +52,19 @@ export function AppNavigator() {
           component={PermissionsScreen}
           options={{ title: t('permissions.title') }}
         />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ title: t('settings.title') }}
+        />
+        <Stack.Screen
+          name="LegalDocument"
+          component={LegalDocumentScreen}
+          options={({ route }) => ({
+            title: route.params.type === 'privacy' ? t('legal.privacy') : t('legal.terms'),
+          })}
+        />
+        <Stack.Screen name="About" component={AboutScreen} options={{ title: t('about.title') }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

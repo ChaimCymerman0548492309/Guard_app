@@ -6,4 +6,6 @@ export type RootStackParamList = {
   Timeline: undefined;
   Permissions: undefined;
   Settings: undefined;
+  LegalDocument: { type: 'privacy' | 'terms' };
+  About: undefined;
 };

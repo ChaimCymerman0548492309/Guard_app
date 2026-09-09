@@ -25,6 +25,10 @@ import i18n from '../i18n';
 import { exportDataAsJson } from '../services/export-service';
 import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
+import { APP_VERSION } from '../config/app-config';
 
 const RETENTION_OPTIONS = [7, 14, 30, 60, 90];
 const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
@@ -35,6 +39,7 @@ const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
 export function SettingsScreen() {
   const { t } = useTranslation();
   const rtl = useRtl();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [retentionDays, setRetentionDaysState] = useState(30);
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [cloudSyncOn, setCloudSyncOn] = useState(false);
@@ -133,6 +138,36 @@ export function SettingsScreen() {
       <TouchableOpacity style={styles.exportButton} onPress={() => void handleExport()}>
         <Text style={styles.exportText}>{t('settings.export')}</Text>
       </TouchableOpacity>
+
+      <Text style={[styles.sectionTitle, rtl.text, styles.legalSection]}>{t('settings.legal')}</Text>
+
+      <TouchableOpacity
+        style={styles.linkRow}
+        onPress={() => navigation.navigate('LegalDocument', { type: 'privacy' })}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t('legal.privacy')}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkRow}
+        onPress={() => navigation.navigate('LegalDocument', { type: 'terms' })}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t('legal.terms')}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkRow}
+        onPress={() => navigation.navigate('About')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.linkText}>{t('about.title')}</Text>
+      </TouchableOpacity>
+
+      <Text style={[styles.versionText, rtl.text]}>
+        {t('about.version', { version: APP_VERSION })}
+      </Text>
     </ScrollView>
   );
 }
@@ -150,4 +185,8 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, color: colors.textSecondary, marginBottom: 8 },
   exportButton: { marginTop: 24, backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
   exportText: { color: colors.white, fontWeight: '600' },
+  legalSection: { marginTop: 32 },
+  linkRow: { paddingVertical: 14, minHeight: 44, justifyContent: 'center' },
+  linkText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  versionText: { fontSize: 12, color: colors.textSecondary, marginTop: 16, textAlign: 'center' },
 });

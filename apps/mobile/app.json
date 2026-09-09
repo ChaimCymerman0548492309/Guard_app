@@ -2,7 +2,7 @@
   "expo": {
     "name": "Guardian",
     "slug": "guardian",
-    "version": "0.1.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1e3a5f"
       },
-      "package": "com.guardian.app"
+      "package": "com.guardian.app",
+      "versionCode": 100
     },
     "plugins": ["expo-localization", "expo-sqlite", "expo-notifications"]
   }

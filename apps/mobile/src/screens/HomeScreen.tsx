@@ -18,6 +18,7 @@ import { VpnStatusBar } from '../components/VpnStatusBar';
 import { VpnStatsBar } from '../components/VpnStatsBar';
 import { SyncStatusBar } from '../components/SyncStatusBar';
 import { useRtl } from '../hooks/use-rtl';
+import { showDevUi } from '../config/app-flags';
 
 function formatLastScan(date: Date | null, locale: string): string {
   if (!date) return '';
@@ -64,7 +65,7 @@ export function HomeScreen() {
       <VpnStatsBar />
       <SyncStatusBar />
 
-      {isSimulator && (
+      {showDevUi() && isSimulator && (
         <View style={styles.simBanner} accessibilityLiveRegion="polite">
           <Text style={[styles.simText, rtl.text]}>{t('home.demoMode')}</Text>
           <TouchableOpacity

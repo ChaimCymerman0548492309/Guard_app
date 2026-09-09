@@ -30,6 +30,8 @@ import {
   setOnboardingComplete,
 } from '../services/settings-service';
 import i18n from '../i18n';
+import { isDevSimulatorEnabled } from '../config/app-flags';
+import { isVpnErrorKey, mapVpnErrorMessage } from '../utils/vpn-errors';
 
 interface GuardianState {
   apps: App[];
@@ -113,7 +115,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
   alerts: [],
   timeline: [],
   isLoading: true,
-  isSimulator: process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false',
+  isSimulator: isDevSimulatorEnabled(),
   vpnStatus: { status: VpnStatus.STOPPED, isSupported: false },
   syncStatus: 'disabled',
   syncPendingCount: 0,
@@ -148,7 +150,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     const onboarded = await isOnboardingComplete(db);
     await i18n.changeLanguage(await getLanguage(db));
     await initNotifications();
-    const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
+    const isSimulator = isDevSimulatorEnabled();
     const vpn = getGuardianVpnService();
     const isSupported = await vpn.isSupported();
     const vpnStatus = isSupported
@@ -247,11 +249,12 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       const vpnStatus = await vpn.getStatus();
       set({ vpnStatus });
     } catch (error) {
+      const mapped = mapVpnErrorMessage(error);
       set({
         vpnStatus: {
           status: VpnStatus.ERROR,
           isSupported: await vpn.isSupported(),
-          errorMessage: error instanceof Error ? error.message : 'Failed to start monitoring',
+          errorMessage: isVpnErrorKey(mapped) ? i18n.t(mapped) : mapped,
         },
       });
     }

@@ -7,7 +7,7 @@ cd "$ROOT/apps/mobile"
 echo "Generating Android native project..."
 npx expo prebuild --platform android --clean
 
-echo "Building and installing on connected device..."
-pnpm android
+echo "Building and installing on connected device (production mode, no simulator)..."
+EXPO_PUBLIC_DEV_SIMULATOR=false pnpm android
 
 echo "Android build complete."

@@ -1,0 +1,27 @@
+Guardian helps you understand what your apps are doing on the network—locally on your Android device, with no account required.
+
+WHAT GUARDIAN DOES
+• Monitors network connections per app using Android's VPN permission
+• Records metadata only: domain names, data sizes, timestamps
+• Never reads your messages, photos, or file contents
+• Alerts you when activity looks unusual or suspicious
+• Works fully offline—no cloud account needed
+
+KEY FEATURES
+• Home dashboard with safe / unusual / suspicious counts
+• App list with risk levels and explanations
+• Activity timeline and security alerts
+• Block suspicious domains (DNS-based, best-effort)
+• Trust apps you know are safe
+• Export your data as JSON anytime
+• English and Hebrew (עברית) with RTL support
+
+PRIVACY FIRST
+All processing happens on your device. Optional cloud sync is off by default. You control data retention (7–90 days). Uninstall or clear storage to delete everything.
+
+REQUIREMENTS
+• Android 8+ recommended
+• VPN permission required for monitoring
+• Physical device (not Expo Go)
+
+Guardian is a privacy tool, not antivirus software. It helps you make informed decisions about your apps.

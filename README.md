@@ -1,5 +1,13 @@
 # Guardian
 
+## 📱 Install on your phone
+
+**[→ Step-by-step install guide (English + עברית)](docs/INSTALL-ON-PHONE.md)**
+
+The Guardian UI runs on your Android phone. Choose USB install from a computer or download an APK from EAS — see the guide above.
+
+---
+
 Local-first mobile security monitoring. Guardian analyzes app and network behavior on your device to surface privacy risks — without collecting packet payloads or sending raw traffic to the cloud.
 
 ## Architecture
@@ -117,13 +125,32 @@ See [docs/decisions/ADR-002-android-vpn.md](docs/decisions/ADR-002-android-vpn.m
 - One VPN at a time; foreground notification required
 - iOS not supported
 
+## Testing without computer after install
+
+After you install Guardian on your phone (see [INSTALL-ON-PHONE.md](docs/INSTALL-ON-PHONE.md)), the app works **fully offline**:
+
+- No computer or API required
+- Complete onboarding, VPN monitoring, app list, alerts, and settings on the phone
+- Data stays in local SQLite on the device
+- Export JSON from Settings anytime
+
+## Testing with API (optional)
+
+Cloud sync is **off by default**. To test mobile → API sync:
+
+1. Start the API: `docker compose up -d && pnpm dev:api`
+2. Set `EXPO_PUBLIC_API_URL=http://<your-computer-ip>:3000` before building
+3. Enable **Cloud sync** in app Settings
+
+See [docs/api.md](docs/api.md) for endpoints.
+
 ## Development simulator
 
-Set `DEV_SIMULATOR=true` (API) or `EXPO_PUBLIC_DEV_SIMULATOR=true` (mobile).
+Set `DEV_SIMULATOR=true` (API) or `EXPO_PUBLIC_DEV_SIMULATOR=true` (mobile). Dev UI (demo button) only appears in `__DEV__` builds with simulator enabled.
 
 Demo scenario: **Photo Cleaner** — 1200 photos accessed, new domain contacted, 350MB upload → **SUSPICIOUS**.
 
-Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
+Tap **Run Photo Cleaner demo** on the home screen to replay the scenario (dev builds only).
 
 ## Scripts
 
@@ -132,6 +159,7 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
 | `./scripts/dev.sh` | Install deps, generate Prisma client, create `.env` |
 | `./scripts/test.sh` | Full CI check: build, lint, typecheck, test |
 | `./scripts/android-build.sh` | Prebuild + run on Android device |
+| `./scripts/build-release-apk.sh` | Build release APK for direct phone install |
 | `python3 scripts/generate-icon.py` | Regenerate app icon PNG |
 | `pnpm dev:api` | Start Express API |
 | `pnpm dev:mobile` | Start Expo mobile app |
@@ -161,6 +189,8 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
 - [API Reference](docs/api.md)
 - [E2E Test Plan](docs/e2e-test-plan.md)
 - [Contributing](CONTRIBUTING.md)
+- [Install on Phone](docs/INSTALL-ON-PHONE.md)
+- [Play Store Checklist](docs/play-store.md)
 - [Privacy](docs/privacy.md)
 - [Security](docs/security.md)
 - [Threat Model](docs/threat-model.md)
