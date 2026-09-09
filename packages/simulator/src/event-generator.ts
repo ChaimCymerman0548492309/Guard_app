@@ -12,10 +12,7 @@ function now(): Date {
   return new Date();
 }
 
-export function generateEvents(
-  appId: string,
-  scenario: SimulatorScenario,
-): GeneratedEvents {
+export function generateEvents(appId: string, scenario: SimulatorScenario): GeneratedEvents {
   switch (scenario) {
     case SimulatorScenario.NORMAL:
       return generateNormalEvents(appId);

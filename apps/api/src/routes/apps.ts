@@ -26,7 +26,9 @@ appsRouter.get('/:id', (req, res) => {
   const app = apps.find((a) => a.id === req.params.id);
 
   if (!app) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'App not found' } });
+    res
+      .status(404)
+      .json({ success: false, error: { code: 'NOT_FOUND', message: 'App not found' } });
     return;
   }
 

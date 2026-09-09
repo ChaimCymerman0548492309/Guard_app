@@ -24,9 +24,7 @@ export function AppsScreen() {
         data={apps}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>{t('apps.noApps')}</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t('apps.noApps')}</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}

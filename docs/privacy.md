@@ -19,12 +19,12 @@ Guardian is designed with privacy as a core principle:
 
 See `config/retention.ts` for default retention periods:
 
-| Data Type | Retention |
-|-----------|-----------|
-| Events | 30 days |
-| Risk assessments | 90 days |
-| Alerts | 60 days |
-| Network events | 14 days |
+| Data Type        | Retention |
+| ---------------- | --------- |
+| Events           | 30 days   |
+| Risk assessments | 90 days   |
+| Alerts           | 60 days   |
+| Network events   | 14 days   |
 
 ## Optional Cloud Sync
 

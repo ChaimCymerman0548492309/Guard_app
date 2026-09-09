@@ -59,14 +59,14 @@ Seed apps: WhatsApp, Google Photos, Photo Editor, Calculator, Unknown App.
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm test` | Run all package tests |
-| `pnpm typecheck` | TypeScript check |
-| `pnpm lint` | ESLint |
-| `pnpm build` | Build packages and API |
-| `pnpm dev:api` | Start Express API |
-| `pnpm dev:mobile` | Start Expo mobile app |
+| Command           | Description            |
+| ----------------- | ---------------------- |
+| `pnpm test`       | Run all package tests  |
+| `pnpm typecheck`  | TypeScript check       |
+| `pnpm lint`       | ESLint                 |
+| `pnpm build`      | Build packages and API |
+| `pnpm dev:api`    | Start Express API      |
+| `pnpm dev:mobile` | Start Expo mobile app  |
 
 ## Documentation
 

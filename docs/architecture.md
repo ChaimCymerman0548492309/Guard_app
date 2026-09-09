@@ -6,15 +6,15 @@ Guardian is a **local-first** mobile security monitoring application. It analyze
 
 ### Stack
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Mobile | React Native (Expo) | Primary UI; Kotlin documented for future VPN POC |
-| API | Express (optional) | Sync/backup skeleton; not required for core flow |
-| Business logic | TypeScript | Risk engine, shared types, simulator |
-| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, assessments, alerts |
-| Persistence (API) | PostgreSQL + Prisma | Optional cloud sync |
-| Validation | Zod | Runtime schemas shared across packages |
-| Logging | Pino | Structured API logging |
+| Layer                | Technology           | Notes                                            |
+| -------------------- | -------------------- | ------------------------------------------------ |
+| Mobile               | React Native (Expo)  | Primary UI; Kotlin documented for future VPN POC |
+| API                  | Express (optional)   | Sync/backup skeleton; not required for core flow |
+| Business logic       | TypeScript           | Risk engine, shared types, simulator             |
+| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, assessments, alerts                |
+| Persistence (API)    | PostgreSQL + Prisma  | Optional cloud sync                              |
+| Validation           | Zod                  | Runtime schemas shared across packages           |
+| Logging              | Pino                 | Structured API logging                           |
 
 ### Design Principles
 
@@ -98,8 +98,8 @@ Output of the risk engine for an app or session.
 interface RiskAssessment {
   id: string;
   appId: string;
-  score: number;           // 0–100
-  level: RiskLevel;        // SAFE | UNUSUAL | SUSPICIOUS
+  score: number; // 0–100
+  level: RiskLevel; // SAFE | UNUSUAL | SUSPICIOUS
   triggeredRules: string[];
   explanation: string;
   assessedAt: Date;
@@ -153,16 +153,16 @@ interface Alert {
 
 ## Phase 1 Plan
 
-| Step | Deliverable | Status |
-|------|-------------|--------|
-| 1 | Monorepo foundation (pnpm, TS, ESLint, Docker, CI) | MVP |
-| 2 | Risk engine with 5 rules + unit tests | MVP |
-| 3 | DEV_SIMULATOR with demo scenarios | MVP |
-| 4 | Mobile dashboard (screens, i18n, SQLite) | MVP |
-| 5 | API skeleton with Prisma + integration tests | MVP |
-| — | Kotlin VPN POC | Future |
-| — | Real Android network monitoring | Future |
-| — | Cloud sync | Future |
+| Step | Deliverable                                        | Status |
+| ---- | -------------------------------------------------- | ------ |
+| 1    | Monorepo foundation (pnpm, TS, ESLint, Docker, CI) | MVP    |
+| 2    | Risk engine with 5 rules + unit tests              | MVP    |
+| 3    | DEV_SIMULATOR with demo scenarios                  | MVP    |
+| 4    | Mobile dashboard (screens, i18n, SQLite)           | MVP    |
+| 5    | API skeleton with Prisma + integration tests       | MVP    |
+| —    | Kotlin VPN POC                                     | Future |
+| —    | Real Android network monitoring                    | Future |
+| —    | Cloud sync                                         | Future |
 
 ## Future: Kotlin VPN Module
 

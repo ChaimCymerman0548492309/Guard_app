@@ -21,9 +21,7 @@ export function TimelineScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>{t('timeline.empty')}</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t('timeline.empty')}</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.header}>
@@ -31,9 +29,7 @@ export function TimelineScreen() {
               <RiskBadge level={item.level} />
             </View>
             <Text style={styles.explanation}>{item.explanation}</Text>
-            <Text style={styles.timestamp}>
-              {new Date(item.assessedAt).toLocaleString()}
-            </Text>
+            <Text style={styles.timestamp}>{new Date(item.assessedAt).toLocaleString()}</Text>
           </View>
         )}
       />

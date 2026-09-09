@@ -8,21 +8,21 @@
 
 ## Threat Actors
 
-| Actor | Capability | Motivation |
-|-------|-----------|------------|
-| Malicious app | Network access, permissions | Data exfiltration |
-| Network attacker | MITM on unencrypted traffic | Intercept metadata |
-| Tracker/ad network | Domain connections | Profiling |
+| Actor              | Capability                  | Motivation         |
+| ------------------ | --------------------------- | ------------------ |
+| Malicious app      | Network access, permissions | Data exfiltration  |
+| Network attacker   | MITM on unencrypted traffic | Intercept metadata |
+| Tracker/ad network | Domain connections          | Profiling          |
 
 ## Mitigations
 
-| Threat | Mitigation | Status |
-|--------|-----------|--------|
-| Malicious app exfiltration | On-device risk detection | MVP |
-| Tracker domains | KNOWN_TRACKER rule | MVP |
-| Large data uploads | LARGE_UPLOAD rule | MVP |
-| Sensitive data access | SENSITIVE_APP_BEHAVIOR rule | MVP |
-| Network monitoring | Kotlin VPN (metadata only) | Future |
+| Threat                     | Mitigation                  | Status |
+| -------------------------- | --------------------------- | ------ |
+| Malicious app exfiltration | On-device risk detection    | MVP    |
+| Tracker domains            | KNOWN_TRACKER rule          | MVP    |
+| Large data uploads         | LARGE_UPLOAD rule           | MVP    |
+| Sensitive data access      | SENSITIVE_APP_BEHAVIOR rule | MVP    |
+| Network monitoring         | Kotlin VPN (metadata only)  | Future |
 
 ## Out of Scope (Phase 1)
 

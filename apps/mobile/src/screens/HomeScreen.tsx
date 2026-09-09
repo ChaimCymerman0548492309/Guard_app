@@ -25,8 +25,16 @@ export function HomeScreen() {
       )}
 
       <View style={styles.countsRow}>
-        <CountCard label={t('home.safe')} count={counts.safe} color={getRiskColor(RiskLevel.SAFE)} />
-        <CountCard label={t('home.unusual')} count={counts.unusual} color={getRiskColor(RiskLevel.UNUSUAL)} />
+        <CountCard
+          label={t('home.safe')}
+          count={counts.safe}
+          color={getRiskColor(RiskLevel.SAFE)}
+        />
+        <CountCard
+          label={t('home.unusual')}
+          count={counts.unusual}
+          color={getRiskColor(RiskLevel.UNUSUAL)}
+        />
         <CountCard
           label={t('home.suspicious')}
           count={counts.suspicious}
@@ -52,16 +60,15 @@ export function HomeScreen() {
               onPress={() => navigation.navigate('Alert', { alertId: alert.id })}
             >
               <Text style={styles.alertTitle}>{alert.title}</Text>
-              <Text style={styles.alertMessage} numberOfLines={2}>{alert.message}</Text>
+              <Text style={styles.alertMessage} numberOfLines={2}>
+                {alert.message}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.linkButton}
-        onPress={() => navigation.navigate('Timeline')}
-      >
+      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Timeline')}>
         <Text style={styles.linkText}>{t('nav.timeline')}</Text>
       </TouchableOpacity>
     </ScrollView>

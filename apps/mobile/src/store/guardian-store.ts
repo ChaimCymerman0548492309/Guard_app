@@ -43,7 +43,14 @@ async function persistToSQLite(
   for (const app of apps) {
     await db.runAsync(
       'INSERT INTO apps (id, package_name, display_name, category, is_system, trust_level) VALUES (?, ?, ?, ?, ?, ?)',
-      [app.id, app.packageName, app.displayName, app.category, app.isSystem ? 1 : 0, app.trustLevel],
+      [
+        app.id,
+        app.packageName,
+        app.displayName,
+        app.category,
+        app.isSystem ? 1 : 0,
+        app.trustLevel,
+      ],
     );
   }
 
@@ -103,9 +110,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
   },
 
   acknowledgeAlert: (alertId: string) => {
-    const alerts = get().alerts.map((a) =>
-      a.id === alertId ? { ...a, acknowledged: true } : a,
-    );
+    const alerts = get().alerts.map((a) => (a.id === alertId ? { ...a, acknowledged: true } : a));
     set({ alerts });
   },
 }));

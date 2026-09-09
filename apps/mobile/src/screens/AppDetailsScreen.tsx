@@ -73,7 +73,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: { fontSize: 15, color: colors.textSecondary },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 16, marginBottom: 8 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
   explanation: { fontSize: 15, color: colors.text, lineHeight: 22 },
   ruleChip: {
     backgroundColor: '#fef2f2',
