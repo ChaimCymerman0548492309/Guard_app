@@ -43,7 +43,32 @@ class GuardianVpnService : VpnService() {
             private set
 
         @Volatile
+        var lastError: String? = null
+            private set
+
+        @Volatile
         var eventListener: ((NetworkEventPayload) -> Unit)? = null
+
+        private val blockedDomains = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+        fun blockDomain(domain: String): Boolean {
+            val normalized = domain.trim().lowercase()
+            if (normalized.isEmpty()) return false
+            blockedDomains.add(normalized)
+            Log.i(TAG, "Domain added to blocklist (best-effort): $normalized")
+            return true
+        }
+
+        fun isDomainBlocked(domain: String): Boolean {
+            val normalized = domain.trim().lowercase()
+            return blockedDomains.any { blocked ->
+                normalized == blocked || normalized.endsWith(".$blocked")
+            }
+        }
+
+        fun clearBlockedDomains() {
+            blockedDomains.clear()
+        }
     }
 
     enum class VpnRuntimeStatus {
@@ -85,12 +110,15 @@ class GuardianVpnService : VpnService() {
     }
 
     override fun onRevoke() {
+        lastError = "VPN permission was revoked by the system"
+        status = VpnRuntimeStatus.ERROR
         stopVpn()
         super.onRevoke()
     }
 
     private fun startVpn() {
         if (running.get()) return
+        lastError = null
         status = VpnRuntimeStatus.STARTING
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -105,6 +133,7 @@ class GuardianVpnService : VpnService() {
 
             vpnInterface = builder.establish()
             if (vpnInterface == null) {
+                lastError = "Failed to establish VPN interface"
                 status = VpnRuntimeStatus.ERROR
                 stopSelf()
                 return
@@ -115,6 +144,7 @@ class GuardianVpnService : VpnService() {
             workerThread = Thread({ processPackets() }, "GuardianVpnWorker").also { it.start() }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start VPN", e)
+            lastError = e.message ?: "Failed to start VPN"
             status = VpnRuntimeStatus.ERROR
             stopVpn()
         }
@@ -152,7 +182,13 @@ class GuardianVpnService : VpnService() {
 
                 val metadata = parsePacketMetadata(packet.array(), length)
                 if (metadata != null) {
-                    emitEvent(metadata)
+                    if (!metadata.blocked) {
+                        emitEvent(metadata)
+                    }
+                    if (metadata.blocked) {
+                        Log.d(TAG, "Dropped packet to blocked destination: ${metadata.domain ?: metadata.destIp}")
+                        continue
+                    }
                 }
 
                 // Forward packet so device connectivity is not broken
@@ -168,11 +204,14 @@ class GuardianVpnService : VpnService() {
 
     private data class PacketMetadata(
         val domain: String?,
+        val sourceIp: String,
         val destIp: String,
+        val sourcePort: Int,
         val destPort: Int,
         val protocol: String,
         val packetSize: Int,
-        val isOutbound: Boolean
+        val isOutbound: Boolean,
+        val blocked: Boolean
     )
 
     private fun parsePacketMetadata(data: ByteArray, length: Int): PacketMetadata? {
@@ -187,14 +226,15 @@ class GuardianVpnService : VpnService() {
             else -> "OTHER"
         }
 
+        val sourceIp = "${data[12].toInt() and 0xFF}.${data[13].toInt() and 0xFF}.${data[14].toInt() and 0xFF}.${data[15].toInt() and 0xFF}"
         val destIp = "${data[16].toInt() and 0xFF}.${data[17].toInt() and 0xFF}.${data[18].toInt() and 0xFF}.${data[19].toInt() and 0xFF}"
+        var sourcePort = 0
         var destPort = 0
         val headerLen = (data[0].toInt() and 0xF) * 4
 
-        if (protocolNum == 17 && length >= headerLen + 4) {
-            destPort = ((data[headerLen].toInt() and 0xFF) shl 8) or (data[headerLen + 1].toInt() and 0xFF)
-        } else if (protocolNum == 6 && length >= headerLen + 4) {
-            destPort = ((data[headerLen].toInt() and 0xFF) shl 8) or (data[headerLen + 1].toInt() and 0xFF)
+        if ((protocolNum == 17 || protocolNum == 6) && length >= headerLen + 4) {
+            sourcePort = ((data[headerLen].toInt() and 0xFF) shl 8) or (data[headerLen + 1].toInt() and 0xFF)
+            destPort = ((data[headerLen + 2].toInt() and 0xFF) shl 8) or (data[headerLen + 3].toInt() and 0xFF)
         }
 
         var domain: String? = null
@@ -202,13 +242,19 @@ class GuardianVpnService : VpnService() {
             domain = parseDnsQuery(data, headerLen + 8, length)
         }
 
+        val identifier = domain ?: destIp
+        val blocked = isDomainBlocked(identifier)
+
         return PacketMetadata(
             domain = domain,
+            sourceIp = sourceIp,
             destIp = destIp,
+            sourcePort = sourcePort,
             destPort = destPort,
             protocol = protocol,
             packetSize = length,
-            isOutbound = true
+            isOutbound = true,
+            blocked = blocked
         )
     }
 
@@ -252,16 +298,38 @@ class GuardianVpnService : VpnService() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
         return try {
             val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val remote = InetSocketAddress(metadata.destIp, metadata.destPort)
-            val local = InetSocketAddress("0.0.0.0", 0)
             val protocol = when (metadata.protocol) {
                 "TCP" -> ConnectivityManager.IPPROTO_TCP
                 "UDP" -> ConnectivityManager.IPPROTO_UDP
                 else -> return null
             }
-            val uid = cm.getConnectionOwnerUid(protocol, local, remote)
+
+            val local = InetSocketAddress(metadata.sourceIp, metadata.sourcePort)
+            val remote = InetSocketAddress(metadata.destIp, metadata.destPort)
+            var uid = cm.getConnectionOwnerUid(protocol, local, remote)
+
+            if (uid == android.os.Process.INVALID_UID && metadata.sourcePort > 0) {
+                uid = cm.getConnectionOwnerUid(
+                    protocol,
+                    InetSocketAddress(metadata.sourceIp, metadata.sourcePort),
+                    InetSocketAddress(metadata.destIp, metadata.destPort)
+                )
+            }
+
             if (uid == android.os.Process.INVALID_UID) return null
-            packageManager.getPackagesForUid(uid)?.firstOrNull()
+
+            val packages = packageManager.getPackagesForUid(uid)
+            if (packages.isNullOrEmpty()) return null
+
+            // Prefer non-system app when multiple packages share a UID
+            packages.firstOrNull { pkg ->
+                try {
+                    val info = packageManager.getApplicationInfo(pkg, 0)
+                    (info.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0
+                } catch (_: PackageManager.NameNotFoundException) {
+                    false
+                }
+            } ?: packages.firstOrNull()
         } catch (_: Exception) {
             null
         }

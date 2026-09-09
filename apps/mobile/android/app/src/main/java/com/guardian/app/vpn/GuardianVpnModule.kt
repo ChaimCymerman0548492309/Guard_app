@@ -56,6 +56,7 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
         }
         map.putString("status", status)
         map.putBoolean("isSupported", Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        GuardianVpnService.lastError?.let { map.putString("errorMessage", it) }
         promise.resolve(map)
     }
 
@@ -92,9 +93,10 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun blockDomain(domain: String, promise: Promise) {
-        // Best-effort: full per-domain blocking requires maintained blocklist in VPN routing.
-        // Documented limitation — acknowledge request without claiming full enforcement.
-        promise.resolve(false)
+        // Best-effort: drops DNS/TCP packets matching the domain in the VPN layer.
+        // DoH/DoT and direct-IP connections may bypass this blocklist.
+        val added = GuardianVpnService.blockDomain(domain)
+        promise.resolve(added)
     }
 
     internal fun startVpnService(promise: Promise) {

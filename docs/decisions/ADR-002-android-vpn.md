@@ -30,7 +30,7 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 | Protocol (TCP/UDP)       | Yes             | From IP header                                  |
 | App attribution          | Partial         | Requires Android 10+; fails for some flows      |
 | HTTPS payload inspection | **No**          | TLS encrypted — by design                       |
-| Per-domain blocking      | **Best-effort** | Full enforcement needs maintained routing rules |
+| Per-domain blocking      | **Best-effort** | In-memory blocklist drops matching DNS/TCP packets in VPN layer |
 | iOS                      | **No**          | Network Extension not implemented               |
 
 ## Limitations
@@ -56,7 +56,15 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 
 ### Blocking
 
-- `blockDomain()` acknowledges requests but **does not guarantee** network-level enforcement in this POC. Documented as best-effort; production would require maintained blocklists and VPN routing rules.
+- `blockDomain()` adds the domain to an in-memory blocklist in `GuardianVpnService`. Matching DNS queries and TCP/UDP packets to that domain (or subdomain) are **dropped** before forwarding.
+- **Limitations remain**: connections that use direct IP addresses, DNS-over-HTTPS/TLS, or cached DNS may bypass the blocklist. Production would need persistent blocklists and split-DNS handling.
+- Blocking state is not persisted across VPN restarts in this POC.
+
+### App attribution improvements (Phase 11)
+
+- Source IP/port extracted from IP headers for `getConnectionOwnerUid()` lookups.
+- When multiple packages share a UID, non-system apps are preferred.
+- `lastError` surfaced to React Native on permission revoke or interface failure.
 
 ## Alternatives considered
 
