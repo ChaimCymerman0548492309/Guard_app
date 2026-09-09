@@ -17,14 +17,14 @@ describe('API', () => {
     const res = await request(app).get('/api/v1/apps');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(5);
+    expect(res.body.data.length).toBe(37);
   });
 
   it('GET /api/v1/dashboard/summary returns counts', async () => {
     const res = await request(app).get('/api/v1/dashboard/summary');
     expect(res.status).toBe(200);
     expect(res.body.data.counts).toBeDefined();
-    expect(res.body.data.totalApps).toBeGreaterThanOrEqual(5);
+    expect(res.body.data.totalApps).toBe(37);
   });
 
   it('GET /api/v1/openapi returns full spec', async () => {

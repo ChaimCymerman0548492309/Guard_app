@@ -11,7 +11,7 @@ apps/mobile     → Expo React Native dashboard + Android VPN module
 apps/api        → Express REST API (optional sync)
 packages/shared → Types, Zod schemas, constants
 packages/risk-engine → Rule-based risk scoring
-packages/simulator     → DEV_SIMULATOR event generator
+packages/simulator     → DEV_SIMULATOR event generator (37 apps)
 packages/ui     → Shared UI utilities
 ```
 
@@ -19,102 +19,144 @@ packages/ui     → Shared UI utilities
 
 - Node.js 20+
 - pnpm 9+
-- Docker (for PostgreSQL, optional)
+- Docker (optional, for PostgreSQL)
 - Android Studio + JDK 17 (for Android native builds)
+- Physical Android device or emulator (API 29+ recommended for app attribution)
 
-## Quick Start
+## Setup from zero
+
+### 1. Clone and install
 
 ```bash
-# Install dependencies
+git clone <repo-url> guardian
+cd guardian
+./scripts/dev.sh
+```
+
+Or manually:
+
+```bash
 pnpm install
-
-# Copy environment file
 cp .env.example .env
-
-# Generate Prisma client
 pnpm db:generate
+```
 
-# Start PostgreSQL (optional, for API sync)
-docker compose up -d postgres
+### 2. Run tests
 
-# Run tests
-pnpm test
+```bash
+./scripts/test.sh
+```
 
-# Typecheck
-pnpm typecheck
+### 3. Start demo mode (no device needed)
 
-# Start API dev server
-pnpm dev:api
-
-# Start mobile app (simulator mode)
+```bash
 EXPO_PUBLIC_DEV_SIMULATOR=true pnpm dev:mobile
 ```
 
-## Android Build (VPN POC)
+Press `a` for Android emulator or scan QR with Expo Go. Demo mode shows 37 monitored apps and the Photo Cleaner high-risk scenario.
 
-The Android VPN module requires a **development build** — it does not run in Expo Go.
+### 4. Start API (optional)
+
+```bash
+# With PostgreSQL
+docker compose up -d
+pnpm dev:api
+
+# Without Docker — simulator fallback
+DEV_SIMULATOR=true pnpm dev:api
+```
+
+API available at `http://localhost:3000`. See [docs/api.md](docs/api.md).
+
+## Android device setup (real VPN monitoring)
+
+VPN requires a **development build** — it does not run in Expo Go.
+
+### 1. Enable USB debugging
+
+On your Android device: Settings → Developer options → USB debugging.
+
+### 2. Connect device and build
+
+```bash
+./scripts/android-build.sh
+```
+
+Or step by step:
 
 ```bash
 cd apps/mobile
-
-# Generate native Android project (first time)
 npx expo prebuild --platform android
-
-# Run on connected device/emulator
-pnpm android
-# or: npx expo run:android
+EXPO_PUBLIC_DEV_SIMULATOR=false pnpm android
 ```
 
-### Real network monitoring
+### 3. Grant permissions
 
-```bash
-# Disable simulator to use native VPN events
-EXPO_PUBLIC_DEV_SIMULATOR=false npx expo run:android
-```
+1. Launch Guardian on device
+2. Open **Monitoring setup** from home
+3. Tap **Start monitoring** → approve Android VPN dialog
+4. Allow notifications when prompted (for high-risk alerts)
 
-On first launch, open **Monitoring setup** from the home screen and tap **Start monitoring**. Android will show the VPN permission dialog.
+### 4. Verify
+
+- Home screen shows **Monitoring active** (green status)
+- Android status bar shows VPN key icon
+- Foreground notification: "Guardian is active"
 
 ### Known Android limitations
 
 See [docs/decisions/ADR-002-android-vpn.md](docs/decisions/ADR-002-android-vpn.md):
 
-- Domains inferred from DNS; DoH/DoT may show IPs only
-- App attribution best-effort on Android 10+
+- Domains inferred from DNS (UDP/53); DoH/DoT may show IPs only
+- App attribution best-effort on Android 10+; system apps harder to identify
+- Domain blocking is best-effort (in-memory blocklist, not persisted across restarts)
 - No HTTPS payload inspection (by design)
 - One VPN at a time; foreground notification required
+- iOS not supported
 
-## Development Simulator
+## Development simulator
 
-Set `DEV_SIMULATOR=true` (API) or `EXPO_PUBLIC_DEV_SIMULATOR=true` (mobile) to use simulated events instead of real network monitoring.
+Set `DEV_SIMULATOR=true` (API) or `EXPO_PUBLIC_DEV_SIMULATOR=true` (mobile).
 
-Demo scenario: **Photo Cleaner** — 1200 photos accessed, new domain contacted, 350MB upload → **HIGH RISK**.
+Demo scenario: **Photo Cleaner** — 1200 photos accessed, new domain contacted, 350MB upload → **SUSPICIOUS**.
 
-Seed apps: WhatsApp, Google Photos, Photo Editor, Calculator, Unknown App.
+Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
 
 ## Scripts
 
-| Command           | Description            |
-| ----------------- | ---------------------- |
-| `pnpm test`       | Run all package tests  |
-| `pnpm typecheck`  | TypeScript check       |
-| `pnpm lint`       | ESLint                 |
-| `pnpm build`      | Build packages and API |
-| `pnpm dev:api`    | Start Express API      |
-| `pnpm dev:mobile` | Start Expo mobile app  |
+| Script / Command | Description |
+| ---------------- | ----------- |
+| `./scripts/dev.sh` | Install deps, generate Prisma client, create `.env` |
+| `./scripts/test.sh` | Full CI check: build, lint, typecheck, test |
+| `./scripts/android-build.sh` | Prebuild + run on Android device |
+| `pnpm dev:api` | Start Express API |
+| `pnpm dev:mobile` | Start Expo mobile app |
+| `pnpm db:migrate` | Apply Prisma migrations |
+| `docker compose up -d` | Start PostgreSQL + API |
 
 ## API Endpoints
 
-| Method | Path                        | Description         |
-| ------ | --------------------------- | ------------------- |
-| GET    | `/health`                   | Health check        |
-| GET    | `/api/v1/apps`              | List apps with risk |
-| GET    | `/api/v1/dashboard/summary` | Dashboard counts    |
-| POST   | `/api/v1/events/batch`      | Optional event sync |
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/health` | Health check |
+| GET | `/api/v1/apps` | List apps with risk |
+| GET | `/api/v1/apps/:id` | App details |
+| GET | `/api/v1/apps/:id/events` | App network events |
+| GET | `/api/v1/apps/:id/risk` | Latest risk assessment |
+| GET | `/api/v1/events` | List network events |
+| POST | `/api/v1/events/batch` | Ingest events from mobile |
+| GET | `/api/v1/alerts` | List alerts |
+| POST | `/api/v1/alerts/:id/block` | Block domain |
+| POST | `/api/v1/alerts/:id/allow` | Allow and acknowledge |
+| GET | `/api/v1/dashboard/summary` | Dashboard counts |
+| GET | `/api/v1/openapi` | OpenAPI 3.0 spec |
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [API Reference](docs/api.md)
+- [E2E Test Plan](docs/e2e-test-plan.md)
+- [Contributing](CONTRIBUTING.md)
 - [Privacy](docs/privacy.md)
 - [Security](docs/security.md)
 - [Threat Model](docs/threat-model.md)
