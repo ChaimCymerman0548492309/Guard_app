@@ -16,12 +16,12 @@
 
 ## Mitigations
 
-| Threat                     | Mitigation                  | Status |
-| -------------------------- | --------------------------- | ------ |
-| Malicious app exfiltration | On-device risk detection    | MVP    |
-| Tracker domains            | KNOWN_TRACKER rule          | MVP    |
-| Large data uploads         | LARGE_UPLOAD rule           | MVP    |
-| Sensitive data access      | SENSITIVE_APP_BEHAVIOR rule | MVP    |
+| Threat                     | Mitigation                  | Status        |
+| -------------------------- | --------------------------- | ------------- |
+| Malicious app exfiltration | On-device risk detection    | MVP           |
+| Tracker domains            | KNOWN_TRACKER rule          | MVP           |
+| Large data uploads         | LARGE_UPLOAD rule           | MVP           |
+| Sensitive data access      | SENSITIVE_APP_BEHAVIOR rule | MVP           |
 | Network monitoring         | Kotlin VPN (metadata only)  | POC (Android) |
 
 ## Out of Scope (Phase 1)
