@@ -8,6 +8,7 @@ import { requestIdMiddleware } from './middleware/request-id.js';
 import { healthRouter } from './routes/health.js';
 import { appsRouter } from './routes/apps.js';
 import { dashboardRouter } from './routes/dashboard.js';
+import { eventsRouter } from './routes/events.js';
 import { openapiRouter } from './routes/openapi.js';
 
 export function createApp(): express.Application {
@@ -35,6 +36,7 @@ export function createApp(): express.Application {
   app.use('/health', healthRouter);
   app.use('/api/v1/apps', appsRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
+  app.use('/api/v1/events', eventsRouter);
   app.use('/api/v1/openapi', openapiRouter);
 
   return app;

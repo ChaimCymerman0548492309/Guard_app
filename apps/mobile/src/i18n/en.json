@@ -10,7 +10,8 @@
     "suspicious": "Suspicious",
     "appsMonitored": "Apps monitored",
     "viewApps": "View all apps",
-    "recentActivity": "Recent activity"
+    "recentActivity": "Recent activity",
+    "demoMode": "Demo mode — simulated data"
   },
   "apps": {
     "title": "Your Apps",
@@ -20,16 +21,41 @@
     "title": "App Details",
     "riskLevel": "Status",
     "explanation": "What we noticed",
-    "rulesTriggered": "Concerns"
+    "rulesTriggered": "Concerns",
+    "showTechnical": "Show technical details",
+    "hideTechnical": "Hide technical details",
+    "score": "Risk score",
+    "assessedAt": "Last assessed",
+    "appId": "App ID",
+    "rules": "Triggered rules"
   },
   "alert": {
     "title": "Alert",
     "acknowledge": "Got it",
-    "learnMore": "Learn more"
+    "learnMore": "Learn more",
+    "notFound": "Alert not found",
+    "block": "Block this connection",
+    "allow": "Allow",
+    "ignore": "Ignore"
   },
   "timeline": {
     "title": "Activity Timeline",
     "empty": "No recent activity"
+  },
+  "permissions": {
+    "title": "Monitoring setup",
+    "heading": "How Guardian watches for risks",
+    "explanation": "Guardian needs your permission to observe network activity. We only record metadata — domain names and data sizes — never the contents of your messages or files.",
+    "vpnTitle": "Network monitoring",
+    "vpnBody": "Android shows a VPN key icon while Guardian is active. This lets us see which apps connect to which servers, without reading encrypted content.",
+    "notificationsTitle": "Alerts",
+    "notificationsBody": "We'll notify you when something looks unusual. Safe activity stays silent; serious concerns appear immediately.",
+    "start": "Start monitoring",
+    "stop": "Stop monitoring",
+    "startHint": "Opens the Android VPN permission dialog",
+    "continue": "Continue to dashboard",
+    "unsupported": "Network monitoring is not available on this device. Use demo mode to explore Guardian.",
+    "simulatorNote": "Demo mode uses simulated events — no VPN permission needed."
   },
   "risk": {
     "SAFE": "Safe",

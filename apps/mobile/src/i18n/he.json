@@ -1,16 +1,17 @@
 {
   "app": {
-    "name": "גארדיאן",
+    "name": "Guardian",
     "tagline": "הפרטיות שלך, מוגנת"
   },
   "home": {
     "title": "בית",
     "safe": "בטוח",
-    "unusual": "חריג",
+    "unusual": "לא רגיל",
     "suspicious": "חשוד",
     "appsMonitored": "אפליקציות במעקב",
     "viewApps": "הצג את כל האפליקציות",
-    "recentActivity": "פעילות אחרונה"
+    "recentActivity": "פעילות אחרונה",
+    "demoMode": "מצב הדגמה — נתונים מדומים"
   },
   "apps": {
     "title": "האפליקציות שלך",
@@ -19,21 +20,46 @@
   "appDetails": {
     "title": "פרטי אפליקציה",
     "riskLevel": "סטטוס",
-    "explanation": "מה שמצאנו",
-    "rulesTriggered": "חששות"
+    "explanation": "מה שמנו לב אליו",
+    "rulesTriggered": "חששות",
+    "showTechnical": "הצג פרטים טכניים",
+    "hideTechnical": "הסתר פרטים טכניים",
+    "score": "ציון סיכון",
+    "assessedAt": "הוערך לאחרונה",
+    "appId": "מזהה אפליקציה",
+    "rules": "כללים שהופעלו"
   },
   "alert": {
     "title": "התראה",
     "acknowledge": "הבנתי",
-    "learnMore": "למידע נוסף"
+    "learnMore": "למידע נוסף",
+    "notFound": "התראה לא נמצאה",
+    "block": "חסום חיבור זה",
+    "allow": "אשר",
+    "ignore": "התעלם"
   },
   "timeline": {
     "title": "ציר זמן פעילות",
     "empty": "אין פעילות אחרונה"
   },
+  "permissions": {
+    "title": "הגדרת ניטור",
+    "heading": "איך Guardian מזהה סיכונים",
+    "explanation": "Guardian צריך את הרשאתך לצפות בפעילות רשת. אנו רושמים רק מטא-נתונים — שמות דומיין וגדלי נתונים — לעולם לא את תוכן ההודעות או הקבצים.",
+    "vpnTitle": "ניטור רשת",
+    "vpnBody": "Android מציג סמל VPN כש-Guardian פעיל. זה מאפשר לראות לאילו שרתים מתחברות אפליקציות, בלי לקרוא תוכן מוצפן.",
+    "notificationsTitle": "התראות",
+    "notificationsBody": "נודיע כשמשהו נראה לא רגיל. פעילות בטוחה שקטה; חששות חמורים מופיעים מיד.",
+    "start": "התחל ניטור",
+    "stop": "עצור ניטור",
+    "startHint": "פותח את דialog הרשאת ה-VPN של Android",
+    "continue": "המשך ללוח הבקרה",
+    "unsupported": "ניטור רשת לא זמין במכשיר זה. השתמש במצב הדגמה.",
+    "simulatorNote": "מצב הדגמה משתמש באירועים מדומים — לא נדרשת הרשאת VPN."
+  },
   "risk": {
     "SAFE": "בטוח",
-    "UNUSUAL": "חריג",
+    "UNUSUAL": "לא רגיל",
     "SUSPICIOUS": "חשוד"
   },
   "nav": {

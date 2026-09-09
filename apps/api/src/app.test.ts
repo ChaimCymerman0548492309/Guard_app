@@ -39,4 +39,31 @@ describe('API', () => {
     expect(res.body.data.displayName).toBe('Photo Editor');
     expect(res.body.data.assessment.level).toBe('SUSPICIOUS');
   });
+
+  it('POST /api/v1/events/batch accepts valid payload', async () => {
+    const res = await request(app)
+      .post('/api/v1/events/batch')
+      .send({
+        deviceId: '00000000-0000-4000-8000-000000000001',
+        networkEvents: [
+          {
+            appPackageName: 'com.example.app',
+            domain: 'example.com',
+            bytesSent: 1024,
+            bytesReceived: 512,
+            isNewDomain: true,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accepted).toBe(1);
+  });
+
+  it('POST /api/v1/events/batch rejects invalid payload', async () => {
+    const res = await request(app).post('/api/v1/events/batch').send({ deviceId: 'not-uuid' });
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
 });

@@ -54,6 +54,30 @@ Get app details including latest risk assessment.
 
 Returns risk counts, total apps, and recent alerts.
 
+### Events
+
+`POST /api/v1/events/batch`
+
+Optional sync endpoint for batched network metadata from mobile devices.
+
+```json
+{
+  "deviceId": "uuid",
+  "networkEvents": [
+    {
+      "appPackageName": "com.example.app",
+      "domain": "example.com",
+      "bytesSent": 1024,
+      "bytesReceived": 512,
+      "isNewDomain": true,
+      "timestamp": "2026-01-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+Returns `{ "accepted": number }`. Uses PostgreSQL when available; accepts all events in simulator mode.
+
 ### OpenAPI
 
 `GET /api/v1/openapi`

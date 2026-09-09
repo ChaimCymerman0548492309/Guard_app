@@ -43,7 +43,7 @@ function createAndroidService(): GuardianVpnService {
     return createUnsupportedService();
   }
 
-  const emitter = new NativeEventEmitter(native as unknown as { addListener: () => void });
+  const emitter = new NativeEventEmitter(NativeModules.GuardianVpn);
 
   return {
     start: () => native.start(),

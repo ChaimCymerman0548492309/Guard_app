@@ -8,10 +8,11 @@ Guardian is a **local-first** mobile security monitoring application. It analyze
 
 | Layer                | Technology           | Notes                                            |
 | -------------------- | -------------------- | ------------------------------------------------ |
-| Mobile               | React Native (Expo)  | Primary UI; Kotlin documented for future VPN POC |
-| API                  | Express (optional)   | Sync/backup skeleton; not required for core flow |
-| Business logic       | TypeScript           | Risk engine, shared types, simulator             |
-| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, assessments, alerts                |
+| Mobile               | React Native (Expo)  | Dashboard + Kotlin VPN module (Android)          |
+| Native (Android)     | Kotlin VpnService    | Metadata-only network capture POC                |
+| API                  | Express (optional)   | Sync/backup; Prisma + simulator fallback         |
+| Business logic       | TypeScript           | Risk engine, baselines, aggregation, alerts      |
+| Persistence (mobile) | SQLite (expo-sqlite) | Apps, events, baselines, timeline, alerts        |
 | Persistence (API)    | PostgreSQL + Prisma  | Optional cloud sync                              |
 | Validation           | Zod                  | Runtime schemas shared across packages           |
 | Logging              | Pino                 | Structured API logging                           |
@@ -22,15 +23,16 @@ Guardian is a **local-first** mobile security monitoring application. It analyze
 2. **No payload collection** — Only metadata (domains, bytes, timing) is recorded.
 3. **Consumer-friendly** — UI uses plain language (Safe / Unusual / Suspicious).
 4. **Extensible rules** — `RiskRule` interface allows adding detectors without rewriting the engine.
-5. **Honest limitations** — Android VPN monitoring is documented but not faked in production.
+5. **Honest limitations** — Android VPN constraints documented in ADR-002; no faked production behavior.
 
 ## Repository Tree
 
 ```
 guardian/
 ├── apps/
-│   ├── api/                 # Express REST API skeleton
+│   ├── api/                 # Express REST API
 │   └── mobile/              # Expo React Native app
+│       └── android/         # Kotlin VPN native module
 ├── packages/
 │   ├── shared/              # Types, Zod schemas, constants
 │   ├── risk-engine/         # Rule-based risk scoring
@@ -38,132 +40,91 @@ guardian/
 │   └── simulator/           # DEV_SIMULATOR event generator
 ├── prisma/                  # PostgreSQL schema
 ├── config/                  # Risk, network, retention, security config
-├── docs/                    # Architecture, privacy, security, API
+├── docs/                    # Architecture, privacy, security, API, ADRs
 ├── scripts/                 # Dev and CI helpers
 └── .github/workflows/       # CI pipeline
 ```
 
 ## Domain Models
 
-### App
-
-Represents an installed application on the device.
-
-```typescript
-interface App {
-  id: string;
-  packageName: string;
-  displayName: string;
-  category: AppCategory;
-  isSystem: boolean;
-  trustLevel: TrustLevel;
-}
-```
-
-### SecurityEvent
-
-On-device security-relevant action (permission use, file access, etc.).
-
-```typescript
-interface SecurityEvent {
-  id: string;
-  appId: string;
-  type: SecurityEventType;
-  timestamp: Date;
-  metadata: Record<string, unknown>;
-}
-```
-
-### NetworkEvent
-
-Network connection metadata — **no packet payloads**.
-
-```typescript
-interface NetworkEvent {
-  id: string;
-  appId: string;
-  domain: string;
-  bytesSent: number;
-  bytesReceived: number;
-  isNewDomain: boolean;
-  timestamp: Date;
-}
-```
-
-### RiskAssessment
-
-Output of the risk engine for an app or session.
-
-```typescript
-interface RiskAssessment {
-  id: string;
-  appId: string;
-  score: number; // 0–100
-  level: RiskLevel; // SAFE | UNUSUAL | SUSPICIOUS
-  triggeredRules: string[];
-  explanation: string;
-  assessedAt: Date;
-}
-```
-
-### Alert
-
-User-facing notification derived from a risk assessment.
-
-```typescript
-interface Alert {
-  id: string;
-  appId: string;
-  riskAssessmentId: string;
-  title: string;
-  message: string;
-  level: RiskLevel;
-  acknowledged: boolean;
-  createdAt: Date;
-}
-```
-
-### Supporting Models
-
-- **User** / **Device** — API sync entities
-- **Rule** — Configurable rule metadata
-- **DomainReputation** — Known tracker/ad domain list
-- **AppBehaviorBaseline** — Per-app normal behavior profile
+See `packages/shared/src/types.ts` for full definitions: `App`, `SecurityEvent`, `NetworkEvent`, `RiskAssessment`, `Alert`, `AppBehaviorBaseline`, `TimelineEvent`, `DomainReputation`.
 
 ## Data Flow
 
+### Production (Android, DEV_SIMULATOR=false)
+
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Simulator  │────▶│ Risk Engine  │────▶│  Dashboard  │
-│ (dev mode)  │     │  (on-device) │     │  (mobile)   │
-└─────────────┘     └──────────────┘     └─────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │   SQLite    │
-                    └─────────────┘
-                           │
-                    (optional sync)
-                           ▼
-                    ┌─────────────┐
-                    │  Express API│
-                    │  PostgreSQL │
-                    └─────────────┘
+┌──────────────────┐     ┌─────────────────┐     ┌──────────────┐
+│ GuardianVpnService│────▶│ EventAggregator │────▶│   SQLite     │
+│ (Kotlin, metadata)│     │ (dedupe/window) │     │              │
+└──────────────────┘     └────────┬────────┘     └──────┬───────┘
+                                  │                      │
+                                  ▼                      │
+                         ┌─────────────────┐             │
+                         │  Risk Engine    │◀────────────┘
+                         │  + Baseline     │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐     ┌──────────────┐
+                         │ Alerts + Timeline│────▶│  Dashboard   │
+                         └─────────────────┘     └──────────────┘
+                                  │
+                           (optional sync)
+                                  ▼
+                         ┌─────────────────┐
+                         │  Express API    │
+                         │  PostgreSQL     │
+                         └─────────────────┘
 ```
 
-## Phase 1 Plan
+### Development (DEV_SIMULATOR=true)
 
-| Step | Deliverable                                        | Status |
-| ---- | -------------------------------------------------- | ------ |
-| 1    | Monorepo foundation (pnpm, TS, ESLint, Docker, CI) | MVP    |
-| 2    | Risk engine with 5 rules + unit tests              | MVP    |
-| 3    | DEV_SIMULATOR with demo scenarios                  | MVP    |
-| 4    | Mobile dashboard (screens, i18n, SQLite)           | MVP    |
-| 5    | API skeleton with Prisma + integration tests       | MVP    |
-| —    | Kotlin VPN POC                                     | Future |
-| —    | Real Android network monitoring                    | Future |
-| —    | Cloud sync                                         | Future |
+The simulator generates realistic seed scenarios (Photo Cleaner high-risk demo) through the same pipeline, ensuring UI and risk logic are tested without VPN hardware.
 
-## Future: Kotlin VPN Module
+## Event Pipeline
 
-A native Android VPN service (Kotlin) will intercept connection metadata only — domain, port, byte counts — never packet contents. This module is documented in `docs/decisions/ADR-001-local-first.md` but not implemented in Phase 1.
+1. **Collect** — Native VPN events or simulator output
+2. **Aggregate** — Merge by app+domain within 60s window (anti-spam)
+3. **Store** — SQLite (`network_events`, `timeline_events`)
+4. **Baseline** — Update per-app typical domains, volume, active hours
+5. **Assess** — Risk engine evaluates against baseline + rules
+6. **Alert** — Generate user-facing alerts with notification policy
+7. **Retain** — Purge data older than configurable retention (default 30 days)
+
+## Android VPN Module
+
+| Component | Location | Role |
+|-----------|----------|------|
+| `GuardianVpnService` | `android/.../vpn/` | TUN interface, DNS/domain parsing, foreground service |
+| `GuardianVpnModule` | `android/.../vpn/` | React Native bridge (start/stop/status/events) |
+| `guardian-vpn.ts` | `apps/mobile/src/native/` | TypeScript interface + platform fallback |
+
+See [ADR-002](decisions/ADR-002-android-vpn.md) for platform limitations.
+
+## Alert Notification Policy
+
+| Risk Level | User label   | Notification behavior        |
+|------------|--------------|------------------------------|
+| SAFE       | Safe         | Silent                       |
+| UNUSUAL    | Unusual      | Occasional (non-immediate)   |
+| SUSPICIOUS | Suspicious   | Immediate + block option     |
+
+## Phase Status
+
+| Phase | Deliverable                              | Status |
+| ----- | ---------------------------------------- | ------ |
+| 1–4   | Monorepo, risk engine, simulator, mobile | Done   |
+| 5     | Android VPN POC (Kotlin)                 | Done   |
+| 6     | Native event pipeline → SQLite → UI      | Done   |
+| 7     | Baselines, alerts, timeline, actions     | Done   |
+| 8     | API Prisma wiring + batch events         | Done   |
+| 9     | UX polish, a11y, retention, domain stub  | Done   |
+| 10    | Tests, CI, README                        | Done   |
+
+## Future Work
+
+- iOS Network Extension
+- Production domain reputation feed
+- Full per-domain VPN blocking
+- Push notification delivery for alerts

@@ -19,8 +19,8 @@ export function HomeScreen() {
       <Text style={styles.tagline}>{t('app.tagline')}</Text>
 
       {isSimulator && (
-        <View style={styles.simBanner}>
-          <Text style={styles.simText}>Demo mode — simulated data</Text>
+        <View style={styles.simBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.simText}>{t('home.demoMode')}</Text>
         </View>
       )}
 
@@ -68,7 +68,21 @@ export function HomeScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Timeline')}>
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => navigation.navigate('Permissions')}
+        accessibilityRole="button"
+        accessibilityLabel={t('permissions.title')}
+      >
+        <Text style={styles.linkText}>{t('permissions.title')}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => navigation.navigate('Timeline')}
+        accessibilityRole="button"
+        accessibilityLabel={t('nav.timeline')}
+      >
         <Text style={styles.linkText}>{t('nav.timeline')}</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -119,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: colors.white, fontSize: 16, fontWeight: '600' },
-  linkButton: { marginTop: 20, alignItems: 'center' },
+  linkButton: { marginTop: 20, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   linkText: { color: colors.primary, fontSize: 15 },
   alertCard: {
     backgroundColor: colors.card,

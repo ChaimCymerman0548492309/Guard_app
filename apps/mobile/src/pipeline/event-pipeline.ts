@@ -1,6 +1,5 @@
 import type {
   App,
-  AppBehaviorBaseline,
   NetworkEvent,
   NativeNetworkEventPayload,
   RiskAssessment,
@@ -14,8 +13,8 @@ import { updateBaseline, isNewDomainForApp } from '../services/baseline-service'
 import { generateAlertsFromAssessments } from '../services/alert-service';
 import { applyRetentionPolicy } from '../services/retention-service';
 import { StubDomainReputationProvider } from '../services/domain-reputation';
+import { getDatabase } from '../db/database';
 import {
-  getDatabase,
   insertNetworkEvent,
   insertTimelineEvent,
   upsertApp,
@@ -177,15 +176,25 @@ export class EventPipeline {
       assessed_at: string;
     }>('SELECT * FROM risk_assessments ORDER BY assessed_at DESC');
 
-    const assessments: RiskAssessment[] = assessmentsRaw.map((row) => ({
-      id: row.id,
-      appId: row.app_id,
-      score: row.score,
-      level: row.level as RiskAssessment['level'],
-      triggeredRules: JSON.parse(row.triggered_rules) as string[],
-      explanation: row.explanation,
-      assessedAt: new Date(row.assessed_at),
-    }));
+    const assessments: RiskAssessment[] = assessmentsRaw.map(
+      (row: {
+        id: string;
+        app_id: string;
+        score: number;
+        level: string;
+        triggered_rules: string;
+        explanation: string;
+        assessed_at: string;
+      }) => ({
+        id: row.id,
+        appId: row.app_id,
+        score: row.score,
+        level: row.level as RiskAssessment['level'],
+        triggeredRules: JSON.parse(row.triggered_rules) as string[],
+        explanation: row.explanation,
+        assessedAt: new Date(row.assessed_at),
+      }),
+    );
 
     return { apps, assessments, timeline };
   }
@@ -205,18 +214,18 @@ export async function seedSimulatorData(
     pipeline.registerApp(app);
   }
 
-  for (const [appId, events] of networkEventsByApp) {
+  for (const [, events] of networkEventsByApp) {
     await pipeline.processNetworkEvents(events);
   }
 
-  for (const [appId, events] of securityEventsByApp) {
+  for (const [, events] of securityEventsByApp) {
     for (const event of events) {
       await db.runAsync(
         'INSERT OR REPLACE INTO events (id, app_id, type, metadata, timestamp) VALUES (?, ?, ?, ?, ?)',
         [event.id, event.appId, event.type, JSON.stringify(event.metadata), event.timestamp.toISOString()],
       );
     }
-    await pipeline['reassessAffectedApps']([appId]);
+    await pipeline['reassessAffectedApps']([events[0]?.appId ?? '']);
   }
 
   return pipeline.refreshState();

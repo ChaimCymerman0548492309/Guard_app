@@ -1,0 +1,34 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { sendSuccess } from '../lib/response.js';
+import { ingestEventBatch } from '../lib/data-source.js';
+
+export const eventsRouter: Router = Router();
+
+const batchSchema = z.object({
+  deviceId: z.string().uuid(),
+  networkEvents: z.array(
+    z.object({
+      appPackageName: z.string().min(1),
+      domain: z.string().min(1),
+      bytesSent: z.number().int().nonnegative(),
+      bytesReceived: z.number().int().nonnegative(),
+      isNewDomain: z.boolean(),
+      timestamp: z.string().datetime(),
+    }),
+  ),
+});
+
+eventsRouter.post('/batch', async (req, res) => {
+  const parsed = batchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.message },
+    });
+    return;
+  }
+
+  const result = await ingestEventBatch(parsed.data);
+  sendSuccess(res, result, req.requestId);
+});
