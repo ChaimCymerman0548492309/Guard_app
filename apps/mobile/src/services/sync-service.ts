@@ -4,8 +4,11 @@ import { getDatabase } from '../db/database';
 export interface SyncResult {
   synced: number;
   skipped: boolean;
+  pending?: number;
   error?: string;
 }
+
+export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'error' | 'offline';
 
 interface UnsyncedEventRow {
   id: string;
@@ -20,6 +23,8 @@ interface UnsyncedEventRow {
 
 const DEVICE_ID_KEY = 'device_id';
 const BATCH_LIMIT = 100;
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 500;
 
 export function getApiBaseUrl(): string | null {
   const url = process.env.EXPO_PUBLIC_API_URL;
@@ -49,6 +54,13 @@ function generateDeviceId(): string {
   return '00000000-0000-4000-8000-000000000001';
 }
 
+export async function countUnsyncedNetworkEvents(db: SQLiteDatabase): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM network_events WHERE cloud_synced = 0',
+  );
+  return row?.count ?? 0;
+}
+
 export async function loadUnsyncedNetworkEvents(
   db: SQLiteDatabase,
   limit = BATCH_LIMIT,
@@ -74,6 +86,68 @@ export async function markEventsSynced(db: SQLiteDatabase, eventIds: string[]): 
   );
 }
 
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function isOfflineError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('network request failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('timeout')
+  );
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function postBatchWithRetry(
+  baseUrl: string,
+  payload: unknown,
+  fetchFn: typeof fetch,
+): Promise<{ ok: true; accepted: number } | { ok: false; error: string; offline: boolean }> {
+  let lastError = 'Sync request failed';
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
+    try {
+      const response = await fetchFn(`${baseUrl}/api/v1/events/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const body = (await response.json()) as {
+          success?: boolean;
+          data?: { accepted?: number };
+        };
+        if (!body.success) {
+          return { ok: false, error: 'Sync response indicated failure', offline: false };
+        }
+        return { ok: true, accepted: body.data?.accepted ?? 0 };
+      }
+
+      lastError = `Sync failed with status ${response.status}`;
+      if (!isRetryableStatus(response.status) || attempt === MAX_RETRIES - 1) {
+        return { ok: false, error: lastError, offline: false };
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Sync request failed';
+      if (!isOfflineError(error) || attempt === MAX_RETRIES - 1) {
+        return { ok: false, error: lastError, offline: isOfflineError(error) };
+      }
+    }
+
+    await sleep(BASE_RETRY_DELAY_MS * 2 ** attempt);
+  }
+
+  return { ok: false, error: lastError, offline: true };
+}
+
 export async function syncPendingEvents(
   fetchFn: typeof fetch = fetch,
 ): Promise<SyncResult> {
@@ -83,9 +157,10 @@ export async function syncPendingEvents(
   }
 
   const db = await getDatabase();
+  const pending = await countUnsyncedNetworkEvents(db);
   const rows = await loadUnsyncedNetworkEvents(db);
   if (rows.length === 0) {
-    return { synced: 0, skipped: false };
+    return { synced: 0, skipped: false, pending: 0 };
   }
 
   const deviceId = await getOrCreateDeviceId(db);
@@ -101,33 +176,43 @@ export async function syncPendingEvents(
     })),
   };
 
-  try {
-    const response = await fetchFn(`${baseUrl}/api/v1/events/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      return {
-        synced: 0,
-        skipped: false,
-        error: `Sync failed with status ${response.status}`,
-      };
-    }
-
-    const body = (await response.json()) as { success?: boolean; data?: { accepted?: number } };
-    if (!body.success) {
-      return { synced: 0, skipped: false, error: 'Sync response indicated failure' };
-    }
-
-    await markEventsSynced(db, rows.map((row) => row.id));
-    return { synced: body.data?.accepted ?? rows.length, skipped: false };
-  } catch (error) {
+  const result = await postBatchWithRetry(baseUrl, payload, fetchFn);
+  if (!result.ok) {
     return {
       synced: 0,
       skipped: false,
-      error: error instanceof Error ? error.message : 'Sync request failed',
+      pending,
+      error: result.error,
     };
   }
+
+  await markEventsSynced(db, rows.map((row) => row.id));
+  const remaining = Math.max(0, pending - (result.accepted || rows.length));
+  return {
+    synced: result.accepted || rows.length,
+    skipped: false,
+    pending: remaining,
+  };
+}
+
+export function deriveSyncStatus(
+  apiConfigured: boolean,
+  pending: number,
+  isSyncing: boolean,
+  lastError?: string,
+): SyncStatus {
+  if (!apiConfigured) return 'disabled';
+  if (isSyncing) return 'syncing';
+  if (lastError && pending > 0) {
+    if (
+      lastError.toLowerCase().includes('network') ||
+      lastError.toLowerCase().includes('fetch') ||
+      lastError.toLowerCase().includes('timeout')
+    ) {
+      return 'offline';
+    }
+    return 'error';
+  }
+  if (pending > 0) return 'offline';
+  return 'idle';
 }

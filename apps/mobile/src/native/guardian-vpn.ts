@@ -9,7 +9,12 @@ const LINKING_ERROR =
 interface NativeModuleShape {
   start(): Promise<void>;
   stop(): Promise<void>;
-  getStatus(): Promise<{ status: string; isSupported: boolean; errorMessage?: string }>;
+  getStatus(): Promise<{
+    status: string;
+    isSupported: boolean;
+    errorMessage?: string;
+    stats?: { packetsProcessed: number; eventsEmitted: number; blockedDomains: number };
+  }>;
   isSupported(): Promise<boolean>;
   blockDomain(domain: string): Promise<boolean>;
 }
@@ -54,6 +59,13 @@ function createAndroidService(): GuardianVpnService {
         status: result.status as VpnStatus,
         isSupported: result.isSupported,
         errorMessage: result.errorMessage,
+        stats: result.stats
+          ? {
+              packetsProcessed: Number(result.stats.packetsProcessed ?? 0),
+              eventsEmitted: Number(result.stats.eventsEmitted ?? 0),
+              blockedDomains: Number(result.stats.blockedDomains ?? 0),
+            }
+          : undefined,
       };
     },
     isSupported: () => native.isSupported(),

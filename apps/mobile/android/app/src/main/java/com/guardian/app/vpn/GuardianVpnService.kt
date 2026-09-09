@@ -49,14 +49,37 @@ class GuardianVpnService : VpnService() {
         @Volatile
         var eventListener: ((NetworkEventPayload) -> Unit)? = null
 
-        private val blockedDomains = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+        private const val PREFS_NAME = "guardian_vpn"
+        private const val BLOCKED_DOMAINS_KEY = "blocked_domains"
 
-        fun blockDomain(domain: String): Boolean {
+        private val blockedDomains = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+        private val packetsProcessed = java.util.concurrent.atomic.AtomicLong(0)
+        private val eventsEmitted = java.util.concurrent.atomic.AtomicLong(0)
+
+        fun loadBlockedDomains(context: Context) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val stored = prefs.getStringSet(BLOCKED_DOMAINS_KEY, emptySet()) ?: emptySet()
+            blockedDomains.clear()
+            blockedDomains.addAll(stored.map { it.trim().lowercase() }.filter { it.isNotEmpty() })
+            Log.i(TAG, "Loaded ${blockedDomains.size} blocked domain(s) from storage")
+        }
+
+        private fun persistBlockedDomains(context: Context) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putStringSet(BLOCKED_DOMAINS_KEY, blockedDomains.toSet())
+                .apply()
+        }
+
+        fun blockDomain(context: Context, domain: String): Boolean {
             val normalized = domain.trim().lowercase()
             if (normalized.isEmpty()) return false
-            blockedDomains.add(normalized)
-            Log.i(TAG, "Domain added to blocklist (best-effort): $normalized")
-            return true
+            val added = blockedDomains.add(normalized)
+            if (added) {
+                persistBlockedDomains(context)
+                Log.i(TAG, "Domain added to blocklist (best-effort): $normalized")
+            }
+            return added
         }
 
         fun isDomainBlocked(domain: String): Boolean {
@@ -66,8 +89,23 @@ class GuardianVpnService : VpnService() {
             }
         }
 
-        fun clearBlockedDomains() {
-            blockedDomains.clear()
+        fun getBlockedDomainCount(): Int = blockedDomains.size
+
+        fun getPacketsProcessed(): Long = packetsProcessed.get()
+
+        fun getEventsEmitted(): Long = eventsEmitted.get()
+
+        fun recordPacketProcessed() {
+            packetsProcessed.incrementAndGet()
+        }
+
+        fun recordEventEmitted() {
+            eventsEmitted.incrementAndGet()
+        }
+
+        fun resetSessionStats() {
+            packetsProcessed.set(0)
+            eventsEmitted.set(0)
         }
     }
 
@@ -119,6 +157,8 @@ class GuardianVpnService : VpnService() {
     private fun startVpn() {
         if (running.get()) return
         lastError = null
+        loadBlockedDomains(this)
+        resetSessionStats()
         status = VpnRuntimeStatus.STARTING
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -179,6 +219,7 @@ class GuardianVpnService : VpnService() {
                 packet.clear()
                 val length = input.read(packet.array())
                 if (length <= 0) continue
+                recordPacketProcessed()
 
                 val metadata = parsePacketMetadata(packet.array(), length)
                 if (metadata != null) {
@@ -291,6 +332,7 @@ class GuardianVpnService : VpnService() {
             timestamp = System.currentTimeMillis()
         )
 
+        recordEventEmitted()
         eventListener?.invoke(payload)
     }
 

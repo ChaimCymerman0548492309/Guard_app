@@ -57,6 +57,12 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
         map.putString("status", status)
         map.putBoolean("isSupported", Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         GuardianVpnService.lastError?.let { map.putString("errorMessage", it) }
+        val stats = Arguments.createMap().apply {
+            putDouble("packetsProcessed", GuardianVpnService.getPacketsProcessed().toDouble())
+            putDouble("eventsEmitted", GuardianVpnService.getEventsEmitted().toDouble())
+            putInt("blockedDomains", GuardianVpnService.getBlockedDomainCount())
+        }
+        map.putMap("stats", stats)
         promise.resolve(map)
     }
 
@@ -95,7 +101,7 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
     fun blockDomain(domain: String, promise: Promise) {
         // Best-effort: drops DNS/TCP packets matching the domain in the VPN layer.
         // DoH/DoT and direct-IP connections may bypass this blocklist.
-        val added = GuardianVpnService.blockDomain(domain)
+        val added = GuardianVpnService.blockDomain(reactContext.applicationContext, domain)
         promise.resolve(added)
     }
 

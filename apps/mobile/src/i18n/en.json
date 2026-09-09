@@ -11,13 +11,18 @@
     "appsMonitored": "{{count}} apps monitored",
     "viewApps": "View all apps",
     "recentActivity": "Recent activity",
-    "demoMode": "Demo mode — simulated data",
+    "demoMode": "Demo mode \u2014 simulated data",
     "runDemo": "Run Photo Cleaner demo",
     "vpnConnected": "Monitoring active",
     "vpnDisconnected": "Monitoring off",
-    "vpnConnecting": "Starting monitoring…",
+    "vpnConnecting": "Starting monitoring\u2026",
     "vpnError": "Monitoring error",
-    "vpnUnsupported": "VPN not available on this device"
+    "vpnUnsupported": "VPN not available on this device",
+    "vpnStats": "{{packets}} packets \u00b7 {{events}} events \u00b7 {{blocked}} blocked",
+    "syncIdle": "Cloud sync up to date",
+    "syncSyncing": "Syncing {{count}} events\u2026",
+    "syncOffline": "{{count}} events waiting to sync",
+    "syncError": "Sync issue \u2014 {{count}} events pending"
   },
   "apps": {
     "title": "Your Apps",
@@ -33,7 +38,9 @@
     "score": "Risk score",
     "assessedAt": "Last assessed",
     "appId": "App ID",
-    "rules": "Triggered rules"
+    "rules": "Triggered rules",
+    "trustApp": "Trust this app",
+    "trusted": "You trust this app \u2014 alerts are less sensitive"
   },
   "alert": {
     "title": "Alert",
@@ -51,7 +58,7 @@
   "permissions": {
     "title": "Monitoring setup",
     "heading": "How Guardian watches for risks",
-    "explanation": "Guardian needs your permission to observe network activity. We only record metadata — domain names and data sizes — never the contents of your messages or files.",
+    "explanation": "Guardian needs your permission to observe network activity. We only record metadata \u2014 domain names and data sizes \u2014 never the contents of your messages or files.",
     "vpnTitle": "Network monitoring",
     "vpnBody": "Android shows a VPN key icon while Guardian is active. This lets us see which apps connect to which servers, without reading encrypted content.",
     "notificationsTitle": "Alerts",
@@ -61,7 +68,7 @@
     "startHint": "Opens the Android VPN permission dialog",
     "continue": "Continue to dashboard",
     "unsupported": "Network monitoring is not available on this device. Use demo mode to explore Guardian.",
-    "simulatorNote": "Demo mode uses simulated events — no VPN permission needed."
+    "simulatorNote": "Demo mode uses simulated events \u2014 no VPN permission needed."
   },
   "risk": {
     "SAFE": "Safe",
@@ -72,5 +79,19 @@
     "home": "Home",
     "apps": "Apps",
     "timeline": "Timeline"
+  },
+  "settings": {
+    "title": "Settings",
+    "retention": "Data retention",
+    "retentionHint": "How long to keep activity history on this device",
+    "notifications": "Security alerts",
+    "notificationsHint": "Push notifications for unusual activity",
+    "cloudSync": "Cloud sync",
+    "cloudSyncHint": "Upload aggregated metadata to API (opt-in)",
+    "language": "Language",
+    "restartHint": "Restart the app for layout direction to apply.",
+    "export": "Export my data",
+    "exportHint": "Download a JSON copy of your local data",
+    "exportError": "Could not export data"
   }
 }

@@ -111,7 +111,8 @@ See [docs/decisions/ADR-002-android-vpn.md](docs/decisions/ADR-002-android-vpn.m
 
 - Domains inferred from DNS (UDP/53); DoH/DoT may show IPs only
 - App attribution best-effort on Android 10+; system apps harder to identify
-- Domain blocking is best-effort (in-memory blocklist, not persisted across restarts)
+- Domain blocking is best-effort (DNS-based; persisted across VPN restarts)
+- Installed-app list shows launcher-visible apps only (no `QUERY_ALL_PACKAGES`)
 - No HTTPS payload inspection (by design)
 - One VPN at a time; foreground notification required
 - iOS not supported
@@ -165,6 +166,7 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
 - [Threat Model](docs/threat-model.md)
 - [ADR-001: Local-First](docs/decisions/ADR-001-local-first.md)
 - [ADR-002: Android VPN](docs/decisions/ADR-002-android-vpn.md)
+- [Android Permissions](docs/android-permissions.md)
 
 ## License
 

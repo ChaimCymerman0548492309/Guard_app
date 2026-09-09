@@ -5,6 +5,8 @@ import {
   getOrCreateDeviceId,
   markEventsSynced,
   loadUnsyncedNetworkEvents,
+  countUnsyncedNetworkEvents,
+  deriveSyncStatus,
 } from './sync-service';
 
 const mockDb = {
@@ -48,6 +50,9 @@ describe('sync-service', () => {
 
   it('syncPendingEvents posts batch and marks events synced', async () => {
     vi.stubEnv('EXPO_PUBLIC_API_URL', 'http://localhost:3000');
+    mockDb.getFirstAsync
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ value: '00000000-0000-4000-8000-000000000001' });
     mockDb.getAllAsync.mockResolvedValue([
       {
         id: 'evt-1',
@@ -60,7 +65,6 @@ describe('sync-service', () => {
         timestamp: '2026-01-01T12:00:00.000Z',
       },
     ]);
-    mockDb.getFirstAsync.mockResolvedValue({ value: '00000000-0000-4000-8000-000000000001' });
 
     const fetchFn = vi.fn().mockResolvedValue({
       ok: true,
@@ -69,7 +73,7 @@ describe('sync-service', () => {
 
     const result = await syncPendingEvents(fetchFn);
 
-    expect(result).toEqual({ synced: 1, skipped: false });
+    expect(result).toEqual({ synced: 1, skipped: false, pending: 0 });
     expect(fetchFn).toHaveBeenCalledWith(
       'http://localhost:3000/api/v1/events/batch',
       expect.objectContaining({ method: 'POST' }),
@@ -78,6 +82,79 @@ describe('sync-service', () => {
       'UPDATE network_events SET cloud_synced = 1 WHERE id IN (?)',
       ['evt-1'],
     );
+  });
+
+  it('syncPendingEvents retries on server errors', async () => {
+    vi.stubEnv('EXPO_PUBLIC_API_URL', 'http://localhost:3000');
+    mockDb.getFirstAsync
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ value: 'device-id' });
+    mockDb.getAllAsync.mockResolvedValue([
+      {
+        id: 'evt-1',
+        app_id: 'app-1',
+        package_name: 'com.example.app',
+        domain: 'tracker.example',
+        bytes_sent: 10,
+        bytes_received: 5,
+        is_new_domain: 0,
+        timestamp: '2026-01-01T12:00:00.000Z',
+      },
+    ]);
+
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { accepted: 1 } }),
+      });
+
+    const result = await syncPendingEvents(fetchFn);
+
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(result.synced).toBe(1);
+  });
+
+  it('syncPendingEvents keeps events queued when offline', async () => {
+    vi.stubEnv('EXPO_PUBLIC_API_URL', 'http://localhost:3000');
+    mockDb.getFirstAsync
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce({ value: 'device-id' });
+    mockDb.getAllAsync.mockResolvedValue([
+      {
+        id: 'evt-1',
+        app_id: 'app-1',
+        package_name: 'com.example.app',
+        domain: 'tracker.example',
+        bytes_sent: 10,
+        bytes_received: 5,
+        is_new_domain: 0,
+        timestamp: '2026-01-01T12:00:00.000Z',
+      },
+    ]);
+
+    const fetchFn = vi.fn().mockRejectedValue(new Error('Network request failed'));
+    const result = await syncPendingEvents(fetchFn);
+
+    expect(result.synced).toBe(0);
+    expect(result.pending).toBe(2);
+    expect(result.error).toContain('Network request failed');
+    expect(mockDb.runAsync).not.toHaveBeenCalled();
+  });
+
+  it('countUnsyncedNetworkEvents returns pending count', async () => {
+    mockDb.getFirstAsync.mockResolvedValue({ count: 7 });
+    const count = await countUnsyncedNetworkEvents(mockDb as never);
+    expect(count).toBe(7);
+  });
+
+  it('deriveSyncStatus maps API and queue state', () => {
+    expect(deriveSyncStatus(false, 0, false)).toBe('disabled');
+    expect(deriveSyncStatus(true, 0, false)).toBe('idle');
+    expect(deriveSyncStatus(true, 3, true)).toBe('syncing');
+    expect(deriveSyncStatus(true, 3, false, 'Network request failed')).toBe('offline');
+    expect(deriveSyncStatus(true, 3, false, 'Sync failed with status 400')).toBe('error');
   });
 
   it('loadUnsyncedNetworkEvents queries unsynced rows', async () => {

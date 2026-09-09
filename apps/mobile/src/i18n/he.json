@@ -1,76 +1,97 @@
 {
   "app": {
     "name": "Guardian",
-    "tagline": "הפרטיות שלך, מוגנת"
+    "tagline": "\u05d4\u05e4\u05e8\u05d8\u05d9\u05d5\u05ea \u05e9\u05dc\u05da, \u05de\u05d5\u05d2\u05e0\u05ea"
   },
   "home": {
-    "title": "בית",
-    "safe": "בטוח",
-    "unusual": "לא רגיל",
-    "suspicious": "חשוד",
-    "appsMonitored": "{{count}} אפליקציות במעקב",
-    "viewApps": "הצג את כל האפליקציות",
-    "recentActivity": "פעילות אחרונה",
-    "demoMode": "מצב הדגמה — נתונים מדומים",
-    "runDemo": "הפעל הדגמת Photo Cleaner",
-    "vpnConnected": "ניטור פעיל",
-    "vpnDisconnected": "ניטור כבוי",
-    "vpnConnecting": "מתחיל ניטור…",
-    "vpnError": "שגיאת ניטור",
-    "vpnUnsupported": "VPN לא זמין במכשיר זה"
+    "title": "\u05d1\u05d9\u05ea",
+    "safe": "\u05d1\u05d8\u05d5\u05d7",
+    "unusual": "\u05dc\u05d0 \u05e8\u05d2\u05d9\u05dc",
+    "suspicious": "\u05d7\u05e9\u05d5\u05d3",
+    "appsMonitored": "{{count}} \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea \u05d1\u05de\u05e2\u05e7\u05d1",
+    "viewApps": "\u05d4\u05e6\u05d2 \u05d0\u05ea \u05db\u05dc \u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea",
+    "recentActivity": "\u05e4\u05e2\u05d9\u05dc\u05d5\u05ea \u05d0\u05d7\u05e8\u05d5\u05e0\u05d4",
+    "demoMode": "\u05de\u05e6\u05d1 \u05d4\u05d3\u05d2\u05de\u05d4 \u2014 \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05de\u05d3\u05d5\u05de\u05d9\u05dd",
+    "runDemo": "\u05d4\u05e4\u05e2\u05dc \u05d4\u05d3\u05d2\u05de\u05ea Photo Cleaner",
+    "vpnConnected": "\u05e0\u05d9\u05d8\u05d5\u05e8 \u05e4\u05e2\u05d9\u05dc",
+    "vpnDisconnected": "\u05e0\u05d9\u05d8\u05d5\u05e8 \u05db\u05d1\u05d5\u05d9",
+    "vpnConnecting": "\u05de\u05ea\u05d7\u05d9\u05dc \u05e0\u05d9\u05d8\u05d5\u05e8\u2026",
+    "vpnError": "\u05e9\u05d2\u05d9\u05d0\u05ea \u05e0\u05d9\u05d8\u05d5\u05e8",
+    "vpnUnsupported": "VPN \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05d1\u05de\u05db\u05e9\u05d9\u05e8 \u05d6\u05d4",
+    "vpnStats": "{{packets}} \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u00b7 {{events}} \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u00b7 {{blocked}} \u05d7\u05e1\u05d5\u05de\u05d9\u05dd",
+    "syncIdle": "\u05e1\u05e0\u05db\u05e8\u05d5\u05df \u05e2\u05e0\u05df \u05de\u05e2\u05d5\u05d3\u05db\u05df",
+    "syncSyncing": "\u05de\u05e1\u05e0\u05db\u05e8\u05df {{count}} \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd\u2026",
+    "syncOffline": "{{count}} \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05de\u05de\u05ea\u05d9\u05e0\u05d9\u05dd \u05dc\u05e1\u05e0\u05db\u05e8\u05d5\u05df",
+    "syncError": "\u05d1\u05e2\u05d9\u05d9\u05ea \u05e1\u05e0\u05db\u05e8\u05d5\u05df \u2014 {{count}} \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05de\u05de\u05ea\u05d9\u05e0\u05d9\u05dd"
   },
   "apps": {
-    "title": "האפליקציות שלך",
-    "noApps": "אין אפליקציות להצגה"
+    "title": "\u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea \u05e9\u05dc\u05da",
+    "noApps": "\u05d0\u05d9\u05df \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea \u05dc\u05d4\u05e6\u05d2\u05d4"
   },
   "appDetails": {
-    "title": "פרטי אפליקציה",
-    "riskLevel": "סטטוס",
-    "explanation": "מה שמנו לב אליו",
-    "rulesTriggered": "חששות",
-    "showTechnical": "הצג פרטים טכניים",
-    "hideTechnical": "הסתר פרטים טכניים",
-    "score": "ציון סיכון",
-    "assessedAt": "הוערך לאחרונה",
-    "appId": "מזהה אפליקציה",
-    "rules": "כללים שהופעלו"
+    "title": "\u05e4\u05e8\u05d8\u05d9 \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4",
+    "riskLevel": "\u05e1\u05d8\u05d8\u05d5\u05e1",
+    "explanation": "\u05de\u05d4 \u05e9\u05de\u05e0\u05d5 \u05dc\u05d1 \u05d0\u05dc\u05d9\u05d5",
+    "rulesTriggered": "\u05d7\u05e9\u05e9\u05d5\u05ea",
+    "showTechnical": "\u05d4\u05e6\u05d2 \u05e4\u05e8\u05d8\u05d9\u05dd \u05d8\u05db\u05e0\u05d9\u05d9\u05dd",
+    "hideTechnical": "\u05d4\u05e1\u05ea\u05e8 \u05e4\u05e8\u05d8\u05d9\u05dd \u05d8\u05db\u05e0\u05d9\u05d9\u05dd",
+    "score": "\u05e6\u05d9\u05d5\u05df \u05e1\u05d9\u05db\u05d5\u05df",
+    "assessedAt": "\u05d4\u05d5\u05e2\u05e8\u05da \u05dc\u05d0\u05d7\u05e8\u05d5\u05e0\u05d4",
+    "appId": "\u05de\u05d6\u05d4\u05d4 \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4",
+    "rules": "\u05db\u05dc\u05dc\u05d9\u05dd \u05e9\u05d4\u05d5\u05e4\u05e2\u05dc\u05d5",
+    "trustApp": "\u05e1\u05de\u05d5\u05da \u05e2\u05dc \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u05d6\u05d5",
+    "trusted": "\u05d0\u05ea\u05d4 \u05e1\u05d5\u05de\u05da \u05e2\u05dc \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u05d6\u05d5"
   },
   "alert": {
-    "title": "התראה",
-    "acknowledge": "הבנתי",
-    "learnMore": "למידע נוסף",
-    "notFound": "התראה לא נמצאה",
-    "block": "חסום חיבור זה",
-    "allow": "אשר",
-    "ignore": "התעלם"
+    "title": "\u05d4\u05ea\u05e8\u05d0\u05d4",
+    "acknowledge": "\u05d4\u05d1\u05e0\u05ea\u05d9",
+    "learnMore": "\u05dc\u05de\u05d9\u05d3\u05e2 \u05e0\u05d5\u05e1\u05e3",
+    "notFound": "\u05d4\u05ea\u05e8\u05d0\u05d4 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4",
+    "block": "\u05d7\u05e1\u05d5\u05dd \u05d7\u05d9\u05d1\u05d5\u05e8 \u05d6\u05d4",
+    "allow": "\u05d0\u05e9\u05e8",
+    "ignore": "\u05d4\u05ea\u05e2\u05dc\u05dd"
   },
   "timeline": {
-    "title": "ציר זמן פעילות",
-    "empty": "אין פעילות אחרונה"
+    "title": "\u05e6\u05d9\u05e8 \u05d6\u05de\u05df \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea",
+    "empty": "\u05d0\u05d9\u05df \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea \u05d0\u05d7\u05e8\u05d5\u05e0\u05d4"
   },
   "permissions": {
-    "title": "הגדרת ניטור",
-    "heading": "איך Guardian מזהה סיכונים",
-    "explanation": "Guardian צריך את הרשאתך לצפות בפעילות רשת. אנו רושמים רק מטא-נתונים — שמות דומיין וגדלי נתונים — לעולם לא את תוכן ההודעות או הקבצים.",
-    "vpnTitle": "ניטור רשת",
-    "vpnBody": "Android מציג סמל VPN כש-Guardian פעיל. זה מאפשר לראות לאילו שרתים מתחברות אפליקציות, בלי לקרוא תוכן מוצפן.",
-    "notificationsTitle": "התראות",
-    "notificationsBody": "נודיע כשמשהו נראה לא רגיל. פעילות בטוחה שקטה; חששות חמורים מופיעים מיד.",
-    "start": "התחל ניטור",
-    "stop": "עצור ניטור",
-    "startHint": "פותח את דialog הרשאת ה-VPN של Android",
-    "continue": "המשך ללוח הבקרה",
-    "unsupported": "ניטור רשת לא זמין במכשיר זה. השתמש במצב הדגמה.",
-    "simulatorNote": "מצב הדגמה משתמש באירועים מדומים — לא נדרשת הרשאת VPN."
+    "title": "\u05d4\u05d2\u05d3\u05e8\u05ea \u05e0\u05d9\u05d8\u05d5\u05e8",
+    "heading": "\u05d0\u05d9\u05da Guardian \u05de\u05d6\u05d4\u05d4 \u05e1\u05d9\u05db\u05d5\u05e0\u05d9\u05dd",
+    "explanation": "Guardian \u05e6\u05e8\u05d9\u05da \u05d0\u05ea \u05d4\u05e8\u05e9\u05d0\u05ea\u05da \u05dc\u05e6\u05e4\u05d5\u05ea \u05d1\u05e4\u05e2\u05d9\u05dc\u05d5\u05ea \u05e8\u05e9\u05ea. \u05d0\u05e0\u05d5 \u05e8\u05d5\u05e9\u05de\u05d9\u05dd \u05e8\u05e7 \u05de\u05d8\u05d0-\u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u2014 \u05e9\u05de\u05d5\u05ea \u05d3\u05d5\u05de\u05d9\u05d9\u05df \u05d5\u05d2\u05d3\u05dc\u05d9 \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u2014 \u05dc\u05e2\u05d5\u05dc\u05dd \u05dc\u05d0 \u05d0\u05ea \u05ea\u05d5\u05db\u05df \u05d4\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea \u05d0\u05d5 \u05d4\u05e7\u05d1\u05e6\u05d9\u05dd.",
+    "vpnTitle": "\u05e0\u05d9\u05d8\u05d5\u05e8 \u05e8\u05e9\u05ea",
+    "vpnBody": "Android \u05de\u05e6\u05d9\u05d2 \u05e1\u05de\u05dc VPN \u05db\u05e9-Guardian \u05e4\u05e2\u05d9\u05dc. \u05d6\u05d4 \u05de\u05d0\u05e4\u05e9\u05e8 \u05dc\u05e8\u05d0\u05d5\u05ea \u05dc\u05d0\u05d9\u05dc\u05d5 \u05e9\u05e8\u05ea\u05d9\u05dd \u05de\u05ea\u05d7\u05d1\u05e8\u05d5\u05ea \u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea, \u05d1\u05dc\u05d9 \u05dc\u05e7\u05e8\u05d5\u05d0 \u05ea\u05d5\u05db\u05df \u05de\u05d5\u05e6\u05e4\u05df.",
+    "notificationsTitle": "\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea",
+    "notificationsBody": "\u05e0\u05d5\u05d3\u05d9\u05e2 \u05db\u05e9\u05de\u05e9\u05d4\u05d5 \u05e0\u05e8\u05d0\u05d4 \u05dc\u05d0 \u05e8\u05d2\u05d9\u05dc. \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea \u05d1\u05d8\u05d5\u05d7\u05d4 \u05e9\u05e7\u05d8\u05d4; \u05d7\u05e9\u05e9\u05d5\u05ea \u05d7\u05de\u05d5\u05e8\u05d9\u05dd \u05de\u05d5\u05e4\u05d9\u05e2\u05d9\u05dd \u05de\u05d9\u05d3.",
+    "start": "\u05d4\u05ea\u05d7\u05dc \u05e0\u05d9\u05d8\u05d5\u05e8",
+    "stop": "\u05e2\u05e6\u05d5\u05e8 \u05e0\u05d9\u05d8\u05d5\u05e8",
+    "startHint": "\u05e4\u05d5\u05ea\u05d7 \u05d0\u05ea \u05d3ialog \u05d4\u05e8\u05e9\u05d0\u05ea \u05d4-VPN \u05e9\u05dc Android",
+    "continue": "\u05d4\u05de\u05e9\u05da \u05dc\u05dc\u05d5\u05d7 \u05d4\u05d1\u05e7\u05e8\u05d4",
+    "unsupported": "\u05e0\u05d9\u05d8\u05d5\u05e8 \u05e8\u05e9\u05ea \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05d1\u05de\u05db\u05e9\u05d9\u05e8 \u05d6\u05d4. \u05d4\u05e9\u05ea\u05de\u05e9 \u05d1\u05de\u05e6\u05d1 \u05d4\u05d3\u05d2\u05de\u05d4.",
+    "simulatorNote": "\u05de\u05e6\u05d1 \u05d4\u05d3\u05d2\u05de\u05d4 \u05de\u05e9\u05ea\u05de\u05e9 \u05d1\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05de\u05d3\u05d5\u05de\u05d9\u05dd \u2014 \u05dc\u05d0 \u05e0\u05d3\u05e8\u05e9\u05ea \u05d4\u05e8\u05e9\u05d0\u05ea VPN."
   },
   "risk": {
-    "SAFE": "בטוח",
-    "UNUSUAL": "לא רגיל",
-    "SUSPICIOUS": "חשוד"
+    "SAFE": "\u05d1\u05d8\u05d5\u05d7",
+    "UNUSUAL": "\u05dc\u05d0 \u05e8\u05d2\u05d9\u05dc",
+    "SUSPICIOUS": "\u05d7\u05e9\u05d5\u05d3"
   },
   "nav": {
-    "home": "בית",
-    "apps": "אפליקציות",
-    "timeline": "ציר זמן"
+    "home": "\u05d1\u05d9\u05ea",
+    "apps": "\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea",
+    "timeline": "\u05e6\u05d9\u05e8 \u05d6\u05de\u05df"
+  },
+  "settings": {
+    "title": "\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea",
+    "retention": "\u05e9\u05de\u05d9\u05e8\u05ea \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd",
+    "retentionHint": "\u05db\u05de\u05d4 \u05d6\u05de\u05df \u05dc\u05e9\u05de\u05d5\u05e8 \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d4",
+    "notifications": "\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea",
+    "notificationsHint": "\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea push",
+    "cloudSync": "\u05e1\u05e0\u05db\u05e8\u05d5\u05df \u05e2\u05e0\u05df",
+    "cloudSyncHint": "\u05d4\u05e2\u05dc\u05d0\u05d4 \u05dc-API (\u05d0\u05d5\u05e4\u05e6\u05d9\u05d5\u05e0\u05dc\u05d9)",
+    "language": "\u05e9\u05e4\u05d4",
+    "restartHint": "\u05d4\u05e4\u05e2\u05dc \u05de\u05d7\u05d3\u05e9 \u05dc\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4",
+    "export": "\u05d9\u05d9\u05e6\u05d5\u05d0 \u05d4\u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05e9\u05dc\u05d9",
+    "exportHint": "\u05e2\u05d5\u05ea\u05e7 JSON",
+    "exportError": "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d9\u05d9\u05e6\u05d5\u05d0"
   }
 }

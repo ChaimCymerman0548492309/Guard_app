@@ -95,10 +95,17 @@ export interface NativeNetworkEventPayload {
   timestamp: number;
 }
 
+export interface VpnConnectionStats {
+  packetsProcessed: number;
+  eventsEmitted: number;
+  blockedDomains: number;
+}
+
 export interface VpnServiceStatus {
   status: VpnStatus;
   isSupported: boolean;
   errorMessage?: string;
+  stats?: VpnConnectionStats;
 }
 
 export interface DomainReputationProvider {

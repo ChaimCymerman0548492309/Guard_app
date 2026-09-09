@@ -7,6 +7,8 @@ import { RiskLevel } from '@guardian/shared';
 import { colors, getRiskColor } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { VpnStatusBar } from '../components/VpnStatusBar';
+import { VpnStatsBar } from '../components/VpnStatsBar';
+import { SyncStatusBar } from '../components/SyncStatusBar';
 import { useRtl } from '../hooks/use-rtl';
 
 export function HomeScreen() {
@@ -25,6 +27,8 @@ export function HomeScreen() {
       <Text style={[styles.tagline, rtl.text]}>{t('app.tagline')}</Text>
 
       <VpnStatusBar />
+      <VpnStatsBar />
+      <SyncStatusBar />
 
       {isSimulator && (
         <View style={styles.simBanner} accessibilityLiveRegion="polite">
@@ -96,6 +100,7 @@ export function HomeScreen() {
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => navigation.navigate('Timeline')}
+      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Settings')} accessibilityRole="button"><Text style={styles.linkText}>{t('settings.title')}</Text></TouchableOpacity>
         accessibilityRole="button"
         accessibilityLabel={t('nav.timeline')}
       >

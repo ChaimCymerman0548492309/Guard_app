@@ -24,6 +24,7 @@ class MainApplication : Application(), ReactApplication {
           override fun getPackages(): List<ReactPackage> {
             val packages = PackageList(this).packages
             packages.add(com.guardian.app.vpn.GuardianVpnPackage())
+            packages.add(com.guardian.app.apps.InstalledAppsPackage())
             return packages
           }
 

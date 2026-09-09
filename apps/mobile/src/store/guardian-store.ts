@@ -15,6 +15,14 @@ import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
 import { getGuardianVpnService } from '../native/guardian-vpn';
 import { applyAlertAction } from '../services/alert-service';
 import { initNotifications, notifyForAlert } from '../services/notification-service';
+import { syncInstalledAppsFromDevice } from '../services/installed-apps-service';
+import {
+  countUnsyncedNetworkEvents,
+  deriveSyncStatus,
+  getApiBaseUrl,
+  syncPendingEvents,
+  type SyncStatus,
+} from '../services/sync-service';
 import { PHOTO_CLEANER_APP_ID } from '@guardian/simulator';
 
 interface GuardianState {
@@ -26,6 +34,9 @@ interface GuardianState {
   isLoading: boolean;
   isSimulator: boolean;
   vpnStatus: VpnServiceStatus;
+  syncStatus: SyncStatus;
+  syncPendingCount: number;
+  syncError?: string;
   showTechnicalDetails: boolean;
   loadData: () => Promise<void>;
   startMonitoring: () => Promise<void>;
@@ -47,6 +58,35 @@ const SCENARIO_MAP: Record<string, SimulatorScenario> = {
 
 let pipeline: EventPipeline | null = null;
 let vpnSubscription: { remove: () => void } | null = null;
+let vpnStatsTimer: ReturnType<typeof setInterval> | null = null;
+
+async function refreshSyncState(
+  set: (partial: Partial<GuardianState>) => void,
+  isSyncing = false,
+): Promise<void> {
+  const db = await getDatabase();
+  const pending = await countUnsyncedNetworkEvents(db);
+  const apiConfigured = getApiBaseUrl() !== null;
+  set({
+    syncPendingCount: pending,
+    syncStatus: deriveSyncStatus(apiConfigured, pending, isSyncing),
+  });
+}
+
+async function runCloudSync(set: (partial: Partial<GuardianState>) => void): Promise<void> {
+  if (!getApiBaseUrl()) {
+    await refreshSyncState(set);
+    return;
+  }
+
+  set({ syncStatus: 'syncing' });
+  const result = await syncPendingEvents();
+  set({
+    syncPendingCount: result.pending ?? 0,
+    syncError: result.error,
+    syncStatus: deriveSyncStatus(true, result.pending ?? 0, false, result.error),
+  });
+}
 
 async function getPipeline(): Promise<EventPipeline> {
   if (!pipeline) {
@@ -65,6 +105,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
   isLoading: true,
   isSimulator: process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false',
   vpnStatus: { status: VpnStatus.STOPPED, isSupported: false },
+  syncStatus: 'disabled',
+  syncPendingCount: 0,
   showTechnicalDetails: false,
 
   refreshFromDb: async () => {
@@ -91,10 +133,10 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       ? await vpn.getStatus()
       : { status: VpnStatus.UNSUPPORTED, isSupported: false };
 
-    await clearDatabase();
     const pipe = await getPipeline();
 
     if (isSimulator) {
+      await clearDatabase();
       const sim = createSimulator();
       const { apps } = sim.run();
       const networkEventsByApp = new Map<
@@ -130,20 +172,34 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
         isLoading: false,
         isSimulator: true,
         vpnStatus,
+        syncStatus: 'disabled',
+        syncPendingCount: 0,
       });
     } else {
-      const state = await pipe.initialize();
+      await syncInstalledAppsFromDevice(pipe);
+      const state = await pipe.refreshState();
       const db = await getDatabase();
       const alerts = await loadAlerts(db);
 
       vpnSubscription?.remove();
       vpnSubscription = vpn.onNetworkEvent((payload) => {
-        void pipe.handleNativeEvent(payload).then(() => get().refreshFromDb());
+        void pipe
+          .handleNativeEvent(payload)
+          .then(() => get().refreshFromDb())
+          .then(() => runCloudSync(set));
       });
 
       pipe.startFlushTimer(() => {
         void get().refreshFromDb();
       });
+
+      if (vpnStatsTimer) clearInterval(vpnStatsTimer);
+      vpnStatsTimer = setInterval(() => {
+        void vpn.getStatus().then((status) => set({ vpnStatus: status }));
+      }, 10_000);
+
+      await refreshSyncState(set);
+      void runCloudSync(set);
 
       set({
         apps: state.apps,
@@ -179,6 +235,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     const vpn = getGuardianVpnService();
     await vpn.stop();
     pipeline?.stopFlushTimer();
+    if (vpnStatsTimer) clearInterval(vpnStatsTimer);
+    vpnStatsTimer = null;
     const vpnStatus = await vpn.getStatus();
     set({ vpnStatus });
   },

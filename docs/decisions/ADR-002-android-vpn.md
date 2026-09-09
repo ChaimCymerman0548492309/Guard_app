@@ -30,7 +30,7 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 | Protocol (TCP/UDP)       | Yes             | From IP header                                  |
 | App attribution          | Partial         | Requires Android 10+; fails for some flows      |
 | HTTPS payload inspection | **No**          | TLS encrypted — by design                       |
-| Per-domain blocking      | **Best-effort** | In-memory blocklist drops matching DNS/TCP packets in VPN layer |
+| Per-domain blocking      | **Best-effort** | SharedPreferences-backed blocklist drops matching DNS/TCP packets in VPN layer |
 | iOS                      | **No**          | Network Extension not implemented               |
 
 ## Limitations
@@ -56,8 +56,8 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 
 ### Blocking
 
-- `blockDomain()` adds the domain to an in-memory blocklist in `GuardianVpnService`. Matching DNS queries and TCP/UDP packets to that domain (or subdomain) are **dropped** before forwarding.
-- **Limitations remain**: connections that use direct IP addresses, DNS-over-HTTPS/TLS, or cached DNS may bypass the blocklist. Production would need persistent blocklists and split-DNS handling.
+- `blockDomain()` adds the domain to a SharedPreferences-backed blocklist in `GuardianVpnService`. Matching DNS queries and TCP/UDP packets to that domain (or subdomain) are **dropped** before forwarding. The blocklist survives VPN restarts.
+- **Limitations remain**: connections that use direct IP addresses, DNS-over-HTTPS/TLS, or cached DNS may bypass the blocklist. Production would still need split-DNS handling for stronger enforcement.
 - Blocking state is not persisted across VPN restarts in this POC.
 
 ### App attribution improvements (Phase 11)
