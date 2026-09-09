@@ -7,6 +7,7 @@ import type {
   SecurityEvent,
   TimelineEvent,
 } from '@guardian/shared';
+import { AppCategory, TrustLevel } from '@guardian/shared';
 import { RiskDetector } from '@guardian/risk-engine';
 import { EventAggregator } from './event-aggregator';
 import { updateBaseline, isNewDomainForApp } from '../services/baseline-service';
@@ -94,10 +95,7 @@ export class EventPipeline {
       const enriched: NetworkEvent = { ...event, isNewDomain: isNew };
       await insertNetworkEvent(db, enriched);
 
-      const reputation = await this.reputation.lookup(event.domain);
-      if (reputation?.isTracker) {
-        enriched.metadata = { ...(enriched as { metadata?: Record<string, unknown> }).metadata, tracker: true };
-      }
+      await this.reputation.lookup(event.domain);
 
       const baseline = updateBaseline(baselines, enriched);
       await upsertBaseline(db, baseline);
@@ -130,9 +128,9 @@ export class EventPipeline {
           id: appId,
           packageName: appId.replace(/^pkg-/, ''),
           displayName: appId.replace(/^pkg-/, ''),
-          category: 'UNKNOWN',
+          category: AppCategory.UNKNOWN,
           isSystem: false,
-          trustLevel: 'UNKNOWN',
+          trustLevel: TrustLevel.UNKNOWN,
         });
       }
 

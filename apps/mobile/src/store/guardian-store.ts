@@ -7,15 +7,12 @@ import type {
   TimelineEvent,
   VpnServiceStatus,
 } from '@guardian/shared';
-import { AlertAction, AppCategory, TrustLevel, VpnStatus } from '@guardian/shared';
-import { createSimulator } from '@guardian/simulator';
-import { generateEvents } from '@guardian/simulator/event-generator';
-import { SimulatorScenario } from '@guardian/shared';
+import { AlertAction, VpnStatus, SimulatorScenario } from '@guardian/shared';
+import { createSimulator, generateEvents } from '@guardian/simulator';
 import { getDatabase, clearDatabase } from '../db/database';
 import {
   computeRiskCounts,
   loadAlerts,
-  loadApps,
   upsertAlert,
 } from '../db/repositories';
 import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';

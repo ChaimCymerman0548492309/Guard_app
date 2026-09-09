@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -10,7 +10,7 @@ import type { RootStackParamList } from '../navigation/types';
 export function AppDetailsScreen() {
   const { t } = useTranslation();
   const route = useRoute<RouteProp<RootStackParamList, 'AppDetails'>>();
-  const { apps, assessments } = useGuardianStore();
+  const { apps, assessments, showTechnicalDetails, toggleTechnicalDetails } = useGuardianStore();
 
   const app = apps.find((a) => a.id === route.params.appId);
   const assessment = assessments.find((a) => a.appId === route.params.appId);
@@ -18,14 +18,20 @@ export function AppDetailsScreen() {
   if (!app) {
     return (
       <View style={styles.container}>
-        <Text>App not found</Text>
+        <Text accessibilityRole="alert">{t('apps.noApps')}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.appName}>{app.displayName}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      accessibilityLabel={`${app.displayName} ${t('appDetails.title')}`}
+    >
+      <Text style={styles.appName} accessibilityRole="header">
+        {app.displayName}
+      </Text>
       <Text style={styles.packageName}>{app.packageName}</Text>
 
       {assessment && (
@@ -42,11 +48,36 @@ export function AppDetailsScreen() {
             <>
               <Text style={styles.sectionTitle}>{t('appDetails.rulesTriggered')}</Text>
               {assessment.triggeredRules.map((rule) => (
-                <View key={rule} style={styles.ruleChip}>
+                <View key={rule} style={styles.ruleChip} accessibilityLabel={formatRule(rule)}>
                   <Text style={styles.ruleText}>{formatRule(rule)}</Text>
                 </View>
               ))}
             </>
+          )}
+
+          <TouchableOpacity
+            onPress={toggleTechnicalDetails}
+            style={styles.techToggle}
+            accessibilityRole="button"
+            accessibilityLabel={t('appDetails.showTechnical')}
+            accessibilityState={{ expanded: showTechnicalDetails }}
+          >
+            <Text style={styles.techToggleText}>
+              {showTechnicalDetails ? t('appDetails.hideTechnical') : t('appDetails.showTechnical')}
+            </Text>
+          </TouchableOpacity>
+
+          {showTechnicalDetails && (
+            <View style={styles.techBox} accessibilityRole="text">
+              <Text style={styles.techLine}>{t('appDetails.score')}: {assessment.score}</Text>
+              <Text style={styles.techLine}>
+                {t('appDetails.assessedAt')}: {new Date(assessment.assessedAt).toLocaleString()}
+              </Text>
+              <Text style={styles.techLine}>{t('appDetails.appId')}: {app.id}</Text>
+              <Text style={styles.techLine}>
+                {t('appDetails.rules')}: {assessment.triggeredRules.join(', ') || '—'}
+              </Text>
+            </View>
           )}
         </>
       )}
@@ -88,6 +119,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   ruleText: { fontSize: 13, color: '#991b1b' },
+  techToggle: { marginTop: 24, minHeight: 44, justifyContent: 'center' },
+  techToggleText: { color: colors.primary, fontSize: 15, fontWeight: '500' },
+  techBox: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+  },
+  techLine: { fontSize: 12, color: colors.textSecondary, marginBottom: 4, fontFamily: 'monospace' },
 });

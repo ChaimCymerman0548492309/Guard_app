@@ -6,30 +6,37 @@ import { colors } from '../theme';
 
 export function TimelineScreen() {
   const { t } = useTranslation();
-  const { assessments, apps } = useGuardianStore();
+  const { timeline, apps } = useGuardianStore();
 
-  const items = assessments
-    .map((a) => {
-      const app = apps.find((ap) => ap.id === a.appId);
-      return { ...a, appName: app?.displayName ?? 'Unknown' };
-    })
-    .sort((a, b) => new Date(b.assessedAt).getTime() - new Date(a.assessedAt).getTime());
+  const items = timeline.map((item) => {
+    const app = apps.find((ap) => ap.id === item.appId);
+    return { ...item, appName: app?.displayName ?? 'Unknown' };
+  });
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLabel={t('timeline.title')}>
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>{t('timeline.empty')}</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty} accessibilityRole="text">
+            {t('timeline.empty')}
+          </Text>
+        }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <View
+            style={styles.card}
+            accessibilityRole="summary"
+            accessibilityLabel={`${item.appName}, ${item.title}, ${item.description}`}
+          >
             <View style={styles.header}>
               <Text style={styles.appName}>{item.appName}</Text>
-              <RiskBadge level={item.level} />
+              {item.level && <RiskBadge level={item.level} />}
             </View>
-            <Text style={styles.explanation}>{item.explanation}</Text>
-            <Text style={styles.timestamp}>{new Date(item.assessedAt).toLocaleString()}</Text>
+            <Text style={styles.eventTitle}>{item.title}</Text>
+            <Text style={styles.explanation}>{item.description}</Text>
+            <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleString()}</Text>
           </View>
         )}
       />
@@ -46,6 +53,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    minHeight: 44,
   },
   header: {
     flexDirection: 'row',
@@ -54,6 +62,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   appName: { fontSize: 16, fontWeight: '600', color: colors.text },
+  eventTitle: { fontSize: 14, fontWeight: '500', color: colors.text, marginBottom: 4 },
   explanation: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
   timestamp: { fontSize: 12, color: colors.textSecondary, marginTop: 8 },
 });

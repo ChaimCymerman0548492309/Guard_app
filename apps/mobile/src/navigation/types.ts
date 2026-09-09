@@ -4,4 +4,5 @@ export type RootStackParamList = {
   AppDetails: { appId: string };
   Alert: { alertId: string };
   Timeline: undefined;
+  Permissions: undefined;
 };

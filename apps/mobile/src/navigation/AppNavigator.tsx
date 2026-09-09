@@ -7,6 +7,7 @@ import { AppsScreen } from '../screens/AppsScreen';
 import { AppDetailsScreen } from '../screens/AppDetailsScreen';
 import { AlertScreen } from '../screens/AlertScreen';
 import { TimelineScreen } from '../screens/TimelineScreen';
+import { PermissionsScreen } from '../screens/PermissionsScreen';
 import { colors } from '../theme';
 import type { RootStackParamList } from './types';
 
@@ -42,6 +43,11 @@ export function AppNavigator() {
           name="Timeline"
           component={TimelineScreen}
           options={{ title: t('timeline.title') }}
+        />
+        <Stack.Screen
+          name="Permissions"
+          component={PermissionsScreen}
+          options={{ title: t('permissions.title') }}
         />
       </Stack.Navigator>
     </NavigationContainer>
