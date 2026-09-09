@@ -68,6 +68,8 @@ DEV_SIMULATOR=true pnpm dev:api
 
 API available at `http://localhost:3000`. See [docs/api.md](docs/api.md).
 
+Optional mobile → cloud sync: set `EXPO_PUBLIC_API_URL=http://localhost:3000` in `.env`. Network metadata batches upload automatically after local processing.
+
 ## Android device setup (real VPN monitoring)
 
 VPN requires a **development build** — it does not run in Expo Go.
@@ -129,6 +131,7 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario.
 | `./scripts/dev.sh` | Install deps, generate Prisma client, create `.env` |
 | `./scripts/test.sh` | Full CI check: build, lint, typecheck, test |
 | `./scripts/android-build.sh` | Prebuild + run on Android device |
+| `python3 scripts/generate-icon.py` | Regenerate app icon PNG |
 | `pnpm dev:api` | Start Express API |
 | `pnpm dev:mobile` | Start Expo mobile app |
 | `pnpm db:migrate` | Apply Prisma migrations |

@@ -17,6 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1e3a5f"
       },
       "package": "com.guardian.app"
