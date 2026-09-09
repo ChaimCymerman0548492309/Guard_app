@@ -17,6 +17,41 @@ CREATE TABLE IF NOT EXISTS events (
   FOREIGN KEY (app_id) REFERENCES apps(id)
 );
 
+CREATE TABLE IF NOT EXISTS network_events (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  bytes_sent INTEGER NOT NULL DEFAULT 0,
+  bytes_received INTEGER NOT NULL DEFAULT 0,
+  is_new_domain INTEGER NOT NULL DEFAULT 0,
+  protocol TEXT NOT NULL DEFAULT 'OTHER',
+  direction TEXT NOT NULL DEFAULT 'OUTBOUND',
+  timestamp TEXT NOT NULL,
+  FOREIGN KEY (app_id) REFERENCES apps(id)
+);
+
+CREATE TABLE IF NOT EXISTS baselines (
+  app_id TEXT PRIMARY KEY,
+  avg_daily_connections INTEGER NOT NULL DEFAULT 0,
+  known_domains TEXT NOT NULL DEFAULT '[]',
+  avg_upload_bytes INTEGER NOT NULL DEFAULT 0,
+  active_hours TEXT NOT NULL DEFAULT '[]',
+  last_updated TEXT NOT NULL,
+  FOREIGN KEY (app_id) REFERENCES apps(id)
+);
+
+CREATE TABLE IF NOT EXISTS timeline_events (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  level TEXT,
+  metadata TEXT NOT NULL DEFAULT '{}',
+  timestamp TEXT NOT NULL,
+  FOREIGN KEY (app_id) REFERENCES apps(id)
+);
+
 CREATE TABLE IF NOT EXISTS risk_assessments (
   id TEXT PRIMARY KEY,
   app_id TEXT NOT NULL,
@@ -36,6 +71,8 @@ CREATE TABLE IF NOT EXISTS alerts (
   message TEXT NOT NULL,
   level TEXT NOT NULL,
   acknowledged INTEGER NOT NULL DEFAULT 0,
+  user_action TEXT NOT NULL DEFAULT 'NONE',
+  domain TEXT,
   created_at TEXT NOT NULL,
   FOREIGN KEY (app_id) REFERENCES apps(id)
 );

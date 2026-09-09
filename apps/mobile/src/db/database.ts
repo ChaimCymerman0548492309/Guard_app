@@ -16,6 +16,9 @@ export async function clearDatabase(): Promise<void> {
   await database.execAsync(`
     DELETE FROM alerts;
     DELETE FROM risk_assessments;
+    DELETE FROM timeline_events;
+    DELETE FROM network_events;
+    DELETE FROM baselines;
     DELETE FROM events;
     DELETE FROM apps;
   `);

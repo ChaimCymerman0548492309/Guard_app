@@ -39,3 +39,29 @@ export enum SimulatorScenario {
   UNUSUAL = 'UNUSUAL',
   HIGH_RISK = 'HIGH_RISK',
 }
+
+export enum VpnStatus {
+  STOPPED = 'STOPPED',
+  STARTING = 'STARTING',
+  ACTIVE = 'ACTIVE',
+  ERROR = 'ERROR',
+  UNSUPPORTED = 'UNSUPPORTED',
+}
+
+export enum AlertAction {
+  NONE = 'NONE',
+  BLOCK = 'BLOCK',
+  ALLOW = 'ALLOW',
+  IGNORE = 'IGNORE',
+}
+
+export enum NetworkDirection {
+  INBOUND = 'INBOUND',
+  OUTBOUND = 'OUTBOUND',
+}
+
+export enum NetworkProtocol {
+  TCP = 'TCP',
+  UDP = 'UDP',
+  OTHER = 'OTHER',
+}

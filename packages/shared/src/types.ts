@@ -1,4 +1,13 @@
-import type { AppCategory, RiskLevel, SecurityEventType, TrustLevel } from './enums.js';
+import type {
+  AlertAction,
+  AppCategory,
+  NetworkDirection,
+  NetworkProtocol,
+  RiskLevel,
+  SecurityEventType,
+  TrustLevel,
+  VpnStatus,
+} from './enums.js';
 
 export interface App {
   id: string;
@@ -26,6 +35,9 @@ export interface NetworkEvent {
   bytesReceived: number;
   isNewDomain: boolean;
   timestamp: Date;
+  protocol?: NetworkProtocol;
+  direction?: NetworkDirection;
+  packageName?: string;
 }
 
 export interface RiskAssessment {
@@ -47,6 +59,9 @@ export interface Alert {
   level: RiskLevel;
   acknowledged: boolean;
   createdAt: Date;
+  userAction?: AlertAction;
+  domain?: string;
+  notifyImmediately?: boolean;
 }
 
 export interface AppBehaviorBaseline {
@@ -54,7 +69,40 @@ export interface AppBehaviorBaseline {
   avgDailyConnections: number;
   knownDomains: string[];
   avgUploadBytes: number;
+  activeHours: number[];
   lastUpdated: Date;
+}
+
+export interface TimelineEvent {
+  id: string;
+  appId: string;
+  type: 'network' | 'security' | 'assessment' | 'alert';
+  title: string;
+  description: string;
+  level?: RiskLevel;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NativeNetworkEventPayload {
+  id: string;
+  packageName: string;
+  domain: string;
+  bytesSent: number;
+  bytesReceived: number;
+  direction: NetworkDirection;
+  protocol: NetworkProtocol;
+  timestamp: number;
+}
+
+export interface VpnServiceStatus {
+  status: VpnStatus;
+  isSupported: boolean;
+  errorMessage?: string;
+}
+
+export interface DomainReputationProvider {
+  lookup(domain: string): Promise<DomainReputation | null>;
 }
 
 export interface DomainReputation {

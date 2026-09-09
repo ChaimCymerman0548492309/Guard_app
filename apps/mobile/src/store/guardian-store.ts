@@ -1,89 +1,63 @@
 import { create } from 'zustand';
-import type { App, RiskAssessment, RiskCounts, Alert } from '@guardian/shared';
+import type {
+  Alert,
+  App,
+  RiskAssessment,
+  RiskCounts,
+  TimelineEvent,
+  VpnServiceStatus,
+} from '@guardian/shared';
+import { AlertAction, AppCategory, TrustLevel, VpnStatus } from '@guardian/shared';
 import { createSimulator } from '@guardian/simulator';
+import { generateEvents } from '@guardian/simulator/event-generator';
+import { SimulatorScenario } from '@guardian/shared';
 import { getDatabase, clearDatabase } from '../db/database';
+import {
+  computeRiskCounts,
+  loadAlerts,
+  loadApps,
+  upsertAlert,
+} from '../db/repositories';
+import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
+import { getGuardianVpnService } from '../native/guardian-vpn';
+import { applyAlertAction } from '../services/alert-service';
 
 interface GuardianState {
   apps: App[];
   assessments: RiskAssessment[];
   counts: RiskCounts;
   alerts: Alert[];
+  timeline: TimelineEvent[];
   isLoading: boolean;
   isSimulator: boolean;
+  vpnStatus: VpnServiceStatus;
+  showTechnicalDetails: boolean;
   loadData: () => Promise<void>;
-  acknowledgeAlert: (alertId: string) => void;
+  startMonitoring: () => Promise<void>;
+  stopMonitoring: () => Promise<void>;
+  acknowledgeAlert: (alertId: string) => Promise<void>;
+  handleAlertAction: (alertId: string, action: AlertAction) => Promise<void>;
+  toggleTechnicalDetails: () => void;
+  refreshFromDb: () => Promise<void>;
 }
 
-function buildAlerts(apps: App[], assessments: RiskAssessment[]): Alert[] {
-  return assessments
-    .filter((a) => a.level !== 'SAFE')
-    .map((a) => {
-      const app = apps.find((ap) => ap.id === a.appId);
-      return {
-        id: `alert-${a.id}`,
-        appId: a.appId,
-        riskAssessmentId: a.id,
-        title: app?.displayName ?? 'Unknown App',
-        message: a.explanation,
-        level: a.level,
-        acknowledged: false,
-        createdAt: a.assessedAt,
-      };
-    });
-}
+const SCENARIO_MAP: Record<string, SimulatorScenario> = {
+  'app-whatsapp': SimulatorScenario.NORMAL,
+  'app-google-photos': SimulatorScenario.NORMAL,
+  'app-photo-editor': SimulatorScenario.HIGH_RISK,
+  'app-calculator': SimulatorScenario.NORMAL,
+  'app-unknown': SimulatorScenario.UNUSUAL,
+};
 
-async function persistToSQLite(
-  apps: App[],
-  assessments: RiskAssessment[],
-  alerts: Alert[],
-): Promise<void> {
-  const db = await getDatabase();
-  await clearDatabase();
+let pipeline: EventPipeline | null = null;
+let vpnSubscription: { remove: () => void } | null = null;
 
-  for (const app of apps) {
-    await db.runAsync(
-      'INSERT INTO apps (id, package_name, display_name, category, is_system, trust_level) VALUES (?, ?, ?, ?, ?, ?)',
-      [
-        app.id,
-        app.packageName,
-        app.displayName,
-        app.category,
-        app.isSystem ? 1 : 0,
-        app.trustLevel,
-      ],
-    );
+async function getPipeline(): Promise<EventPipeline> {
+  if (!pipeline) {
+    pipeline = new EventPipeline();
+    await pipeline.initialize();
   }
-
-  for (const a of assessments) {
-    await db.runAsync(
-      'INSERT INTO risk_assessments (id, app_id, score, level, triggered_rules, explanation, assessed_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [
-        a.id,
-        a.appId,
-        a.score,
-        a.level,
-        JSON.stringify(a.triggeredRules),
-        a.explanation,
-        a.assessedAt.toISOString(),
-      ],
-    );
-  }
-
-  for (const alert of alerts) {
-    await db.runAsync(
-      'INSERT INTO alerts (id, app_id, risk_assessment_id, title, message, level, acknowledged, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        alert.id,
-        alert.appId,
-        alert.riskAssessmentId,
-        alert.title,
-        alert.message,
-        alert.level,
-        alert.acknowledged ? 1 : 0,
-        alert.createdAt.toISOString(),
-      ],
-    );
-  }
+  return pipeline;
 }
 
 export const useGuardianStore = create<GuardianState>((set, get) => ({
@@ -91,26 +65,141 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
   assessments: [],
   counts: { safe: 0, unusual: 0, suspicious: 0 },
   alerts: [],
+  timeline: [],
   isLoading: true,
   isSimulator: process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false',
+  vpnStatus: { status: VpnStatus.STOPPED, isSupported: false },
+  showTechnicalDetails: false,
+
+  refreshFromDb: async () => {
+    const db = await getDatabase();
+    const pipe = await getPipeline();
+    const state = await pipe.refreshState();
+    const alerts = await loadAlerts(db);
+    set({
+      apps: state.apps,
+      assessments: state.assessments,
+      timeline: state.timeline,
+      alerts,
+      counts: computeRiskCounts(state.assessments),
+    });
+  },
 
   loadData: async () => {
     set({ isLoading: true });
     const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
+    const vpn = getGuardianVpnService();
+    const isSupported = await vpn.isSupported();
+    const vpnStatus = isSupported ? await vpn.getStatus() : { status: VpnStatus.UNSUPPORTED, isSupported: false };
+
+    await clearDatabase();
+    const pipe = await getPipeline();
 
     if (isSimulator) {
       const sim = createSimulator();
-      const { apps, assessments, counts } = sim.run();
-      const alerts = buildAlerts(apps, assessments);
-      await persistToSQLite(apps, assessments, alerts);
-      set({ apps, assessments, counts, alerts, isLoading: false, isSimulator: true });
+      const { apps } = sim.run();
+      const networkEventsByApp = new Map<string, ReturnType<typeof generateEvents>['networkEvents']>();
+      const securityEventsByApp = new Map<string, ReturnType<typeof generateEvents>['securityEvents']>();
+
+      for (const app of apps) {
+        const scenario = SCENARIO_MAP[app.id] ?? SimulatorScenario.NORMAL;
+        const events = generateEvents(app.id, scenario);
+        networkEventsByApp.set(app.id, events.networkEvents);
+        securityEventsByApp.set(app.id, events.securityEvents);
+      }
+
+      const state = await seedSimulatorData(apps, networkEventsByApp, securityEventsByApp);
+      const db = await getDatabase();
+      const alerts = await loadAlerts(db);
+
+      set({
+        apps: state.apps,
+        assessments: state.assessments,
+        timeline: state.timeline,
+        alerts,
+        counts: computeRiskCounts(state.assessments),
+        isLoading: false,
+        isSimulator: true,
+        vpnStatus,
+      });
     } else {
-      set({ isLoading: false, isSimulator: false });
+      const state = await pipe.initialize();
+      const db = await getDatabase();
+      const alerts = await loadAlerts(db);
+
+      vpnSubscription?.remove();
+      vpnSubscription = vpn.onNetworkEvent((payload) => {
+        void pipe.handleNativeEvent(payload).then(() => get().refreshFromDb());
+      });
+
+      pipe.startFlushTimer(() => {
+        void get().refreshFromDb();
+      });
+
+      set({
+        apps: state.apps,
+        assessments: state.assessments,
+        timeline: state.timeline,
+        alerts,
+        counts: computeRiskCounts(state.assessments),
+        isLoading: false,
+        isSimulator: false,
+        vpnStatus,
+      });
     }
   },
 
-  acknowledgeAlert: (alertId: string) => {
-    const alerts = get().alerts.map((a) => (a.id === alertId ? { ...a, acknowledged: true } : a));
-    set({ alerts });
+  startMonitoring: async () => {
+    const vpn = getGuardianVpnService();
+    try {
+      await vpn.start();
+      const vpnStatus = await vpn.getStatus();
+      set({ vpnStatus });
+    } catch (error) {
+      set({
+        vpnStatus: {
+          status: VpnStatus.ERROR,
+          isSupported: await vpn.isSupported(),
+          errorMessage: error instanceof Error ? error.message : 'Failed to start monitoring',
+        },
+      });
+    }
+  },
+
+  stopMonitoring: async () => {
+    const vpn = getGuardianVpnService();
+    await vpn.stop();
+    pipeline?.stopFlushTimer();
+    const vpnStatus = await vpn.getStatus();
+    set({ vpnStatus });
+  },
+
+  acknowledgeAlert: async (alertId: string) => {
+    const alert = get().alerts.find((a) => a.id === alertId);
+    if (!alert) return;
+    const updated = applyAlertAction(alert, AlertAction.NONE);
+    const acknowledged = { ...updated, acknowledged: true };
+    const db = await getDatabase();
+    await upsertAlert(db, acknowledged);
+    set({ alerts: get().alerts.map((a) => (a.id === alertId ? acknowledged : a)) });
+  },
+
+  handleAlertAction: async (alertId: string, action: AlertAction) => {
+    const alert = get().alerts.find((a) => a.id === alertId);
+    if (!alert) return;
+    const updated = applyAlertAction(alert, action);
+    const db = await getDatabase();
+
+    if (action === AlertAction.BLOCK && alert.domain) {
+      const vpn = getGuardianVpnService();
+      await vpn.blockDomain(alert.domain);
+    }
+
+    await upsertAlert(db, updated);
+    set({ alerts: get().alerts.map((a) => (a.id === alertId ? updated : a)) });
+  },
+
+  toggleTechnicalDetails: () => {
+    set({ showTechnicalDetails: !get().showTechnicalDetails });
   },
 }));
