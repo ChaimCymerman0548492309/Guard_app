@@ -1,4 +1,4 @@
-import type { NetworkEvent, SecurityEvent, AppBehaviorBaseline } from '@guardian/shared';
+import type { NetworkEvent, SecurityEvent, AppBehaviorBaseline, TrustLevel } from '@guardian/shared';
 import type { RuleId } from '@guardian/shared';
 
 export interface RiskContext {
@@ -30,4 +30,5 @@ export interface AssessmentInput {
   securityEvents: SecurityEvent[];
   baseline?: AppBehaviorBaseline;
   knownTrackerDomains?: readonly string[];
+  trustLevel?: TrustLevel;
 }

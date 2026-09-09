@@ -1,5 +1,5 @@
 import type { Alert, App, RiskAssessment } from '@guardian/shared';
-import { AlertAction, RiskLevel } from '@guardian/shared';
+import { AlertAction, RiskLevel, TrustLevel } from '@guardian/shared';
 
 export interface NotificationPolicy {
   silent: boolean;
@@ -23,6 +23,10 @@ export function getNotificationPolicy(level: RiskLevel): NotificationPolicy {
 export function generateAlertsFromAssessments(apps: App[], assessments: RiskAssessment[]): Alert[] {
   return assessments
     .filter((a) => a.level !== RiskLevel.SAFE)
+    .filter((assessment) => {
+      const app = apps.find((ap) => ap.id === assessment.appId);
+      return !(app?.trustLevel === TrustLevel.TRUSTED && assessment.level === RiskLevel.UNUSUAL);
+    })
     .map((assessment) => {
       const app = apps.find((ap) => ap.id === assessment.appId);
       const policy = getNotificationPolicy(assessment.level);
@@ -36,7 +40,7 @@ export function generateAlertsFromAssessments(apps: App[], assessments: RiskAsse
         acknowledged: false,
         createdAt: assessment.assessedAt,
         userAction: AlertAction.NONE,
-        notifyImmediately: policy.immediate,
+        notifyImmediately: app?.trustLevel === TrustLevel.TRUSTED ? false : policy.immediate,
       };
     });
 }

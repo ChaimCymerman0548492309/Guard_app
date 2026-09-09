@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../db/database';
+import { isCloudSyncEnabled } from './settings-service';
 
 export interface SyncResult {
   synced: number;
@@ -107,6 +108,7 @@ async function sleep(ms: number): Promise<void> {
 
 async function postBatchWithRetry(
   baseUrl: string,
+  deviceId: string,
   payload: unknown,
   fetchFn: typeof fetch,
 ): Promise<{ ok: true; accepted: number } | { ok: false; error: string; offline: boolean }> {
@@ -116,7 +118,7 @@ async function postBatchWithRetry(
     try {
       const response = await fetchFn(`${baseUrl}/api/v1/events/batch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
         body: JSON.stringify(payload),
       });
 
@@ -157,6 +159,7 @@ export async function syncPendingEvents(
   }
 
   const db = await getDatabase();
+  if (!(await isCloudSyncEnabled(db))) return { synced: 0, skipped: true };
   const pending = await countUnsyncedNetworkEvents(db);
   const rows = await loadUnsyncedNetworkEvents(db);
   if (rows.length === 0) {
@@ -176,7 +179,7 @@ export async function syncPendingEvents(
     })),
   };
 
-  const result = await postBatchWithRetry(baseUrl, payload, fetchFn);
+  const result = await postBatchWithRetry(baseUrl, deviceId, payload, fetchFn);
   if (!result.ok) {
     return {
       synced: 0,

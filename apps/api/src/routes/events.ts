@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '../lib/response.js';
 import { ingestEventBatch, listEvents } from '../lib/data-source.js';
+import { deviceRateLimiter } from '../middleware/device-rate-limit.js';
 
 export const eventsRouter: Router = Router();
 
@@ -26,7 +27,7 @@ const batchSchema = z.object({
   ),
 });
 
-eventsRouter.post('/batch', async (req, res) => {
+eventsRouter.post('/batch', deviceRateLimiter, async (req, res) => {
   const parsed = batchSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({

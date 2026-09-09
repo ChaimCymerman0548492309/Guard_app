@@ -9,7 +9,8 @@ describe('API', () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.status).toBe('ok');
+    expect(['ok','degraded']).toContain(res.body.data.status);
+    expect(res.body.data.database).toBeDefined();
     expect(res.headers['x-request-id']).toBeDefined();
   });
 

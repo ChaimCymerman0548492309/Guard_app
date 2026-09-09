@@ -23,7 +23,7 @@ export class RiskDetector {
     };
 
     const results = this.rules.map((rule) => rule.evaluate(context));
-    const score = calculateScore(results);
+    const score = calculateScore(results, input.trustLevel);
     const level = scoreToLevel(score);
     const triggeredRules = results.filter((r) => r.triggered).map((r) => r.ruleId);
 

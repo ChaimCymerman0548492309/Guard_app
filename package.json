@@ -19,7 +19,8 @@
     "db:push": "prisma db push --schema=prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",
     "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
-    "prepare": "pnpm db:generate"
+    "prepare": "pnpm db:generate",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "engines": {
     "node": ">=20"
@@ -35,6 +36,10 @@
     "prisma": "^6.1.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "tsx": "^4.19.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
