@@ -5,4 +5,5 @@ export type RootStackParamList = {
   Alert: { alertId: string };
   Timeline: undefined;
   Permissions: undefined;
+  Settings: undefined;
 };

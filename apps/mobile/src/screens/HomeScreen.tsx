@@ -100,11 +100,19 @@ export function HomeScreen() {
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => navigation.navigate('Timeline')}
-      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Settings')} accessibilityRole="button"><Text style={styles.linkText}>{t('settings.title')}</Text></TouchableOpacity>
         accessibilityRole="button"
         accessibilityLabel={t('nav.timeline')}
       >
         <Text style={styles.linkText}>{t('nav.timeline')}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => navigation.navigate('Settings')}
+        accessibilityRole="button"
+        accessibilityLabel={t('settings.title')}
+      >
+        <Text style={styles.linkText}>{t('settings.title')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
