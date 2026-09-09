@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { useGuardianStore } from '../store/guardian-store';
 import { RiskBadge } from '../components/RiskBadge';
 import { colors } from '../theme';
+import { useRtl } from '../hooks/use-rtl';
 
 export function TimelineScreen() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const { timeline, apps } = useGuardianStore();
 
   const items = timeline.map((item) => {
@@ -18,9 +20,9 @@ export function TimelineScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, rtl.container]}
         ListEmptyComponent={
-          <Text style={styles.empty} accessibilityRole="text">
+          <Text style={[styles.empty, rtl.text]} accessibilityRole="text">
             {t('timeline.empty')}
           </Text>
         }
@@ -30,8 +32,8 @@ export function TimelineScreen() {
             accessibilityRole="summary"
             accessibilityLabel={`${item.appName}, ${item.title}, ${item.description}`}
           >
-            <View style={styles.header}>
-              <Text style={styles.appName}>{item.appName}</Text>
+            <View style={[styles.header, rtl.row]}>
+              <Text style={[styles.appName, rtl.text]}>{item.appName}</Text>
               {item.level && <RiskBadge level={item.level} />}
             </View>
             <Text style={styles.eventTitle}>{item.title}</Text>

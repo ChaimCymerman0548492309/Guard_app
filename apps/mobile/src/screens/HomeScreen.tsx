@@ -7,27 +7,28 @@ import { RiskLevel } from '@guardian/shared';
 import { colors, getRiskColor } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { VpnStatusBar } from '../components/VpnStatusBar';
+import { useRtl } from '../hooks/use-rtl';
 
 export function HomeScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { counts, apps, alerts, isSimulator, runDemoScenario } = useGuardianStore();
-  const isRTL = i18n.language === 'he';
+  const rtl = useRtl();
 
   const unacknowledged = alerts.filter((a) => !a.acknowledged);
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, isRTL && styles.rtlContent]}
+      contentContainerStyle={[styles.content, rtl.container]}
     >
-      <Text style={[styles.tagline, isRTL && styles.rtlText]}>{t('app.tagline')}</Text>
+      <Text style={[styles.tagline, rtl.text]}>{t('app.tagline')}</Text>
 
       <VpnStatusBar />
 
       {isSimulator && (
         <View style={styles.simBanner} accessibilityLiveRegion="polite">
-          <Text style={[styles.simText, isRTL && styles.rtlText]}>{t('home.demoMode')}</Text>
+          <Text style={[styles.simText, rtl.text]}>{t('home.demoMode')}</Text>
           <TouchableOpacity
             style={styles.demoButton}
             onPress={() => void runDemoScenario()}
@@ -57,7 +58,7 @@ export function HomeScreen() {
         />
       </View>
 
-      <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>
+      <Text style={[styles.sectionTitle, rtl.text]}>
         {t('home.appsMonitored', { count: apps.length })}
       </Text>
 
@@ -67,11 +68,11 @@ export function HomeScreen() {
 
       {unacknowledged.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
+          <Text style={[styles.sectionTitle, rtl.text]}>{t('home.recentActivity')}</Text>
           {unacknowledged.slice(0, 3).map((alert) => (
             <TouchableOpacity
               key={alert.id}
-              style={styles.alertCard}
+              style={[styles.alertCard, rtl.borderStart('#ef4444')]}
               onPress={() => navigation.navigate('Alert', { alertId: alert.id })}
             >
               <Text style={styles.alertTitle}>{alert.title}</Text>
@@ -116,8 +117,6 @@ function CountCard({ label, count, color }: { label: string; count: number; colo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
-  rtlContent: { direction: 'rtl' },
-  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   tagline: { fontSize: 16, color: colors.textSecondary, marginBottom: 20 },
   simBanner: {
     backgroundColor: '#fef3c7',
@@ -165,8 +164,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
   },
   alertTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
   alertMessage: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },

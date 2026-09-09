@@ -6,9 +6,11 @@ import { useGuardianStore } from '../store/guardian-store';
 import { RiskBadge } from '../components/RiskBadge';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+import { useRtl } from '../hooks/use-rtl';
 
 export function AppDetailsScreen() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const route = useRoute<RouteProp<RootStackParamList, 'AppDetails'>>();
   const { apps, assessments, showTechnicalDetails, toggleTechnicalDetails } = useGuardianStore();
 
@@ -26,27 +28,27 @@ export function AppDetailsScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, rtl.container]}
       accessibilityLabel={`${app.displayName} ${t('appDetails.title')}`}
     >
-      <Text style={styles.appName} accessibilityRole="header">
+      <Text style={[styles.appName, rtl.text]} accessibilityRole="header">
         {app.displayName}
       </Text>
-      <Text style={styles.packageName}>{app.packageName}</Text>
+      <Text style={[styles.packageName, rtl.text]}>{app.packageName}</Text>
 
       {assessment && (
         <>
-          <View style={styles.row}>
-            <Text style={styles.label}>{t('appDetails.riskLevel')}</Text>
+          <View style={[styles.row, rtl.row]}>
+            <Text style={[styles.label, rtl.text]}>{t('appDetails.riskLevel')}</Text>
             <RiskBadge level={assessment.level} />
           </View>
 
-          <Text style={styles.sectionTitle}>{t('appDetails.explanation')}</Text>
-          <Text style={styles.explanation}>{assessment.explanation}</Text>
+          <Text style={[styles.sectionTitle, rtl.text]}>{t('appDetails.explanation')}</Text>
+          <Text style={[styles.explanation, rtl.text]}>{assessment.explanation}</Text>
 
           {assessment.triggeredRules.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>{t('appDetails.rulesTriggered')}</Text>
+              <Text style={[styles.sectionTitle, rtl.text]}>{t('appDetails.rulesTriggered')}</Text>
               {assessment.triggeredRules.map((rule) => (
                 <View key={rule} style={styles.ruleChip} accessibilityLabel={formatRule(rule)}>
                   <Text style={styles.ruleText}>{formatRule(rule)}</Text>

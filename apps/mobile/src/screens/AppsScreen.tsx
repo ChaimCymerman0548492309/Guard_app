@@ -7,9 +7,11 @@ import { RiskBadge } from '../components/RiskBadge';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { RiskLevel } from '@guardian/shared';
+import { useRtl } from '../hooks/use-rtl';
 
 export function AppsScreen() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { apps, assessments } = useGuardianStore();
 
@@ -23,18 +25,18 @@ export function AppsScreen() {
       <FlatList
         data={apps}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>{t('apps.noApps')}</Text>}
+        contentContainerStyle={[styles.list, rtl.container]}
+        ListEmptyComponent={<Text style={[styles.empty, rtl.text]}>{t('apps.noApps')}</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('AppDetails', { appId: item.id })}
           >
-            <View style={styles.cardHeader}>
-              <Text style={styles.appName}>{item.displayName}</Text>
+            <View style={[styles.cardHeader, rtl.row]}>
+              <Text style={[styles.appName, rtl.text]}>{item.displayName}</Text>
               <RiskBadge level={getLevel(item.id)} />
             </View>
-            <Text style={styles.packageName}>{item.packageName}</Text>
+            <Text style={[styles.packageName, rtl.text]}>{item.packageName}</Text>
           </TouchableOpacity>
         )}
       />

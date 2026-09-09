@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { VpnStatus } from '@guardian/shared';
 import { useGuardianStore } from '../store/guardian-store';
 import { colors } from '../theme';
+import { useRtl } from '../hooks/use-rtl';
 
 export function VpnStatusBar() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const { vpnStatus, isSimulator } = useGuardianStore();
 
   if (isSimulator) return null;
@@ -14,9 +16,9 @@ export function VpnStatusBar() {
 
   if (!isSupported) {
     return (
-      <View style={[styles.bar, styles.unsupported]} accessibilityLiveRegion="polite">
+      <View style={[styles.bar, styles.unsupported, rtl.borderStart('#9ca3af')]} accessibilityLiveRegion="polite">
         <View style={[styles.dot, styles.dotGray]} />
-        <Text style={styles.text}>{t('home.vpnUnsupported')}</Text>
+        <Text style={[styles.text, rtl.text]}>{t('home.vpnUnsupported')}</Text>
       </View>
     );
   }
@@ -38,8 +40,11 @@ export function VpnStatusBar() {
       style={[
         styles.bar,
         isActive && styles.active,
+        isActive && rtl.borderStart('#22c55e'),
         isError && styles.error,
+        isError && rtl.borderStart('#ef4444'),
         isStarting && styles.starting,
+        isStarting && rtl.borderStart('#eab308'),
       ]}
       accessibilityRole="text"
       accessibilityLabel={label}
@@ -54,9 +59,9 @@ export function VpnStatusBar() {
           !isActive && !isError && !isStarting && styles.dotGray,
         ]}
       />
-      <Text style={styles.text}>{label}</Text>
+      <Text style={[styles.text, rtl.text]}>{label}</Text>
       {errorMessage && isError && (
-        <Text style={styles.errorDetail} numberOfLines={2}>{errorMessage}</Text>
+        <Text style={[styles.errorDetail, rtl.text]} numberOfLines={2}>{errorMessage}</Text>
       )}
     </View>
   );
@@ -73,10 +78,10 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
   },
-  active: { borderLeftWidth: 3, borderLeftColor: '#22c55e' },
-  error: { borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  starting: { borderLeftWidth: 3, borderLeftColor: '#eab308' },
-  unsupported: { borderLeftWidth: 3, borderLeftColor: '#9ca3af' },
+  active: {},
+  error: {},
+  starting: {},
+  unsupported: {},
   dot: { width: 10, height: 10, borderRadius: 5 },
   dotGreen: { backgroundColor: '#22c55e' },
   dotRed: { backgroundColor: '#ef4444' },

@@ -8,9 +8,11 @@ import { RiskBadge } from '../components/RiskBadge';
 import { AlertAction, RiskLevel } from '@guardian/shared';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+import { useRtl } from '../hooks/use-rtl';
 
 export function AlertScreen() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const route = useRoute<RouteProp<RootStackParamList, 'Alert'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { alerts, acknowledgeAlert, handleAlertAction } = useGuardianStore();
@@ -28,13 +30,13 @@ export function AlertScreen() {
   const showBlock = alert.level === RiskLevel.SUSPICIOUS;
 
   return (
-    <View style={styles.container} accessibilityLabel={t('alert.title')}>
+    <View style={[styles.container, rtl.container]} accessibilityLabel={t('alert.title')}>
       <View style={styles.card} accessibilityRole="summary">
         <RiskBadge level={alert.level} />
-        <Text style={styles.title} accessibilityRole="header">
+        <Text style={[styles.title, rtl.text]} accessibilityRole="header">
           {alert.title}
         </Text>
-        <Text style={styles.message}>{alert.message}</Text>
+        <Text style={[styles.message, rtl.text]}>{alert.message}</Text>
       </View>
 
       <TouchableOpacity

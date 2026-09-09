@@ -6,9 +6,11 @@ import { useGuardianStore } from '../store/guardian-store';
 import { VpnStatus } from '@guardian/shared';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+import { useRtl } from '../hooks/use-rtl';
 
 export function PermissionsScreen() {
   const { t } = useTranslation();
+  const rtl = useRtl();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { vpnStatus, startMonitoring, stopMonitoring, isSimulator } = useGuardianStore();
   const isActive = vpnStatus.status === VpnStatus.ACTIVE;
@@ -16,22 +18,22 @@ export function PermissionsScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, rtl.container]}
       accessibilityLabel={t('permissions.title')}
     >
-      <Text style={styles.heading} accessibilityRole="header">
+      <Text style={[styles.heading, rtl.text]} accessibilityRole="header">
         {t('permissions.heading')}
       </Text>
-      <Text style={styles.body}>{t('permissions.explanation')}</Text>
+      <Text style={[styles.body, rtl.text]}>{t('permissions.explanation')}</Text>
 
       <View style={styles.card} accessibilityRole="summary">
-        <Text style={styles.cardTitle}>{t('permissions.vpnTitle')}</Text>
-        <Text style={styles.cardBody}>{t('permissions.vpnBody')}</Text>
+        <Text style={[styles.cardTitle, rtl.text]}>{t('permissions.vpnTitle')}</Text>
+        <Text style={[styles.cardBody, rtl.text]}>{t('permissions.vpnBody')}</Text>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('permissions.notificationsTitle')}</Text>
-        <Text style={styles.cardBody}>{t('permissions.notificationsBody')}</Text>
+        <Text style={[styles.cardTitle, rtl.text]}>{t('permissions.notificationsTitle')}</Text>
+        <Text style={[styles.cardBody, rtl.text]}>{t('permissions.notificationsBody')}</Text>
       </View>
 
       {!vpnStatus.isSupported && !isSimulator && (
