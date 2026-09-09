@@ -8,6 +8,17 @@ All notable changes to Guardian are documented in this file.
 
 Local-first mobile security monitoring with optional cloud sync.
 
+#### Post-MVP updates (since `v0.1.0-mvp` tag)
+
+- Settings screen with retention, notifications, cloud sync, and data export
+- Trust this app action on app details (50% risk score reduction, fewer alerts)
+- English / Hebrew language switcher in settings (persisted locally)
+- Trusted-app scoring wired through risk pipeline reassessment
+- API health/DB connectivity check and per-device rate limiting
+- Cloud sync opt-in gate with `X-Device-Id` header
+- Android release config (ProGuard, network security, EAS, keystore template)
+- Additional unit tests for settings, sync, score, and rate limiter
+
 #### Mobile
 
 - React Native dashboard with Hebrew RTL support

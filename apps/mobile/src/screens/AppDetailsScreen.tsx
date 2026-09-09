@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useTranslation } from 'react-i18next';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import { TrustLevel } from '@guardian/shared';
 import { useGuardianStore } from '../store/guardian-store';
 import { RiskBadge } from '../components/RiskBadge';
 import { colors } from '../theme';
@@ -12,7 +13,8 @@ export function AppDetailsScreen() {
   const { t } = useTranslation();
   const rtl = useRtl();
   const route = useRoute<RouteProp<RootStackParamList, 'AppDetails'>>();
-  const { apps, assessments, showTechnicalDetails, toggleTechnicalDetails } = useGuardianStore();
+  const { apps, assessments, showTechnicalDetails, toggleTechnicalDetails, trustApp } =
+    useGuardianStore();
 
   const app = apps.find((a) => a.id === route.params.appId);
   const assessment = assessments.find((a) => a.appId === route.params.appId);
@@ -35,6 +37,21 @@ export function AppDetailsScreen() {
         {app.displayName}
       </Text>
       <Text style={[styles.packageName, rtl.text]}>{app.packageName}</Text>
+
+      {app.trustLevel === TrustLevel.TRUSTED ? (
+        <Text style={[styles.trustedNote, rtl.text]} accessibilityRole="text">
+          {t('appDetails.trusted')}
+        </Text>
+      ) : (
+        <TouchableOpacity
+          onPress={() => void trustApp(app.id)}
+          style={styles.trustButton}
+          accessibilityRole="button"
+          accessibilityLabel={t('appDetails.trustApp')}
+        >
+          <Text style={styles.trustButtonText}>{t('appDetails.trustApp')}</Text>
+        </TouchableOpacity>
+      )}
 
       {assessment && (
         <>
@@ -102,7 +119,24 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
   appName: { fontSize: 24, fontWeight: '700', color: colors.text },
-  packageName: { fontSize: 13, color: colors.textSecondary, marginBottom: 24 },
+  packageName: { fontSize: 13, color: colors.textSecondary, marginBottom: 16 },
+  trustButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 24,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  trustButtonText: { color: colors.white, fontSize: 15, fontWeight: '600' },
+  trustedNote: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 24,
+    fontStyle: 'italic',
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

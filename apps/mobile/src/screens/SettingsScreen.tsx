@@ -18,12 +18,19 @@ import {
   setNotificationsEnabled,
   isCloudSyncEnabled,
   setCloudSyncEnabled,
+  getLanguage,
+  setLanguage,
 } from '../services/settings-service';
+import i18n from '../i18n';
 import { exportDataAsJson } from '../services/export-service';
 import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
 
 const RETENTION_OPTIONS = [7, 14, 30, 60, 90];
+const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
+  { code: 'en', label: 'English' },
+  { code: 'he', label: 'עברית' },
+];
 
 export function SettingsScreen() {
   const { t } = useTranslation();
@@ -31,12 +38,14 @@ export function SettingsScreen() {
   const [retentionDays, setRetentionDaysState] = useState(30);
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [cloudSyncOn, setCloudSyncOn] = useState(false);
+  const [language, setLanguageState] = useState<'en' | 'he'>('en');
 
   const loadSettings = useCallback(async () => {
     const db = await getDatabase();
     setRetentionDaysState(await getRetentionDays(db));
     setNotificationsOn(await areNotificationsEnabled(db));
     setCloudSyncOn(await isCloudSyncEnabled(db));
+    setLanguageState(await getLanguage(db));
   }, []);
 
   useEffect(() => {
@@ -86,6 +95,28 @@ export function SettingsScreen() {
         />
       </View>
 
+      <Text style={[styles.sectionTitle, rtl.text]}>{t('settings.language')}</Text>
+      <View style={[styles.chipRow, rtl.row]}>
+        {LANGUAGE_OPTIONS.map((option) => (
+          <TouchableOpacity
+            key={option.code}
+            style={[styles.chip, language === option.code && styles.chipActive]}
+            onPress={() => {
+              void getDatabase().then(async (db) => {
+                await setLanguage(db, option.code);
+                await i18n.changeLanguage(option.code);
+                setLanguageState(option.code);
+              });
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: language === option.code }}
+          >
+            <Text style={styles.chipText}>{option.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={[styles.hint, rtl.text]}>{t('settings.restartHint')}</Text>
+
       <View style={[styles.row, rtl.row]}>
         <Text style={styles.label}>{t('settings.cloudSync')}</Text>
         <Switch
@@ -116,6 +147,7 @@ const styles = StyleSheet.create({
   chip: { padding: 10, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: '#e5e7eb' },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text },
+  hint: { fontSize: 12, color: colors.textSecondary, marginBottom: 8 },
   exportButton: { marginTop: 24, backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
   exportText: { color: colors.white, fontWeight: '600' },
 });

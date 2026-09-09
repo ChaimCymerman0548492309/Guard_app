@@ -2,9 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getApiBaseUrl,
   syncPendingEvents,
-  getOrCreateDeviceId,
-  markEventsSynced,
-  loadUnsyncedNetworkEvents,
   countUnsyncedNetworkEvents,
   deriveSyncStatus,
 } from './sync-service';

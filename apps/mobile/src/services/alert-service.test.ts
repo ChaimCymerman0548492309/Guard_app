@@ -63,4 +63,31 @@ describe('alert-service', () => {
     expect(getNotificationPolicy(RiskLevel.UNUSUAL).immediate).toBe(false);
     expect(getNotificationPolicy(RiskLevel.SUSPICIOUS).offerBlock).toBe(true);
   });
+
+  it('suppresses unusual alerts for trusted apps', () => {
+    const alerts = generateAlertsFromAssessments(
+      [
+        {
+          id: 'a1',
+          packageName: 'com.trusted',
+          displayName: 'Trusted App',
+          category: AppCategory.SOCIAL,
+          isSystem: false,
+          trustLevel: TrustLevel.TRUSTED,
+        },
+      ],
+      [
+        {
+          id: 'r1',
+          appId: 'a1',
+          score: 40,
+          level: RiskLevel.UNUSUAL,
+          triggeredRules: ['NEW_DOMAIN'],
+          explanation: 'New domain seen',
+          assessedAt: new Date(),
+        },
+      ],
+    );
+    expect(alerts).toHaveLength(0);
+  });
 });

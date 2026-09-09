@@ -7,10 +7,10 @@ import type {
   TimelineEvent,
   VpnServiceStatus,
 } from '@guardian/shared';
-import { AlertAction, VpnStatus, SimulatorScenario } from '@guardian/shared';
+import { AlertAction, TrustLevel, VpnStatus, SimulatorScenario } from '@guardian/shared';
 import { createSimulator, generateEvents } from '@guardian/simulator';
 import { getDatabase, clearDatabase } from '../db/database';
-import { computeRiskCounts, loadAlerts, upsertAlert } from '../db/repositories';
+import { computeRiskCounts, loadAlerts, upsertAlert, upsertApp } from '../db/repositories';
 import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
 import { getGuardianVpnService } from '../native/guardian-vpn';
 import { applyAlertAction } from '../services/alert-service';
@@ -24,6 +24,8 @@ import {
   type SyncStatus,
 } from '../services/sync-service';
 import { PHOTO_CLEANER_APP_ID } from '@guardian/simulator';
+import { getLanguage } from '../services/settings-service';
+import i18n from '../i18n';
 
 interface GuardianState {
   apps: App[];
@@ -44,6 +46,7 @@ interface GuardianState {
   acknowledgeAlert: (alertId: string) => Promise<void>;
   handleAlertAction: (alertId: string, action: AlertAction) => Promise<void>;
   toggleTechnicalDetails: () => void;
+  trustApp: (appId: string) => Promise<void>;
   refreshFromDb: () => Promise<void>;
   runDemoScenario: () => Promise<void>;
 }
@@ -125,6 +128,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
 
   loadData: async () => {
     set({ isLoading: true });
+    const db = await getDatabase();
+    await i18n.changeLanguage(await getLanguage(db));
     await initNotifications();
     const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
     const vpn = getGuardianVpnService();
@@ -268,6 +273,19 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
 
   toggleTechnicalDetails: () => {
     set({ showTechnicalDetails: !get().showTechnicalDetails });
+  },
+
+  trustApp: async (appId: string) => {
+    const app = get().apps.find((a) => a.id === appId);
+    if (!app || app.trustLevel === TrustLevel.TRUSTED) return;
+
+    const trustedApp = { ...app, trustLevel: TrustLevel.TRUSTED };
+    const db = await getDatabase();
+    await upsertApp(db, trustedApp);
+
+    const pipe = await getPipeline();
+    await pipe.reassessApp(appId);
+    await get().refreshFromDb();
   },
 
   runDemoScenario: async () => {

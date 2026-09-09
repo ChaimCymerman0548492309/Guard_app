@@ -123,16 +123,17 @@ export class EventPipeline {
     const baselines = await loadBaselines(db);
 
     for (const appId of unique) {
-      const app = apps.find((a) => a.id === appId);
+      let app = apps.find((a) => a.id === appId);
       if (!app) {
-        await upsertApp(db, {
+        app = {
           id: appId,
           packageName: appId.replace(/^pkg-/, ''),
           displayName: appId.replace(/^pkg-/, ''),
           category: AppCategory.UNKNOWN,
           isSystem: false,
           trustLevel: TrustLevel.UNKNOWN,
-        });
+        };
+        await upsertApp(db, app);
       }
 
       const networkEvents = await loadNetworkEventsForApp(db, appId);
@@ -144,6 +145,7 @@ export class EventPipeline {
         networkEvents,
         securityEvents,
         baseline,
+        trustLevel: app.trustLevel,
       });
 
       await upsertAssessment(db, assessment);
@@ -162,6 +164,10 @@ export class EventPipeline {
         timestamp: assessment.assessedAt,
       });
     }
+  }
+
+  async reassessApp(appId: string): Promise<void> {
+    await this.reassessAffectedApps([appId]);
   }
 
   async refreshState(): Promise<PipelineState> {
