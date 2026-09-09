@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "גארדיאן",
+    "tagline": "הפרטיות שלך, מוגנת"
+  },
+  "home": {
+    "title": "בית",
+    "safe": "בטוח",
+    "unusual": "חריג",
+    "suspicious": "חשוד",
+    "appsMonitored": "אפליקציות במעקב",
+    "viewApps": "הצג את כל האפליקציות",
+    "recentActivity": "פעילות אחרונה"
+  },
+  "apps": {
+    "title": "האפליקציות שלך",
+    "noApps": "אין אפליקציות להצגה"
+  },
+  "appDetails": {
+    "title": "פרטי אפליקציה",
+    "riskLevel": "סטטוס",
+    "explanation": "מה שמצאנו",
+    "rulesTriggered": "חששות"
+  },
+  "alert": {
+    "title": "התראה",
+    "acknowledge": "הבנתי",
+    "learnMore": "למידע נוסף"
+  },
+  "timeline": {
+    "title": "ציר זמן פעילות",
+    "empty": "אין פעילות אחרונה"
+  },
+  "risk": {
+    "SAFE": "בטוח",
+    "UNUSUAL": "חריג",
+    "SUSPICIOUS": "חשוד"
+  },
+  "nav": {
+    "home": "בית",
+    "apps": "אפליקציות",
+    "timeline": "ציר זמן"
+  }
+}

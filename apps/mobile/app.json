@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Guardian",
+    "slug": "guardian",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1e3a5f"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.guardian.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1e3a5f"
+      },
+      "package": "com.guardian.app"
+    },
+    "plugins": ["expo-localization", "expo-sqlite"]
+  }
+}

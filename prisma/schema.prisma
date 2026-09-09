@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  devices   Device[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  platform  String
+  apps      App[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model App {
+  id          String   @id @default(uuid())
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id])
+  packageName String
+  displayName String
+  category    String
+  isSystem    Boolean  @default(false)
+  trustLevel  String   @default("NEUTRAL")
+  securityEvents    SecurityEvent[]
+  networkEvents     NetworkEvent[]
+  riskAssessments   RiskAssessment[]
+  alerts            Alert[]
+  behaviorBaseline  AppBehaviorBaseline?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([deviceId, packageName])
+}
+
+model SecurityEvent {
+  id        String   @id @default(uuid())
+  appId     String
+  app       App      @relation(fields: [appId], references: [id])
+  type      String
+  metadata  Json     @default("{}")
+  timestamp DateTime @default(now())
+}
+
+model NetworkEvent {
+  id             String   @id @default(uuid())
+  appId          String
+  app            App      @relation(fields: [appId], references: [id])
+  domain         String
+  bytesSent      Int      @default(0)
+  bytesReceived  Int      @default(0)
+  isNewDomain    Boolean  @default(false)
+  timestamp      DateTime @default(now())
+}
+
+model RiskAssessment {
+  id             String   @id @default(uuid())
+  appId          String
+  app            App      @relation(fields: [appId], references: [id])
+  score          Int
+  level          String
+  triggeredRules String[]
+  explanation    String
+  assessedAt     DateTime @default(now())
+  alerts         Alert[]
+}
+
+model Alert {
+  id               String         @id @default(uuid())
+  appId            String
+  app              App            @relation(fields: [appId], references: [id])
+  riskAssessmentId String
+  riskAssessment   RiskAssessment @relation(fields: [riskAssessmentId], references: [id])
+  title            String
+  message          String
+  level            String
+  acknowledged     Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+}
+
+model Rule {
+  id          String  @id @default(uuid())
+  ruleId      String  @unique
+  name        String
+  description String
+  weight      Int
+  enabled     Boolean @default(true)
+}
+
+model DomainReputation {
+  id              String @id @default(uuid())
+  domain          String @unique
+  isTracker       Boolean @default(false)
+  category        String
+  reputationScore Int    @default(50)
+}
+
+model AppBehaviorBaseline {
+  id                    String   @id @default(uuid())
+  appId                 String   @unique
+  app                   App      @relation(fields: [appId], references: [id])
+  avgDailyConnections   Int      @default(10)
+  knownDomains          String[]
+  avgUploadBytes        Int      @default(0)
+  lastUpdated           DateTime @default(now())
+}
