@@ -104,12 +104,12 @@ Seed apps: WhatsApp, Google Photos, Photo Editor, Calculator, Unknown App.
 
 ## API Endpoints
 
-| Method | Path                      | Description              |
-| ------ | ------------------------- | ------------------------ |
-| GET    | `/health`                 | Health check             |
-| GET    | `/api/v1/apps`            | List apps with risk      |
-| GET    | `/api/v1/dashboard/summary` | Dashboard counts       |
-| POST   | `/api/v1/events/batch`    | Optional event sync      |
+| Method | Path                        | Description         |
+| ------ | --------------------------- | ------------------- |
+| GET    | `/health`                   | Health check        |
+| GET    | `/api/v1/apps`              | List apps with risk |
+| GET    | `/api/v1/dashboard/summary` | Dashboard counts    |
+| POST   | `/api/v1/events/batch`      | Optional event sync |
 
 ## Documentation
 

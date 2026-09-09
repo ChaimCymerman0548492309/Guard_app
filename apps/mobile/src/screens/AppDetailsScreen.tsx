@@ -69,11 +69,15 @@ export function AppDetailsScreen() {
 
           {showTechnicalDetails && (
             <View style={styles.techBox} accessibilityRole="text">
-              <Text style={styles.techLine}>{t('appDetails.score')}: {assessment.score}</Text>
+              <Text style={styles.techLine}>
+                {t('appDetails.score')}: {assessment.score}
+              </Text>
               <Text style={styles.techLine}>
                 {t('appDetails.assessedAt')}: {new Date(assessment.assessedAt).toLocaleString()}
               </Text>
-              <Text style={styles.techLine}>{t('appDetails.appId')}: {app.id}</Text>
+              <Text style={styles.techLine}>
+                {t('appDetails.appId')}: {app.id}
+              </Text>
               <Text style={styles.techLine}>
                 {t('appDetails.rules')}: {assessment.triggeredRules.join(', ') || '—'}
               </Text>
