@@ -28,6 +28,9 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
+      - name: Build packages
+        run: pnpm build
+
       - name: Lint
         run: pnpm lint
 

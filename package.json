@@ -17,6 +17,8 @@
     "dev:mobile": "pnpm --filter @guardian/mobile start",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
     "prepare": "pnpm db:generate"
   },
   "engines": {

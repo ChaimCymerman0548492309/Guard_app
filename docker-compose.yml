@@ -25,6 +25,7 @@ services:
       DATABASE_URL: postgresql://guardian:guardian@postgres:5432/guardian
       NODE_ENV: production
       PORT: 3000
+      DEV_SIMULATOR: 'true'
     depends_on:
       postgres:
         condition: service_healthy

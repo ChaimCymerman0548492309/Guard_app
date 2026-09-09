@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { sendSuccess } from '../lib/response.js';
-import { ingestEventBatch } from '../lib/data-source.js';
+import { ingestEventBatch, listEvents } from '../lib/data-source.js';
 
 export const eventsRouter: Router = Router();
+
+eventsRouter.get('/', async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const appId = typeof req.query.appId === 'string' ? req.query.appId : undefined;
+  const data = await listEvents({ limit, appId });
+  sendSuccess(res, data, req.requestId);
+});
 
 const batchSchema = z.object({
   deviceId: z.string().uuid(),

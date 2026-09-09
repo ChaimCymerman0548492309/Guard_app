@@ -9,6 +9,7 @@ import { healthRouter } from './routes/health.js';
 import { appsRouter } from './routes/apps.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { eventsRouter } from './routes/events.js';
+import { alertsRouter } from './routes/alerts.js';
 import { openapiRouter } from './routes/openapi.js';
 
 export function createApp(): express.Application {
@@ -37,6 +38,7 @@ export function createApp(): express.Application {
   app.use('/api/v1/apps', appsRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/events', eventsRouter);
+  app.use('/api/v1/alerts', alertsRouter);
   app.use('/api/v1/openapi', openapiRouter);
 
   return app;

@@ -56,6 +56,14 @@ Returns risk counts, total apps, and recent alerts.
 
 ### Events
 
+`GET /api/v1/events`
+
+List network events. Query params: `limit` (default 50, max 200), `appId` (optional filter).
+
+`GET /api/v1/apps/:id/events`
+
+Network events for a specific app. Returns 404 if app not found.
+
 `POST /api/v1/events/batch`
 
 Optional sync endpoint for batched network metadata from mobile devices.
@@ -78,11 +86,35 @@ Optional sync endpoint for batched network metadata from mobile devices.
 
 Returns `{ "accepted": number }`. Uses PostgreSQL when available; accepts all events in simulator mode.
 
+### Risk
+
+`GET /api/v1/apps/:id/risk`
+
+Returns the latest risk assessment for an app. Returns 404 if not found.
+
+### Alerts
+
+`GET /api/v1/alerts`
+
+List alerts. Query param: `acknowledged` (`true` / `false`).
+
+`GET /api/v1/alerts/:id`
+
+Get a single alert.
+
+`POST /api/v1/alerts/:id/block`
+
+Block the domain associated with the alert and mark acknowledged.
+
+`POST /api/v1/alerts/:id/allow`
+
+Allow the connection and acknowledge the alert.
+
 ### OpenAPI
 
 `GET /api/v1/openapi`
 
-Returns OpenAPI 3.0 stub specification.
+Returns full OpenAPI 3.0 specification for all endpoints.
 
 ## Authentication
 

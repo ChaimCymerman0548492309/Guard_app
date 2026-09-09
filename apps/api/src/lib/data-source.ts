@@ -1,6 +1,7 @@
-import { createSimulator } from '@guardian/simulator';
+import { createSimulator, generateEvents } from '@guardian/simulator';
 import type { SimulatorResult } from '@guardian/simulator';
-import type { App, RiskAssessment, RiskCounts } from '@guardian/shared';
+import type { Alert, App, NetworkEvent, RiskAssessment, RiskCounts } from '@guardian/shared';
+import { AlertAction, RiskLevel, SimulatorScenario } from '@guardian/shared';
 import { isDatabaseAvailable, prisma } from './prisma.js';
 
 export interface AppWithRisk extends App {
@@ -20,8 +21,67 @@ export interface DashboardSummary {
   }>;
 }
 
+const SCENARIO_MAP: Record<string, SimulatorScenario> = {
+  'app-whatsapp': SimulatorScenario.NORMAL,
+  'app-google-photos': SimulatorScenario.NORMAL,
+  'app-photo-editor': SimulatorScenario.HIGH_RISK,
+  'app-calculator': SimulatorScenario.NORMAL,
+  'app-unknown': SimulatorScenario.UNUSUAL,
+};
+
+interface SimulatorCache {
+  result: SimulatorResult;
+  networkEvents: NetworkEvent[];
+  alerts: Alert[];
+}
+
+let simulatorCache: SimulatorCache | null = null;
+const simulatorAlertOverrides = new Map<string, Alert>();
+
+function getSimulatorCache(): SimulatorCache {
+  if (!simulatorCache) {
+    const result = createSimulator().run();
+    const networkEvents: NetworkEvent[] = [];
+    for (const app of result.apps) {
+      const scenario = SCENARIO_MAP[app.id] ?? SimulatorScenario.NORMAL;
+      const generated = generateEvents(app.id, scenario);
+      networkEvents.push(...generated.networkEvents);
+    }
+    const alerts = result.assessments
+      .filter((a) => a.level !== RiskLevel.SAFE)
+      .map((assessment) => {
+        const app = result.apps.find((ap) => ap.id === assessment.appId);
+        const domain =
+          assessment.level === RiskLevel.SUSPICIOUS ? 'unknown-upload-server.xyz' : undefined;
+        return {
+          id: `alert-${assessment.id}`,
+          appId: assessment.appId,
+          riskAssessmentId: assessment.id,
+          title: app?.displayName ?? 'Unknown App',
+          message: assessment.explanation,
+          level: assessment.level,
+          acknowledged: false,
+          createdAt: assessment.assessedAt,
+          userAction: AlertAction.NONE,
+          domain,
+        };
+      });
+    simulatorCache = { result, networkEvents, alerts };
+  }
+  return simulatorCache;
+}
+
 function fromSimulator(): SimulatorResult {
-  return createSimulator().run();
+  return getSimulatorCache().result;
+}
+
+function simulatorNetworkEvents(): NetworkEvent[] {
+  return getSimulatorCache().networkEvents;
+}
+
+function simulatorAlerts(): Alert[] {
+  const base = getSimulatorCache().alerts;
+  return base.map((alert) => simulatorAlertOverrides.get(alert.id) ?? alert);
 }
 
 export async function listAppsWithRisk(): Promise<AppWithRisk[]> {
@@ -238,4 +298,121 @@ export async function ingestEventBatch(input: BatchEventInput): Promise<{ accept
   }
 
   return { accepted };
+}
+
+export async function listEvents(options: {
+  limit: number;
+  appId?: string;
+}): Promise<NetworkEvent[]> {
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    let events = simulatorNetworkEvents();
+    if (options.appId) {
+      events = events.filter((e) => e.appId === options.appId);
+    }
+    return events.slice(0, options.limit);
+  }
+
+  const rows = await prisma.networkEvent.findMany({
+    where: options.appId ? { appId: options.appId } : undefined,
+    orderBy: { timestamp: 'desc' },
+    take: options.limit,
+  });
+
+  if (rows.length === 0 && !options.appId) {
+    return simulatorNetworkEvents().slice(0, options.limit);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    appId: row.appId,
+    domain: row.domain,
+    bytesSent: row.bytesSent,
+    bytesReceived: row.bytesReceived,
+    isNewDomain: row.isNewDomain,
+    timestamp: row.timestamp,
+  }));
+}
+
+export async function getAppEvents(appId: string, limit: number): Promise<NetworkEvent[] | null> {
+  const app = await getAppById(appId);
+  if (!app) return null;
+  return listEvents({ limit, appId });
+}
+
+export async function getAppRisk(appId: string): Promise<RiskAssessment | null> {
+  const result = await getAppById(appId);
+  return result?.assessment ?? null;
+}
+
+export async function listAlerts(options?: { acknowledged?: boolean }): Promise<Alert[]> {
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    let alerts = simulatorAlerts();
+    if (options?.acknowledged !== undefined) {
+      alerts = alerts.filter((a) => a.acknowledged === options.acknowledged);
+    }
+    return alerts;
+  }
+
+  const rows = await prisma.alert.findMany({
+    where: options?.acknowledged !== undefined ? { acknowledged: options.acknowledged } : undefined,
+    orderBy: { createdAt: 'desc' },
+    include: { app: true },
+  });
+
+  if (rows.length === 0) {
+    return simulatorAlerts();
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    appId: row.appId,
+    riskAssessmentId: row.riskAssessmentId,
+    title: row.title,
+    message: row.message,
+    level: row.level as RiskLevel,
+    acknowledged: row.acknowledged,
+    createdAt: row.createdAt,
+    userAction: (row.userAction as AlertAction) ?? AlertAction.NONE,
+    domain: row.domain ?? undefined,
+  }));
+}
+
+export async function getAlertById(id: string): Promise<Alert | null> {
+  const alerts = await listAlerts();
+  return alerts.find((a) => a.id === id) ?? null;
+}
+
+export async function updateAlertAction(
+  id: string,
+  action: AlertAction,
+): Promise<Alert | null> {
+  const alert = await getAlertById(id);
+  if (!alert) return null;
+
+  const updated: Alert = {
+    ...alert,
+    userAction: action,
+    acknowledged: true,
+  };
+
+  if (action === AlertAction.BLOCK && alert.domain) {
+    if (await isDatabaseAvailable()) {
+      await prisma.blockedDomain.upsert({
+        where: { domain: alert.domain },
+        create: { domain: alert.domain, source: id },
+        update: { source: id },
+      });
+    }
+  }
+
+  if ((await isDatabaseAvailable()) && process.env.DEV_SIMULATOR !== 'true') {
+    await prisma.alert.update({
+      where: { id },
+      data: { userAction: action, acknowledged: true },
+    });
+  } else if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    simulatorAlertOverrides.set(id, updated);
+  }
+
+  return updated;
 }

@@ -88,8 +88,17 @@ model Alert {
   title            String
   message          String
   level            String
+  domain           String?
+  userAction       String         @default("NONE")
   acknowledged     Boolean        @default(false)
   createdAt        DateTime       @default(now())
+}
+
+model BlockedDomain {
+  id        String   @id @default(uuid())
+  domain    String   @unique
+  source    String?
+  createdAt DateTime @default(now())
 }
 
 model Rule {
