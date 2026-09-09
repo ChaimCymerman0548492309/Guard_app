@@ -22,16 +22,16 @@
 | Tracker domains            | KNOWN_TRACKER rule          | MVP    |
 | Large data uploads         | LARGE_UPLOAD rule           | MVP    |
 | Sensitive data access      | SENSITIVE_APP_BEHAVIOR rule | MVP    |
-| Network monitoring         | Kotlin VPN (metadata only)  | Future |
+| Network monitoring         | Kotlin VPN (metadata only)  | POC (Android) |
 
 ## Out of Scope (Phase 1)
 
 - Real-time packet inspection
-- Android VPN service implementation
+- Full per-domain VPN blocking
 - iOS Network Extension
 - Malware signature detection
 - Root/jailbreak detection
 
 ## Honest Limitations
 
-Guardian Phase 1 uses a **development simulator** for event generation. Production network monitoring requires a native Android VPN module (Kotlin) that captures connection metadata only. This is documented but **not faked** in the production build.
+Guardian uses a **development simulator** (`DEV_SIMULATOR=true`) for demo and testing. On Android with `DEV_SIMULATOR=false`, a native Kotlin VPN module captures connection metadata only — see [ADR-002](decisions/ADR-002-android-vpn.md). The simulator is never faked as real VPN data in production builds.
