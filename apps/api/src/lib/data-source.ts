@@ -37,6 +37,7 @@ interface SimulatorCache {
 
 let simulatorCache: SimulatorCache | null = null;
 const simulatorAlertOverrides = new Map<string, Alert>();
+const simulatorBatchEvents: NetworkEvent[] = [];
 
 function getSimulatorCache(): SimulatorCache {
   if (!simulatorCache) {
@@ -76,7 +77,7 @@ function fromSimulator(): SimulatorResult {
 }
 
 function simulatorNetworkEvents(): NetworkEvent[] {
-  return getSimulatorCache().networkEvents;
+  return [...getSimulatorCache().networkEvents, ...simulatorBatchEvents];
 }
 
 function simulatorAlerts(): Alert[] {
@@ -274,7 +275,20 @@ export interface BatchEventInput {
 
 export async function ingestEventBatch(input: BatchEventInput): Promise<{ accepted: number }> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    return { accepted: input.networkEvents.length };
+    let accepted = 0;
+    for (const event of input.networkEvents) {
+      simulatorBatchEvents.push({
+        id: `batch-${input.deviceId}-${simulatorBatchEvents.length}`,
+        appId: `pkg-${event.appPackageName}`,
+        domain: event.domain,
+        bytesSent: event.bytesSent,
+        bytesReceived: event.bytesReceived,
+        isNewDomain: event.isNewDomain,
+        timestamp: new Date(event.timestamp),
+      });
+      accepted++;
+    }
+    return { accepted };
   }
 
   let accepted = 0;

@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS network_events (
   protocol TEXT NOT NULL DEFAULT 'OTHER',
   direction TEXT NOT NULL DEFAULT 'OUTBOUND',
   timestamp TEXT NOT NULL,
+  cloud_synced INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (app_id) REFERENCES apps(id)
 );
 

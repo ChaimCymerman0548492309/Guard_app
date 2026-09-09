@@ -38,4 +38,31 @@ describe('Critical flow integration', () => {
     expect(block.status).toBe(200);
     expect(block.body.data.userAction).toBe('BLOCK');
   });
+
+  it('mobile sync: batch ingest then list events by app package', async () => {
+    const batch = await request(app)
+      .post('/api/v1/events/batch')
+      .send({
+        deviceId: '00000000-0000-4000-8000-000000000099',
+        networkEvents: [
+          {
+            appPackageName: 'com.guardian.sync.test',
+            domain: 'sync-test.example.com',
+            bytesSent: 2048,
+            bytesReceived: 1024,
+            isNewDomain: true,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      });
+    expect(batch.status).toBe(200);
+    expect(batch.body.data.accepted).toBe(1);
+
+    const events = await request(app).get(
+      '/api/v1/events?appId=pkg-com.guardian.sync.test&limit=5',
+    );
+    expect(events.status).toBe(200);
+    expect(events.body.data).toHaveLength(1);
+    expect(events.body.data[0].domain).toBe('sync-test.example.com');
+  });
 });

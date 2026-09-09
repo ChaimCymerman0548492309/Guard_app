@@ -13,6 +13,7 @@ import { updateBaseline, isNewDomainForApp } from '../services/baseline-service'
 import { generateAlertsFromAssessments } from '../services/alert-service';
 import { applyRetentionPolicy } from '../services/retention-service';
 import { StubDomainReputationProvider } from '../services/domain-reputation';
+import { syncPendingEvents } from '../services/sync-service';
 import { getDatabase } from '../db/database';
 import {
   insertNetworkEvent,
@@ -112,6 +113,7 @@ export class EventPipeline {
 
     await this.reassessAffectedApps(events.map((e) => e.appId));
     await applyRetentionPolicy(db);
+    void syncPendingEvents().catch(() => undefined);
   }
 
   private async reassessAffectedApps(appIds: string[]): Promise<void> {
