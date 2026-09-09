@@ -14,12 +14,8 @@ export const RISK_LEVEL_COLORS = {
 
 export const API_VERSION = 'v1';
 
-export const KNOWN_TRACKER_DOMAINS = [
-  'doubleclick.net',
-  'google-analytics.com',
-  'facebook.com',
-  'adservice.google.com',
-  'scorecardresearch.com',
-  'moatads.com',
-  'ads.twitter.com',
-] as const;
+import { TRACKER_REPUTATION_DB } from './domain-reputation.js';
+
+export const KNOWN_TRACKER_DOMAINS = TRACKER_REPUTATION_DB.map(
+  (entry) => entry.domain,
+) as readonly string[];

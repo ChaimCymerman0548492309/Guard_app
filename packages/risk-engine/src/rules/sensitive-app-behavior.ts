@@ -1,7 +1,8 @@
-import { RuleId, SecurityEventType } from '@guardian/shared';
+import { AppCategory, RuleId, SecurityEventType } from '@guardian/shared';
 import type { RiskRule } from '../types.js';
 
 const SENSITIVE_PHOTO_THRESHOLD = 500;
+const PHOTO_APP_THRESHOLD = 200;
 
 export const sensitiveAppBehaviorRule: RiskRule = {
   id: RuleId.SENSITIVE_APP_BEHAVIOR,
@@ -23,7 +24,10 @@ export const sensitiveAppBehaviorRule: RiskRule = {
       (e) => e.type === SecurityEventType.CONTACT_ACCESS,
     );
 
-    if (totalPhotos >= SENSITIVE_PHOTO_THRESHOLD) {
+    const photoThreshold =
+      context.appCategory === AppCategory.PHOTO ? PHOTO_APP_THRESHOLD : SENSITIVE_PHOTO_THRESHOLD;
+
+    if (totalPhotos >= photoThreshold) {
       return {
         ruleId: RuleId.SENSITIVE_APP_BEHAVIOR,
         triggered: true,

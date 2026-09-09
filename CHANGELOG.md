@@ -2,6 +2,22 @@
 
 All notable changes to Guardian are documented in this file.
 
+## [0.1.1] - 2026-03-09
+
+### Added
+
+- First-launch onboarding wizard (welcome, privacy, VPN permission, completion) with skip support
+- App category heuristics: MESSAGING, BROWSER, FINANCE alongside existing categories
+- Category badge on Apps screen (en/he)
+- Home screen empty state, pull-to-refresh, and last scan timestamp
+- `LocalDomainReputationProvider` with expanded tracker database (20 domains)
+- API endpoint `GET /api/v1/domains/:domain/reputation`
+- Risk engine uses app category for sensitive-app-behavior thresholds (photo apps)
+
+### Tests
+
+- Onboarding settings, app category heuristics, domain reputation, sensitive-app rule (60+ total)
+
 ## [0.1.0] - 2026-03-09
 
 ### MVP release

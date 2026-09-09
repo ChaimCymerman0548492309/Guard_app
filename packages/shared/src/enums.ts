@@ -6,7 +6,10 @@ export enum RiskLevel {
 
 export enum AppCategory {
   SOCIAL = 'SOCIAL',
+  MESSAGING = 'MESSAGING',
   PHOTO = 'PHOTO',
+  BROWSER = 'BROWSER',
+  FINANCE = 'FINANCE',
   UTILITY = 'UTILITY',
   SYSTEM = 'SYSTEM',
   UNKNOWN = 'UNKNOWN',

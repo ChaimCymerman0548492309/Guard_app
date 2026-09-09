@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useGuardianStore } from '../store/guardian-store';
 import { RiskBadge } from '../components/RiskBadge';
+import { CategoryBadge } from '../components/CategoryBadge';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { RiskLevel } from '@guardian/shared';
@@ -36,7 +37,10 @@ export function AppsScreen() {
               <Text style={[styles.appName, rtl.text]}>{item.displayName}</Text>
               <RiskBadge level={getLevel(item.id)} />
             </View>
-            <Text style={[styles.packageName, rtl.text]}>{item.packageName}</Text>
+            <View style={[styles.metaRow, rtl.row]}>
+              <CategoryBadge category={item.category} />
+              <Text style={[styles.packageName, rtl.text]}>{item.packageName}</Text>
+            </View>
           </TouchableOpacity>
         )}
       />
@@ -64,5 +68,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   appName: { fontSize: 17, fontWeight: '600', color: colors.text, flex: 1 },
-  packageName: { fontSize: 12, color: colors.textSecondary, marginTop: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  packageName: { fontSize: 12, color: colors.textSecondary, flex: 1 },
 });

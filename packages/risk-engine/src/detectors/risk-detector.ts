@@ -16,6 +16,7 @@ export class RiskDetector {
   assess(input: AssessmentInput): RiskAssessment {
     const context = {
       appId: input.appId,
+      appCategory: input.appCategory,
       networkEvents: input.networkEvents,
       securityEvents: input.securityEvents,
       baseline: input.baseline,

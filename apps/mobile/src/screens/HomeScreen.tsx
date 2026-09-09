@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,20 +19,46 @@ import { VpnStatsBar } from '../components/VpnStatsBar';
 import { SyncStatusBar } from '../components/SyncStatusBar';
 import { useRtl } from '../hooks/use-rtl';
 
+function formatLastScan(date: Date | null, locale: string): string {
+  if (!date) return '';
+  return date.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { counts, apps, alerts, isSimulator, runDemoScenario } = useGuardianStore();
+  const { counts, apps, alerts, timeline, isSimulator, runDemoScenario, refreshFromDb, lastScanAt } =
+    useGuardianStore();
   const rtl = useRtl();
+  const [refreshing, setRefreshing] = useState(false);
 
   const unacknowledged = alerts.filter((a) => !a.acknowledged);
+  const hasActivity = timeline.length > 0 || alerts.length > 0;
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshFromDb();
+    setRefreshing(false);
+  }, [refreshFromDb]);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, rtl.container]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
     >
       <Text style={[styles.tagline, rtl.text]}>{t('app.tagline')}</Text>
+
+      {lastScanAt && (
+        <Text style={[styles.lastScan, rtl.text]}>
+          {t('home.lastScan', { time: formatLastScan(lastScanAt, i18n.language) })}
+        </Text>
+      )}
 
       <VpnStatusBar />
       <VpnStatsBar />
@@ -61,6 +95,13 @@ export function HomeScreen() {
           color={getRiskColor(RiskLevel.SUSPICIOUS)}
         />
       </View>
+
+      {!hasActivity && (
+        <View style={styles.emptyState} accessibilityRole="text">
+          <Text style={[styles.emptyTitle, rtl.text]}>{t('home.emptyTitle')}</Text>
+          <Text style={[styles.emptyBody, rtl.text]}>{t('home.emptyBody')}</Text>
+        </View>
+      )}
 
       <Text style={[styles.sectionTitle, rtl.text]}>
         {t('home.appsMonitored', { count: apps.length })}
@@ -130,7 +171,8 @@ function CountCard({ label, count, color }: { label: string; count: number; colo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
-  tagline: { fontSize: 16, color: colors.textSecondary, marginBottom: 20 },
+  tagline: { fontSize: 16, color: colors.textSecondary, marginBottom: 8 },
+  lastScan: { fontSize: 12, color: colors.textSecondary, marginBottom: 16 },
   simBanner: {
     backgroundColor: '#fef3c7',
     padding: 12,
@@ -161,6 +203,15 @@ const styles = StyleSheet.create({
   },
   countNumber: { fontSize: 28, fontWeight: '700' },
   countLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  emptyState: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 8 },
+  emptyBody: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 12 },
   section: { marginTop: 24 },
   button: {

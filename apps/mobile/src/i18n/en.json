@@ -22,7 +22,42 @@
     "syncIdle": "Cloud sync up to date",
     "syncSyncing": "Syncing {{count}} events\u2026",
     "syncOffline": "{{count}} events waiting to sync",
-    "syncError": "Sync issue \u2014 {{count}} events pending"
+    "syncError": "Sync issue \u2014 {{count}} events pending",
+    "lastScan": "Last scan: {{time}}",
+    "emptyTitle": "All quiet so far",
+    "emptyBody": "Guardian is watching your apps. Activity will appear here when something is detected."
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Guardian",
+      "body": "Guardian helps you understand what your apps are doing on the network \u2014 locally on your device, with no account required."
+    },
+    "privacy": {
+      "title": "Your privacy comes first",
+      "body": "We only record metadata like domain names and data sizes. We never read your messages, photos, or file contents. Everything stays on your phone unless you opt in to cloud sync."
+    },
+    "monitoring": {
+      "title": "Enable network monitoring",
+      "body": "Guardian uses Android\u2019s VPN permission to observe network connections. Tap below to grant permission and start protecting your device."
+    },
+    "done": {
+      "title": "You\u2019re all set",
+      "body": "Guardian is now watching for unusual activity. You can review apps, alerts, and settings from the home screen."
+    },
+    "next": "Continue",
+    "back": "Back",
+    "skip": "Skip setup",
+    "finish": "Go to dashboard"
+  },
+  "category": {
+    "SOCIAL": "Social",
+    "MESSAGING": "Messaging",
+    "PHOTO": "Photo",
+    "BROWSER": "Browser",
+    "FINANCE": "Finance",
+    "UTILITY": "Utility",
+    "SYSTEM": "System",
+    "UNKNOWN": "Other"
   },
   "apps": {
     "title": "Your Apps",

@@ -9,9 +9,9 @@ describe('installed-apps-mappers', () => {
     );
   });
 
-  it('infers social category from display name', () => {
+  it('infers messaging category from display name', () => {
     expect(inferAppCategory('com.example.app', 'WhatsApp Messenger')).toBe(
-      AppCategory.SOCIAL,
+      AppCategory.MESSAGING,
     );
   });
 
@@ -32,7 +32,7 @@ describe('installed-apps-mappers', () => {
       id: 'app-com.example.chat',
       packageName: 'com.example.chat',
       displayName: 'Example Chat',
-      category: AppCategory.SOCIAL,
+      category: AppCategory.MESSAGING,
       isSystem: false,
       trustLevel: 'UNKNOWN',
     });

@@ -89,6 +89,21 @@ describe('API', () => {
     expect(res.body.data.userAction).toBe('ALLOW');
   });
 
+  it('GET /api/v1/domains/:domain/reputation returns tracker info', async () => {
+    const res = await request(app).get('/api/v1/domains/doubleclick.net/reputation');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.isTracker).toBe(true);
+    expect(res.body.data.category).toBe('advertising');
+  });
+
+  it('GET /api/v1/domains/:domain/reputation returns neutral for unknown', async () => {
+    const res = await request(app).get('/api/v1/domains/example.com/reputation');
+    expect(res.status).toBe(200);
+    expect(res.body.data.isTracker).toBe(false);
+    expect(res.body.data.reputationScore).toBe(50);
+  });
+
   it('POST /api/v1/events/batch accepts valid payload', async () => {
     const res = await request(app)
       .post('/api/v1/events/batch')

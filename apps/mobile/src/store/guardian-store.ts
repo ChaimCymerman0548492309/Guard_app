@@ -24,7 +24,11 @@ import {
   type SyncStatus,
 } from '../services/sync-service';
 import { PHOTO_CLEANER_APP_ID } from '@guardian/simulator';
-import { getLanguage } from '../services/settings-service';
+import {
+  getLanguage,
+  isOnboardingComplete,
+  setOnboardingComplete,
+} from '../services/settings-service';
 import i18n from '../i18n';
 
 interface GuardianState {
@@ -40,7 +44,10 @@ interface GuardianState {
   syncPendingCount: number;
   syncError?: string;
   showTechnicalDetails: boolean;
+  onboardingComplete: boolean;
+  lastScanAt: Date | null;
   loadData: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
   startMonitoring: () => Promise<void>;
   stopMonitoring: () => Promise<void>;
   acknowledgeAlert: (alertId: string) => Promise<void>;
@@ -111,6 +118,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
   syncStatus: 'disabled',
   syncPendingCount: 0,
   showTechnicalDetails: false,
+  onboardingComplete: false,
+  lastScanAt: null,
 
   refreshFromDb: async () => {
     const db = await getDatabase();
@@ -123,12 +132,20 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       timeline: state.timeline,
       alerts,
       counts: computeRiskCounts(state.assessments),
+      lastScanAt: new Date(),
     });
+  },
+
+  completeOnboarding: async () => {
+    const db = await getDatabase();
+    await setOnboardingComplete(db, true);
+    set({ onboardingComplete: true });
   },
 
   loadData: async () => {
     set({ isLoading: true });
     const db = await getDatabase();
+    const onboarded = await isOnboardingComplete(db);
     await i18n.changeLanguage(await getLanguage(db));
     await initNotifications();
     const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
@@ -179,6 +196,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
         vpnStatus,
         syncStatus: 'disabled',
         syncPendingCount: 0,
+        onboardingComplete: onboarded,
+        lastScanAt: new Date(),
       });
     } else {
       await syncInstalledAppsFromDevice(pipe);
@@ -215,6 +234,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
         isLoading: false,
         isSimulator: false,
         vpnStatus,
+        onboardingComplete: onboarded,
+        lastScanAt: new Date(),
       });
     }
   },

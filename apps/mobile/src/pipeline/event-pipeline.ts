@@ -142,6 +142,7 @@ export class EventPipeline {
 
       const assessment = this.detector.assess({
         appId,
+        appCategory: app.category,
         networkEvents,
         securityEvents,
         baseline,
