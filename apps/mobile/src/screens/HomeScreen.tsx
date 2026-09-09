@@ -6,21 +6,36 @@ import { useGuardianStore } from '../store/guardian-store';
 import { RiskLevel } from '@guardian/shared';
 import { colors, getRiskColor } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+import { VpnStatusBar } from '../components/VpnStatusBar';
 
 export function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { counts, apps, alerts, isSimulator } = useGuardianStore();
+  const { counts, apps, alerts, isSimulator, runDemoScenario } = useGuardianStore();
+  const isRTL = i18n.language === 'he';
 
   const unacknowledged = alerts.filter((a) => !a.acknowledged);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.tagline}>{t('app.tagline')}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, isRTL && styles.rtlContent]}
+    >
+      <Text style={[styles.tagline, isRTL && styles.rtlText]}>{t('app.tagline')}</Text>
+
+      <VpnStatusBar />
 
       {isSimulator && (
         <View style={styles.simBanner} accessibilityLiveRegion="polite">
-          <Text style={styles.simText}>{t('home.demoMode')}</Text>
+          <Text style={[styles.simText, isRTL && styles.rtlText]}>{t('home.demoMode')}</Text>
+          <TouchableOpacity
+            style={styles.demoButton}
+            onPress={() => void runDemoScenario()}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.runDemo')}
+          >
+            <Text style={styles.demoButtonText}>{t('home.runDemo')}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -42,8 +57,8 @@ export function HomeScreen() {
         />
       </View>
 
-      <Text style={styles.sectionTitle}>
-        {t('home.appsMonitored')}: {apps.length}
+      <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>
+        {t('home.appsMonitored', { count: apps.length })}
       </Text>
 
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Apps')}>
@@ -101,14 +116,24 @@ function CountCard({ label, count, color }: { label: string; count: number; colo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
+  rtlContent: { direction: 'rtl' },
+  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   tagline: { fontSize: 16, color: colors.textSecondary, marginBottom: 20 },
   simBanner: {
     backgroundColor: '#fef3c7',
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
-  simText: { color: '#92400e', fontSize: 13, textAlign: 'center' },
+  simText: { color: '#92400e', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  demoButton: {
+    backgroundColor: '#d97706',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  demoButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   countsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   countCard: {
     flex: 1,

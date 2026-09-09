@@ -15,7 +15,7 @@ describe('GuardianSimulator', () => {
   it('generates seed apps', () => {
     const sim = createSimulator();
     const result = sim.run();
-    expect(result.apps).toHaveLength(5);
+    expect(result.apps).toHaveLength(37);
     expect(result.apps.map((a) => a.displayName)).toContain('Photo Editor');
   });
 
@@ -33,7 +33,7 @@ describe('GuardianSimulator', () => {
   it('counts risk levels correctly', () => {
     const sim = createSimulator();
     const result = sim.run();
-    expect(result.counts.safe + result.counts.unusual + result.counts.suspicious).toBe(5);
+    expect(result.counts.safe + result.counts.unusual + result.counts.suspicious).toBe(37);
     expect(result.counts.suspicious).toBeGreaterThanOrEqual(1);
   });
 });

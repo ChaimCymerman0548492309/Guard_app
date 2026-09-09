@@ -18,6 +18,10 @@ const SCENARIO_MAP: Record<string, SimulatorScenario> = {
   'app-unknown': SimulatorScenario.UNUSUAL,
 };
 
+function scenarioForApp(appId: string): SimulatorScenario {
+  return SCENARIO_MAP[appId] ?? SimulatorScenario.NORMAL;
+}
+
 export class GuardianSimulator {
   private detector = new RiskDetector();
 
@@ -30,7 +34,7 @@ export class GuardianSimulator {
     const assessments: RiskAssessment[] = [];
 
     for (const app of apps) {
-      const scenario = SCENARIO_MAP[app.id] ?? SimulatorScenario.NORMAL;
+      const scenario = scenarioForApp(app.id);
       const { networkEvents, securityEvents } = generateEvents(app.id, scenario);
       const assessment = this.detector.assess({
         appId: app.id,

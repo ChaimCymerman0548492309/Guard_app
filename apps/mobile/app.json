@@ -7,6 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#1e3a5f"
     },
     "ios": {
@@ -19,6 +21,6 @@
       },
       "package": "com.guardian.app"
     },
-    "plugins": ["expo-localization", "expo-sqlite"]
+    "plugins": ["expo-localization", "expo-sqlite", "expo-notifications"]
   }
 }

@@ -8,10 +8,16 @@
     "safe": "בטוח",
     "unusual": "לא רגיל",
     "suspicious": "חשוד",
-    "appsMonitored": "אפליקציות במעקב",
+    "appsMonitored": "{{count}} אפליקציות במעקב",
     "viewApps": "הצג את כל האפליקציות",
     "recentActivity": "פעילות אחרונה",
-    "demoMode": "מצב הדגמה — נתונים מדומים"
+    "demoMode": "מצב הדגמה — נתונים מדומים",
+    "runDemo": "הפעל הדגמת Photo Cleaner",
+    "vpnConnected": "ניטור פעיל",
+    "vpnDisconnected": "ניטור כבוי",
+    "vpnConnecting": "מתחיל ניטור…",
+    "vpnError": "שגיאת ניטור",
+    "vpnUnsupported": "VPN לא זמין במכשיר זה"
   },
   "apps": {
     "title": "האפליקציות שלך",

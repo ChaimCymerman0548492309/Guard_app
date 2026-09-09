@@ -14,6 +14,8 @@ import { computeRiskCounts, loadAlerts, upsertAlert } from '../db/repositories';
 import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
 import { getGuardianVpnService } from '../native/guardian-vpn';
 import { applyAlertAction } from '../services/alert-service';
+import { initNotifications, notifyForAlert } from '../services/notification-service';
+import { PHOTO_CLEANER_APP_ID } from '@guardian/simulator';
 
 interface GuardianState {
   apps: App[];
@@ -32,6 +34,7 @@ interface GuardianState {
   handleAlertAction: (alertId: string, action: AlertAction) => Promise<void>;
   toggleTechnicalDetails: () => void;
   refreshFromDb: () => Promise<void>;
+  runDemoScenario: () => Promise<void>;
 }
 
 const SCENARIO_MAP: Record<string, SimulatorScenario> = {
@@ -80,6 +83,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
 
   loadData: async () => {
     set({ isLoading: true });
+    await initNotifications();
     const isSimulator = process.env.EXPO_PUBLIC_DEV_SIMULATOR !== 'false';
     const vpn = getGuardianVpnService();
     const isSupported = await vpn.isSupported();
@@ -112,6 +116,10 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       const state = await seedSimulatorData(apps, networkEventsByApp, securityEventsByApp);
       const db = await getDatabase();
       const alerts = await loadAlerts(db);
+
+      for (const alert of alerts.filter((a) => a.notifyImmediately && !a.acknowledged)) {
+        await notifyForAlert(alert);
+      }
 
       set({
         apps: state.apps,
@@ -202,5 +210,46 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
 
   toggleTechnicalDetails: () => {
     set({ showTechnicalDetails: !get().showTechnicalDetails });
+  },
+
+  runDemoScenario: async () => {
+    await clearDatabase();
+    const sim = createSimulator();
+    const { apps } = sim.run();
+    const networkEventsByApp = new Map<
+      string,
+      ReturnType<typeof generateEvents>['networkEvents']
+    >();
+    const securityEventsByApp = new Map<
+      string,
+      ReturnType<typeof generateEvents>['securityEvents']
+    >();
+
+    for (const app of apps) {
+      const scenario =
+        app.id === PHOTO_CLEANER_APP_ID
+          ? SimulatorScenario.HIGH_RISK
+          : (SCENARIO_MAP[app.id] ?? SimulatorScenario.NORMAL);
+      const events = generateEvents(app.id, scenario);
+      networkEventsByApp.set(app.id, events.networkEvents);
+      securityEventsByApp.set(app.id, events.securityEvents);
+    }
+
+    const state = await seedSimulatorData(apps, networkEventsByApp, securityEventsByApp);
+    const db = await getDatabase();
+    const alerts = await loadAlerts(db);
+    const suspicious = alerts.find((a) => a.appId === PHOTO_CLEANER_APP_ID);
+    if (suspicious) {
+      await notifyForAlert(suspicious);
+    }
+
+    set({
+      apps: state.apps,
+      assessments: state.assessments,
+      timeline: state.timeline,
+      alerts,
+      counts: computeRiskCounts(state.assessments),
+      isSimulator: true,
+    });
   },
 }));

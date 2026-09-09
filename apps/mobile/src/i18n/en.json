@@ -8,10 +8,16 @@
     "safe": "Safe",
     "unusual": "Unusual",
     "suspicious": "Suspicious",
-    "appsMonitored": "Apps monitored",
+    "appsMonitored": "{{count}} apps monitored",
     "viewApps": "View all apps",
     "recentActivity": "Recent activity",
-    "demoMode": "Demo mode — simulated data"
+    "demoMode": "Demo mode — simulated data",
+    "runDemo": "Run Photo Cleaner demo",
+    "vpnConnected": "Monitoring active",
+    "vpnDisconnected": "Monitoring off",
+    "vpnConnecting": "Starting monitoring…",
+    "vpnError": "Monitoring error",
+    "vpnUnsupported": "VPN not available on this device"
   },
   "apps": {
     "title": "Your Apps",
