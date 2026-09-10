@@ -70,6 +70,18 @@ describe('API', () => {
     expect(res.body.data[0].level).not.toBe('SAFE');
   });
 
+  it('POST /api/v1/alerts/:id/ignore dismisses alert', async () => {
+    const alerts = await request(app).get('/api/v1/alerts?acknowledged=false');
+    const target = alerts.body.data.find(
+      (a: { userAction: string }) => a.userAction === 'NONE',
+    );
+    expect(target).toBeDefined();
+    const res = await request(app).post(`/api/v1/alerts/${target.id}/ignore`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.userAction).toBe('IGNORE');
+    expect(res.body.data.acknowledged).toBe(true);
+  });
+
   it('POST /api/v1/alerts/:id/block updates alert', async () => {
     const alerts = await request(app).get('/api/v1/alerts');
     const suspicious = alerts.body.data.find((a: { level: string }) => a.level === 'SUSPICIOUS');

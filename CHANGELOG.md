@@ -2,6 +2,23 @@
 
 All notable changes to Guardian are documented in this file.
 
+## [1.0.1] - 2026-09-10
+
+### Gap audit fixes
+
+- Added `POST /api/v1/alerts/:id/ignore` endpoint (mobile already had Ignore UX)
+- OpenAPI spec: added ignore + domain reputation paths, version 1.0.1
+- Centralized risk thresholds/weights in `@guardian/shared` (`risk-config.ts`); risk-engine rules now import from shared
+- Mobile pipeline integration test: Photo Cleaner scenario → SUSPICIOUS → alert actions
+- Comprehensive gap audit: `docs/GAP-AUDIT.md`
+- Apps screen accessibility labels on list items
+
+### Tests
+
+- API ignore endpoint test
+- Pipeline flow integration test (2 tests)
+- Total: 85 tests
+
 ## [1.0.0] - 2026-03-09
 
 ### Play Store release

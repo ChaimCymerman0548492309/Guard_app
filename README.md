@@ -180,6 +180,7 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario (dev bu
 | GET | `/api/v1/alerts` | List alerts |
 | POST | `/api/v1/alerts/:id/block` | Block domain |
 | POST | `/api/v1/alerts/:id/allow` | Allow and acknowledge |
+| POST | `/api/v1/alerts/:id/ignore` | Dismiss without action |
 | GET | `/api/v1/dashboard/summary` | Dashboard counts |
 | GET | `/api/v1/openapi` | OpenAPI 3.0 spec |
 
@@ -197,6 +198,7 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario (dev bu
 - [ADR-001: Local-First](docs/decisions/ADR-001-local-first.md)
 - [ADR-002: Android VPN](docs/decisions/ADR-002-android-vpn.md)
 - [Android Permissions](docs/android-permissions.md)
+- [Gap Audit](docs/GAP-AUDIT.md)
 
 ## License
 

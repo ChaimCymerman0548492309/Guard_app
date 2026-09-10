@@ -1,13 +1,11 @@
-import { RuleId } from '@guardian/shared';
+import { RULE_WEIGHTS, RuleId, UNUSUAL_CONNECTION_COUNT } from '@guardian/shared';
 import type { RiskRule } from '../types.js';
-
-const UNUSUAL_CONNECTION_COUNT = 50;
 
 export const unusualNetworkActivityRule: RiskRule = {
   id: RuleId.UNUSUAL_NETWORK_ACTIVITY,
   name: 'Unusual Network Activity',
   description: 'App made significantly more network connections than usual',
-  weight: 20,
+  weight: RULE_WEIGHTS.UNUSUAL_NETWORK_ACTIVITY,
   evaluate(context) {
     const connectionCount = context.networkEvents.length;
     const baseline = context.baseline?.avgDailyConnections ?? 10;

@@ -1,17 +1,8 @@
-export const RISK_THRESHOLDS = {
-  SAFE_MAX: 29,
-  UNUSUAL_MAX: 69,
-  SUSPICIOUS_MIN: 70,
-} as const;
-
-export const RULE_WEIGHTS = {
-  KNOWN_TRACKER: 30,
-  NEW_DOMAIN: 20,
-  LARGE_UPLOAD: 25,
-  UNUSUAL_NETWORK_ACTIVITY: 20,
-  SENSITIVE_APP_BEHAVIOR: 35,
-} as const;
-
-export const LARGE_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB
-export const UNUSUAL_CONNECTION_COUNT = 50;
-export const SENSITIVE_PHOTO_THRESHOLD = 500;
+/** Re-exported from @guardian/shared — edit packages/shared/src/risk-config.ts */
+export {
+  RISK_THRESHOLDS,
+  RULE_WEIGHTS,
+  LARGE_UPLOAD_BYTES,
+  UNUSUAL_CONNECTION_COUNT,
+  SENSITIVE_PHOTO_THRESHOLD,
+} from '../packages/shared/src/risk-config.js';

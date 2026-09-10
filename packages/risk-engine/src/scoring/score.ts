@@ -1,6 +1,7 @@
-import { RiskLevel, TrustLevel } from '@guardian/shared';
+import { RiskLevel, RISK_THRESHOLDS, TrustLevel } from '@guardian/shared';
 import type { RuleResult } from '../types.js';
-const SAFE_MAX = 29, UNUSUAL_MAX = 69;
+
+const { SAFE_MAX, UNUSUAL_MAX } = RISK_THRESHOLDS;
 export function calculateScore(results: RuleResult[], trustLevel?: TrustLevel): number {
   const raw = results.filter((r) => r.triggered).reduce((s, r) => s + r.weight, 0);
   const m = trustLevel === TrustLevel.TRUSTED ? 0.5 : 1;

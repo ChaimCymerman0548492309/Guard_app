@@ -1,11 +1,11 @@
-import { RuleId } from '@guardian/shared';
+import { RULE_WEIGHTS, RuleId } from '@guardian/shared';
 import type { RiskRule } from '../types.js';
 
 export const knownTrackerRule: RiskRule = {
   id: RuleId.KNOWN_TRACKER,
   name: 'Known Tracker',
   description: 'App connected to a known advertising or tracking domain',
-  weight: 30,
+  weight: RULE_WEIGHTS.KNOWN_TRACKER,
   evaluate(context) {
     const trackerDomains = context.knownTrackerDomains;
     const matched = context.networkEvents.filter((e) =>

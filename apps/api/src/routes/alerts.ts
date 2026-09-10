@@ -39,3 +39,12 @@ alertsRouter.post('/:id/allow', async (req, res) => {
   }
   sendSuccess(res, result, req.requestId);
 });
+
+alertsRouter.post('/:id/ignore', async (req, res) => {
+  const result = await updateAlertAction(req.params.id, AlertAction.IGNORE);
+  if (!result) {
+    sendError(res, 'NOT_FOUND', 'Alert not found', req.requestId, 404);
+    return;
+  }
+  sendSuccess(res, result, req.requestId);
+});

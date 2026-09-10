@@ -1,5 +1,8 @@
 export const APP_NAME = 'Guardian';
 
+/** Fallback when app display name is unavailable (API/sync paths only) */
+export const FALLBACK_APP_NAME = 'Unknown App';
+
 export const RISK_LEVEL_LABELS = {
   SAFE: 'Safe',
   UNUSUAL: 'Unusual',

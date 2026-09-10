@@ -1,11 +1,11 @@
-import { RuleId } from '@guardian/shared';
+import { RULE_WEIGHTS, RuleId } from '@guardian/shared';
 import type { RiskRule } from '../types.js';
 
 export const newDomainRule: RiskRule = {
   id: RuleId.NEW_DOMAIN,
   name: 'New Domain',
   description: 'App contacted a domain not seen before for this app',
-  weight: 20,
+  weight: RULE_WEIGHTS.NEW_DOMAIN,
   evaluate(context) {
     const newDomains = context.networkEvents.filter((e) => e.isNewDomain);
 

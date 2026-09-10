@@ -2,7 +2,7 @@ export const OPENAPI_SPEC = {
   openapi: '3.0.3',
   info: {
     title: 'Guardian API',
-    version: '0.2.0',
+    version: '1.0.1',
     description:
       'Local-first security monitoring API. Risk assessments and alerts are derived from network metadata only — no packet payloads.',
   },
@@ -157,6 +157,30 @@ export const OPENAPI_SPEC = {
         responses: {
           '200': { description: 'Alert updated with ALLOW action' },
           '404': { description: 'Alert not found' },
+        },
+      },
+    },
+    '/api/v1/alerts/{id}/ignore': {
+      post: {
+        summary: 'Dismiss the alert without blocking or allowing',
+        tags: ['Alerts'],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Alert updated with IGNORE action' },
+          '404': { description: 'Alert not found' },
+        },
+      },
+    },
+    '/api/v1/domains/{domain}/reputation': {
+      get: {
+        summary: 'Look up domain reputation (tracker database)',
+        tags: ['Domains'],
+        parameters: [
+          { name: 'domain', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          '200': { description: 'Domain reputation (tracker flag, category, score)' },
+          '400': { description: 'Invalid domain name' },
         },
       },
     },

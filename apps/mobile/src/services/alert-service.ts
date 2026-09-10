@@ -1,5 +1,5 @@
 import type { Alert, App, RiskAssessment } from '@guardian/shared';
-import { AlertAction, RiskLevel, TrustLevel } from '@guardian/shared';
+import { AlertAction, FALLBACK_APP_NAME, RiskLevel, TrustLevel } from '@guardian/shared';
 
 export interface NotificationPolicy {
   silent: boolean;
@@ -34,7 +34,7 @@ export function generateAlertsFromAssessments(apps: App[], assessments: RiskAsse
         id: `alert-${assessment.id}`,
         appId: assessment.appId,
         riskAssessmentId: assessment.id,
-        title: app?.displayName ?? 'Unknown App',
+        title: app?.displayName ?? FALLBACK_APP_NAME,
         message: assessment.explanation,
         level: assessment.level,
         acknowledged: false,

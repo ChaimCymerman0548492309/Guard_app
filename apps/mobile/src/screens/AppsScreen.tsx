@@ -32,6 +32,8 @@ export function AppsScreen() {
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('AppDetails', { appId: item.id })}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.displayName}, ${getLevel(item.id)}`}
           >
             <View style={[styles.cardHeader, rtl.row]}>
               <Text style={[styles.appName, rtl.text]}>{item.displayName}</Text>

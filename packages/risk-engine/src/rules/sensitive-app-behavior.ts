@@ -1,14 +1,19 @@
-import { AppCategory, RuleId, SecurityEventType } from '@guardian/shared';
+import {
+  AppCategory,
+  RULE_WEIGHTS,
+  RuleId,
+  SENSITIVE_PHOTO_THRESHOLD,
+  SecurityEventType,
+} from '@guardian/shared';
 import type { RiskRule } from '../types.js';
 
-const SENSITIVE_PHOTO_THRESHOLD = 500;
 const PHOTO_APP_THRESHOLD = 200;
 
 export const sensitiveAppBehaviorRule: RiskRule = {
   id: RuleId.SENSITIVE_APP_BEHAVIOR,
   name: 'Sensitive App Behavior',
   description: 'App accessed sensitive data in an unusual way',
-  weight: 35,
+  weight: RULE_WEIGHTS.SENSITIVE_APP_BEHAVIOR,
   evaluate(context) {
     const photoEvents = context.securityEvents.filter(
       (e) => e.type === SecurityEventType.PHOTO_ACCESS,

@@ -1,13 +1,11 @@
-import { RuleId } from '@guardian/shared';
+import { LARGE_UPLOAD_BYTES, RULE_WEIGHTS, RuleId } from '@guardian/shared';
 import type { RiskRule } from '../types.js';
-
-const LARGE_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB
 
 export const largeUploadRule: RiskRule = {
   id: RuleId.LARGE_UPLOAD,
   name: 'Large Upload',
   description: 'App uploaded an unusually large amount of data',
-  weight: 25,
+  weight: RULE_WEIGHTS.LARGE_UPLOAD,
   evaluate(context) {
     const totalSent = context.networkEvents.reduce((sum, e) => sum + e.bytesSent, 0);
 
