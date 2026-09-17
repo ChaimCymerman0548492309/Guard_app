@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Local-first mobile security monitoring",
   "scripts": {
-    "build": "pnpm -r --filter './packages/*' --filter './apps/api' --filter '!./apps/mobile' run build",
+    "build": "pnpm -r --filter './packages/*' --filter './apps/api' --filter './apps/web' --filter '!./apps/mobile' run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -14,7 +14,9 @@
     "test": "pnpm -r --filter './packages/*' --filter './apps/*' run test",
     "test:ci": "pnpm test",
     "dev:api": "pnpm --filter @guardian/api dev",
+    "dev:web": "pnpm --filter @guardian/web dev",
     "dev:mobile": "pnpm --filter @guardian/mobile start",
+    "dev:lab": "./scripts/dev-lab.sh",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",

@@ -125,6 +125,44 @@ export interface RiskCounts {
   suspicious: number;
 }
 
+export type DeviceStatus = 'online' | 'offline' | 'syncing';
+
+export interface DeviceInfo {
+  id: string;
+  name: string;
+  platform: string;
+  status: DeviceStatus;
+  lastSyncAt: Date | null;
+  appCount: number;
+  riskCounts: RiskCounts;
+  isVirtual: boolean;
+}
+
+export interface DeviceSummary extends DeviceInfo {
+  recentAlerts: Array<{
+    appId: string;
+    appName: string;
+    level: string;
+    explanation: string;
+    assessedAt: Date;
+  }>;
+}
+
+export interface DashboardSummary {
+  counts: RiskCounts;
+  totalApps: number;
+  totalDevices: number;
+  recentAlerts: Array<{
+    appId: string;
+    appName: string;
+    level: string;
+    explanation: string;
+    assessedAt: Date;
+    deviceId?: string;
+    deviceName?: string;
+  }>;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

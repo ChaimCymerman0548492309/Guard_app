@@ -26,6 +26,31 @@ describe('API', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.counts).toBeDefined();
     expect(res.body.data.totalApps).toBe(37);
+    expect(res.body.data.totalDevices).toBeGreaterThanOrEqual(3);
+  });
+
+  it('GET /api/v1/devices returns virtual lab devices', async () => {
+    const res = await request(app).get('/api/v1/devices');
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(3);
+    expect(res.body.data[0].id).toBeDefined();
+    expect(res.body.data[0].riskCounts).toBeDefined();
+  });
+
+  it('GET /api/v1/devices/:id/apps returns apps for device', async () => {
+    const res = await request(app).get(
+      '/api/v1/devices/00000000-0000-4000-8000-000000000001/apps',
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(37);
+  });
+
+  it('POST /api/v1/devices/:id/demo runs demo scenario', async () => {
+    const res = await request(app).post(
+      '/api/v1/devices/00000000-0000-4000-8000-000000000001/demo',
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.ok).toBe(true);
   });
 
   it('GET /api/v1/openapi returns full spec', async () => {

@@ -1,24 +1,28 @@
-import { createSimulator, generateEvents } from '@guardian/simulator';
+import {
+  createSimulator,
+  generateEvents,
+  VIRTUAL_DEVICE_SEEDS,
+  DEFAULT_VIRTUAL_DEVICE_ID,
+} from '@guardian/simulator';
 import type { SimulatorResult } from '@guardian/simulator';
-import type { Alert, App, NetworkEvent, RiskAssessment, RiskCounts } from '@guardian/shared';
+import type {
+  Alert,
+  App,
+  DashboardSummary,
+  DeviceInfo,
+  DeviceSummary,
+  DeviceStatus,
+  NetworkEvent,
+  RiskAssessment,
+  RiskCounts,
+} from '@guardian/shared';
 import { AlertAction, RiskLevel, SimulatorScenario } from '@guardian/shared';
 import { isDatabaseAvailable, prisma } from './prisma.js';
 
 export interface AppWithRisk extends App {
   riskLevel: string;
   riskScore: number;
-}
-
-export interface DashboardSummary {
-  counts: RiskCounts;
-  totalApps: number;
-  recentAlerts: Array<{
-    appId: string;
-    appName: string;
-    level: string;
-    explanation: string;
-    assessedAt: Date;
-  }>;
+  deviceId?: string;
 }
 
 const SCENARIO_MAP: Record<string, SimulatorScenario> = {
@@ -35,9 +39,54 @@ interface SimulatorCache {
   alerts: Alert[];
 }
 
+interface SimulatorDeviceState {
+  id: string;
+  name: string;
+  platform: string;
+  status: DeviceStatus;
+  lastSyncAt: Date | null;
+  isVirtual: boolean;
+}
+
 let simulatorCache: SimulatorCache | null = null;
 const simulatorAlertOverrides = new Map<string, Alert>();
 const simulatorBatchEvents: NetworkEvent[] = [];
+const simulatorDevices = new Map<string, SimulatorDeviceState>();
+
+function ensureSimulatorDevices(): void {
+  if (simulatorDevices.size > 0) return;
+  for (const seed of VIRTUAL_DEVICE_SEEDS) {
+    simulatorDevices.set(seed.id, {
+      id: seed.id,
+      name: seed.name,
+      platform: seed.platform,
+      status: seed.id === DEFAULT_VIRTUAL_DEVICE_ID ? 'online' : 'offline',
+      lastSyncAt: seed.id === DEFAULT_VIRTUAL_DEVICE_ID ? new Date() : null,
+      isVirtual: true,
+    });
+  }
+}
+
+function registerSimulatorDevice(deviceId: string, name?: string): SimulatorDeviceState {
+  ensureSimulatorDevices();
+  const existing = simulatorDevices.get(deviceId);
+  if (existing) {
+    existing.status = 'online';
+    existing.lastSyncAt = new Date();
+    return existing;
+  }
+
+  const device: SimulatorDeviceState = {
+    id: deviceId,
+    name: name ?? `Connected Device (${deviceId.slice(0, 8)})`,
+    platform: 'android',
+    status: 'online',
+    lastSyncAt: new Date(),
+    isVirtual: false,
+  };
+  simulatorDevices.set(deviceId, device);
+  return device;
+}
 
 function getSimulatorCache(): SimulatorCache {
   if (!simulatorCache) {
@@ -68,6 +117,7 @@ function getSimulatorCache(): SimulatorCache {
         };
       });
     simulatorCache = { result, networkEvents, alerts };
+    ensureSimulatorDevices();
   }
   return simulatorCache;
 }
@@ -85,13 +135,170 @@ function simulatorAlerts(): Alert[] {
   return base.map((alert) => simulatorAlertOverrides.get(alert.id) ?? alert);
 }
 
-export async function listAppsWithRisk(): Promise<AppWithRisk[]> {
+function buildDeviceInfo(state: SimulatorDeviceState): DeviceInfo {
+  const { counts, apps } = fromSimulator();
+  return {
+    id: state.id,
+    name: state.name,
+    platform: state.platform,
+    status: state.status,
+    lastSyncAt: state.lastSyncAt,
+    appCount: apps.length,
+    riskCounts: counts,
+    isVirtual: state.isVirtual,
+  };
+}
+
+function buildRecentAlerts(deviceId?: string) {
+  const { apps, assessments } = fromSimulator();
+  return assessments
+    .filter((a) => a.level !== 'SAFE')
+    .map((a) => {
+      const app = apps.find((ap) => ap.id === a.appId);
+      const device = deviceId ? simulatorDevices.get(deviceId) : undefined;
+      return {
+        appId: a.appId,
+        appName: app?.displayName ?? 'Unknown',
+        level: a.level,
+        explanation: a.explanation,
+        assessedAt: a.assessedAt,
+        deviceId: device?.id,
+        deviceName: device?.name,
+      };
+    });
+}
+
+export async function listDevices(): Promise<DeviceInfo[]> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    ensureSimulatorDevices();
+    return [...simulatorDevices.values()]
+      .map(buildDeviceInfo)
+      .sort((a, b) => {
+        const aTime = a.lastSyncAt?.getTime() ?? 0;
+        const bTime = b.lastSyncAt?.getTime() ?? 0;
+        return bTime - aTime;
+      });
+  }
+
+  const rows = await prisma.device.findMany({
+    include: {
+      apps: {
+        include: {
+          riskAssessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
+        },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  if (rows.length === 0) {
+    ensureSimulatorDevices();
+    return [...simulatorDevices.values()].map(buildDeviceInfo);
+  }
+
+  return rows.map((row) => {
+    const counts: RiskCounts = { safe: 0, unusual: 0, suspicious: 0 };
+    for (const app of row.apps) {
+      const level = app.riskAssessments[0]?.level ?? 'SAFE';
+      switch (level) {
+        case 'SAFE':
+          counts.safe++;
+          break;
+        case 'UNUSUAL':
+          counts.unusual++;
+          break;
+        case 'SUSPICIOUS':
+          counts.suspicious++;
+          break;
+      }
+    }
+
+    return {
+      id: row.id,
+      name: row.name,
+      platform: row.platform,
+      status: 'online' as DeviceStatus,
+      lastSyncAt: row.updatedAt,
+      appCount: row.apps.length,
+      riskCounts: counts,
+      isVirtual: false,
+    };
+  });
+}
+
+export async function getDeviceById(id: string): Promise<DeviceInfo | null> {
+  const devices = await listDevices();
+  return devices.find((device) => device.id === id) ?? null;
+}
+
+export async function getDeviceSummary(id: string): Promise<DeviceSummary | null> {
+  const device = await getDeviceById(id);
+  if (!device) return null;
+
+  return {
+    ...device,
+    recentAlerts: buildRecentAlerts(id).slice(0, 10),
+  };
+}
+
+export async function registerDevice(input: {
+  id: string;
+  name?: string;
+  platform?: string;
+}): Promise<DeviceInfo> {
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    const state = registerSimulatorDevice(input.id, input.name);
+    if (input.platform) state.platform = input.platform;
+    return buildDeviceInfo(state);
+  }
+
+  const device = await prisma.device.upsert({
+    where: { id: input.id },
+    create: {
+      id: input.id,
+      name: input.name ?? `Device ${input.id.slice(0, 8)}`,
+      platform: input.platform ?? 'android',
+      userId: await ensureDefaultUserId(),
+    },
+    update: {
+      name: input.name ?? undefined,
+      platform: input.platform ?? undefined,
+    },
+  });
+
+  return {
+    id: device.id,
+    name: device.name,
+    platform: device.platform,
+    status: 'online',
+    lastSyncAt: device.updatedAt,
+    appCount: 0,
+    riskCounts: { safe: 0, unusual: 0, suspicious: 0 },
+    isVirtual: false,
+  };
+}
+
+async function ensureDefaultUserId(): Promise<string> {
+  const user = await prisma.user.upsert({
+    where: { email: 'lab@guardian.local' },
+    create: { email: 'lab@guardian.local', name: 'Lab User' },
+    update: {},
+  });
+  return user.id;
+}
+
+export async function listAppsWithRisk(deviceId?: string): Promise<AppWithRisk[]> {
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    if (deviceId) {
+      await getDeviceById(deviceId);
+    }
     const { apps, assessments } = fromSimulator();
+    const resolvedDeviceId = deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID;
     return apps.map((app) => {
       const assessment = assessments.find((a) => a.appId === app.id);
       return {
         ...app,
+        deviceId: resolvedDeviceId,
         riskLevel: assessment?.level ?? 'SAFE',
         riskScore: assessment?.score ?? 0,
       };
@@ -99,6 +306,7 @@ export async function listAppsWithRisk(): Promise<AppWithRisk[]> {
   }
 
   const rows = await prisma.app.findMany({
+    where: deviceId ? { deviceId } : undefined,
     include: {
       riskAssessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
     },
@@ -110,6 +318,7 @@ export async function listAppsWithRisk(): Promise<AppWithRisk[]> {
       const assessment = assessments.find((a) => a.appId === app.id);
       return {
         ...app,
+        deviceId: deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID,
         riskLevel: assessment?.level ?? 'SAFE',
         riskScore: assessment?.score ?? 0,
       };
@@ -123,6 +332,7 @@ export async function listAppsWithRisk(): Promise<AppWithRisk[]> {
     category: row.category as App['category'],
     isSystem: row.isSystem,
     trustLevel: row.trustLevel as App['trustLevel'],
+    deviceId: row.deviceId,
     riskLevel: row.riskAssessments[0]?.level ?? 'SAFE',
     riskScore: row.riskAssessments[0]?.score ?? 0,
   }));
@@ -179,50 +389,32 @@ export async function getAppById(id: string): Promise<{
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    const { counts, apps, assessments } = fromSimulator();
+    const devices = await listDevices();
+    const { counts, apps } = fromSimulator();
     return {
       counts,
       totalApps: apps.length,
-      recentAlerts: assessments
-        .filter((a) => a.level !== 'SAFE')
-        .map((a) => {
-          const app = apps.find((ap) => ap.id === a.appId);
-          return {
-            appId: a.appId,
-            appName: app?.displayName ?? 'Unknown',
-            level: a.level,
-            explanation: a.explanation,
-            assessedAt: a.assessedAt,
-          };
-        }),
+      totalDevices: devices.length,
+      recentAlerts: buildRecentAlerts(),
     };
   }
 
   const apps = await prisma.app.findMany();
+  const devices = await listDevices();
   if (apps.length === 0) {
     const sim = fromSimulator();
     return {
       counts: sim.counts,
       totalApps: sim.apps.length,
-      recentAlerts: sim.assessments
-        .filter((a) => a.level !== 'SAFE')
-        .map((a) => {
-          const app = sim.apps.find((ap) => ap.id === a.appId);
-          return {
-            appId: a.appId,
-            appName: app?.displayName ?? 'Unknown',
-            level: a.level,
-            explanation: a.explanation,
-            assessedAt: a.assessedAt,
-          };
-        }),
+      totalDevices: devices.length,
+      recentAlerts: buildRecentAlerts(),
     };
   }
 
   const assessments = await prisma.riskAssessment.findMany({
     orderBy: { assessedAt: 'desc' },
     take: 50,
-    include: { app: true },
+    include: { app: { include: { device: true } } },
   });
 
   const latestByApp = new Map<string, (typeof assessments)[0]>();
@@ -248,6 +440,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   return {
     counts,
     totalApps: apps.length,
+    totalDevices: devices.length,
     recentAlerts: assessments
       .filter((a) => a.level !== 'SAFE')
       .slice(0, 10)
@@ -257,6 +450,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         level: a.level,
         explanation: a.explanation,
         assessedAt: a.assessedAt,
+        deviceId: a.app.deviceId,
+        deviceName: a.app.device.name,
       })),
   };
 }
@@ -275,6 +470,7 @@ export interface BatchEventInput {
 
 export async function ingestEventBatch(input: BatchEventInput): Promise<{ accepted: number }> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    registerSimulatorDevice(input.deviceId);
     let accepted = 0;
     for (const event of input.networkEvents) {
       simulatorBatchEvents.push({
@@ -290,6 +486,8 @@ export async function ingestEventBatch(input: BatchEventInput): Promise<{ accept
     }
     return { accepted };
   }
+
+  await registerDevice({ id: input.deviceId });
 
   let accepted = 0;
   for (const event of input.networkEvents) {
@@ -314,11 +512,61 @@ export async function ingestEventBatch(input: BatchEventInput): Promise<{ accept
   return { accepted };
 }
 
+export async function runDeviceDemoScenario(deviceId: string): Promise<{ ok: true } | null> {
+  const device = await getDeviceById(deviceId);
+  if (!device) return null;
+
+  registerSimulatorDevice(deviceId, device.name);
+
+  const { networkEvents } = generateEvents('app-photo-editor', SimulatorScenario.HIGH_RISK);
+
+  for (const event of networkEvents) {
+    simulatorBatchEvents.push({
+      ...event,
+      id: `demo-${deviceId}-${simulatorBatchEvents.length}`,
+      timestamp: new Date(),
+    });
+  }
+
+  const { assessments, apps } = fromSimulator();
+  const photoAssessment = assessments.find((a) => a.appId === 'app-photo-editor');
+  if (photoAssessment) {
+    const app = apps.find((a) => a.id === 'app-photo-editor');
+    const alertId = `alert-${photoAssessment.id}`;
+    simulatorAlertOverrides.delete(alertId);
+    const alert: Alert = {
+      id: alertId,
+      appId: photoAssessment.appId,
+      riskAssessmentId: photoAssessment.id,
+      title: app?.displayName ?? 'Photo Editor',
+      message: photoAssessment.explanation,
+      level: photoAssessment.level,
+      acknowledged: false,
+      createdAt: new Date(),
+      userAction: AlertAction.NONE,
+      domain: 'unknown-upload-server.xyz',
+    };
+    simulatorAlertOverrides.set(alertId, alert);
+  }
+
+  const state = simulatorDevices.get(deviceId);
+  if (state) {
+    state.status = 'online';
+    state.lastSyncAt = new Date();
+  }
+
+  return { ok: true };
+}
+
 export async function listEvents(options: {
   limit: number;
   appId?: string;
+  deviceId?: string;
 }): Promise<NetworkEvent[]> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    if (options.deviceId) {
+      await getDeviceById(options.deviceId);
+    }
     let events = simulatorNetworkEvents();
     if (options.appId) {
       events = events.filter((e) => e.appId === options.appId);
@@ -358,8 +606,14 @@ export async function getAppRisk(appId: string): Promise<RiskAssessment | null> 
   return result?.assessment ?? null;
 }
 
-export async function listAlerts(options?: { acknowledged?: boolean }): Promise<Alert[]> {
+export async function listAlerts(options?: {
+  acknowledged?: boolean;
+  deviceId?: string;
+}): Promise<Alert[]> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    if (options?.deviceId) {
+      await getDeviceById(options.deviceId);
+    }
     let alerts = simulatorAlerts();
     if (options?.acknowledged !== undefined) {
       alerts = alerts.filter((a) => a.acknowledged === options.acknowledged);

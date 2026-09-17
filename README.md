@@ -14,7 +14,22 @@ Local-first mobile security monitoring. Guardian analyzes app and network behavi
 
 See [docs/architecture.md](docs/architecture.md) for the full overview.
 
+## Dev Lab (web dashboard + phone simulation)
+
+**No physical phone required.** Run the full lab environment:
+
+```bash
+./scripts/dev-lab.sh
+# or: pnpm dev:lab
 ```
+
+- **Web dashboard:** http://localhost:5173 — device reports, alerts, demo scenarios
+- **API (simulator):** http://localhost:3000
+
+See **[docs/DEV-LAB.md](docs/DEV-LAB.md)** for Android Emulator setup (install APKs on a virtual phone).
+
+```
+apps/web        → Web dashboard (device reports)
 apps/mobile     → Expo React Native dashboard + Android VPN module
 apps/api        → Express REST API (optional sync)
 packages/shared → Types, Zod schemas, constants

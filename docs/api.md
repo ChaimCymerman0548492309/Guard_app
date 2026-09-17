@@ -110,6 +110,22 @@ Block the domain associated with the alert and mark acknowledged.
 
 Allow the connection and acknowledge the alert.
 
+### Devices
+
+`GET /api/v1/devices` — list connected / virtual devices
+
+`GET /api/v1/devices/:id` — device details
+
+`GET /api/v1/devices/:id/summary` — dashboard summary for one device
+
+`GET /api/v1/devices/:id/apps` — apps on device with risk
+
+`GET /api/v1/devices/:id/alerts` — alerts for device
+
+`POST /api/v1/devices/:id/demo` — run Photo Cleaner demo (lab mode)
+
+`POST /api/v1/devices/register` — register device for sync/lab
+
 ### OpenAPI
 
 `GET /api/v1/openapi`

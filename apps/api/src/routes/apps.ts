@@ -5,7 +5,8 @@ import { sendError, sendSuccess } from '../lib/response.js';
 export const appsRouter: Router = Router();
 
 appsRouter.get('/', async (req, res) => {
-  const data = await listAppsWithRisk();
+  const deviceId = typeof req.query.deviceId === 'string' ? req.query.deviceId : undefined;
+  const data = await listAppsWithRisk(deviceId);
   sendSuccess(res, data, req.requestId);
 });
 
