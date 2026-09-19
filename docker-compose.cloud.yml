@@ -1,0 +1,55 @@
+# Public stack: Postgres + API + Web dashboard (single entry port).
+# Put HTTPS in front (Caddy, Traefik, cloud load balancer) for phones on cellular.
+#
+#   docker compose -f docker-compose.cloud.yml up -d --build
+#   docker compose -f docker-compose.cloud.yml exec api pnpm db:seed
+#
+# Open http://SERVER_IP:8080 (or your HTTPS domain → port 8080)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: guardian
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guardian}
+      POSTGRES_DB: guardian
+    volumes:
+      - guardian_cloud_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U guardian']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://guardian:${POSTGRES_PASSWORD:-guardian}@postgres:5432/guardian
+      NODE_ENV: production
+      PORT: 3000
+      DEV_SIMULATOR: 'false'
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@guardian.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RUN_DB_SEED: ${RUN_DB_SEED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: ''
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      - api
+
+volumes:
+  guardian_cloud_pg:

@@ -11,6 +11,7 @@ import type {
 } from '@guardian/shared';
 import { UserRole } from '@guardian/shared';
 import { authHeaders } from './auth-storage';
+import { apiUrl } from './api-base';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -24,7 +25,7 @@ export interface AppWithRisk extends App {
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     headers: {
       'Content-Type': 'application/json',

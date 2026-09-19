@@ -43,6 +43,20 @@ pnpm db:seed   # יוצר admin מ-ADMIN_EMAIL / ADMIN_PASSWORD
 
 שנה `JWT_SECRET` וסיסמת מנהל לפני פריסה ציבורית.
 
+**טלפון ודשבורד לא על אותה Wi‑Fi:** פרוס API + דשבורד לענן עם HTTPS — מדריך מלא: [REMOTE-ACCESS.md](./REMOTE-ACCESS.md).
+
+```bash
+# דוגמה VPS
+docker compose -f docker-compose.cloud.yml up -d --build
+# דשבורד: http://SERVER:8080  →  הוסף HTTPS לפני APK ללקוחות
+```
+
+APK:
+
+```bash
+EXPO_PUBLIC_API_URL=https://your-domain.com ./scripts/build-release-apk.sh
+```
+
 ## API
 
 - `POST /api/v1/auth/login` — ציבורי
