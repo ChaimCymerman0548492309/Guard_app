@@ -8,6 +8,7 @@ import type { SimulatorResult } from '@guardian/simulator';
 import type {
   Alert,
   App,
+  AuthUser,
   DashboardSummary,
   DeviceInfo,
   DeviceSummary,
@@ -17,7 +18,19 @@ import type {
   RiskCounts,
 } from '@guardian/shared';
 import { AlertAction, RiskLevel, SimulatorScenario } from '@guardian/shared';
+import {
+  canAccessOwner,
+  deviceWhereForUser,
+  isAdmin,
+  type AccessContext,
+} from './access-control.js';
+import {
+  getSimulatorAdminUserId,
+  getSimulatorCustomerUserId,
+} from './auth.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
+
+export type { AccessContext };
 
 export interface AppWithRisk extends App {
   riskLevel: string;
@@ -46,12 +59,15 @@ interface SimulatorDeviceState {
   status: DeviceStatus;
   lastSyncAt: Date | null;
   isVirtual: boolean;
+  ownerUserId: string;
 }
 
-let simulatorCache: SimulatorCache | null = null;
-const simulatorAlertOverrides = new Map<string, Alert>();
-const simulatorBatchEvents: NetworkEvent[] = [];
-const simulatorDevices = new Map<string, SimulatorDeviceState>();
+function defaultOwnerForSeed(seedId: string): string {
+  if (seedId === '00000000-0000-4000-8000-000000000003') {
+    return getSimulatorAdminUserId();
+  }
+  return getSimulatorCustomerUserId();
+}
 
 function ensureSimulatorDevices(): void {
   if (simulatorDevices.size > 0) return;
@@ -63,11 +79,16 @@ function ensureSimulatorDevices(): void {
       status: seed.id === DEFAULT_VIRTUAL_DEVICE_ID ? 'online' : 'offline',
       lastSyncAt: seed.id === DEFAULT_VIRTUAL_DEVICE_ID ? new Date() : null,
       isVirtual: true,
+      ownerUserId: defaultOwnerForSeed(seed.id),
     });
   }
 }
 
-function registerSimulatorDevice(deviceId: string, name?: string): SimulatorDeviceState {
+function registerSimulatorDevice(
+  deviceId: string,
+  ownerUserId: string,
+  name?: string,
+): SimulatorDeviceState {
   ensureSimulatorDevices();
   const existing = simulatorDevices.get(deviceId);
   if (existing) {
@@ -83,10 +104,38 @@ function registerSimulatorDevice(deviceId: string, name?: string): SimulatorDevi
     status: 'online',
     lastSyncAt: new Date(),
     isVirtual: false,
+    ownerUserId,
   };
   simulatorDevices.set(deviceId, device);
   return device;
 }
+
+function listSimulatorDevicesForUser(user: AuthUser): SimulatorDeviceState[] {
+  ensureSimulatorDevices();
+  const devices = [...simulatorDevices.values()];
+  if (isAdmin(user)) return devices;
+  return devices.filter((device) => device.ownerUserId === user.id);
+}
+
+async function getDeviceOwnerId(deviceId: string): Promise<string | null> {
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    ensureSimulatorDevices();
+    return simulatorDevices.get(deviceId)?.ownerUserId ?? null;
+  }
+  const row = await prisma.device.findUnique({ where: { id: deviceId }, select: { userId: true } });
+  return row?.userId ?? null;
+}
+
+export async function assertDeviceAccess(deviceId: string, ctx: AccessContext): Promise<boolean> {
+  const ownerId = await getDeviceOwnerId(deviceId);
+  if (!ownerId) return false;
+  return canAccessOwner(ownerId, ctx.user);
+}
+
+let simulatorCache: SimulatorCache | null = null;
+const simulatorAlertOverrides = new Map<string, Alert>();
+const simulatorBatchEvents: NetworkEvent[] = [];
+const simulatorDevices = new Map<string, SimulatorDeviceState>();
 
 function getSimulatorCache(): SimulatorCache {
   if (!simulatorCache) {
@@ -168,10 +217,9 @@ function buildRecentAlerts(deviceId?: string) {
     });
 }
 
-export async function listDevices(): Promise<DeviceInfo[]> {
+export async function listDevices(ctx: AccessContext): Promise<DeviceInfo[]> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    ensureSimulatorDevices();
-    return [...simulatorDevices.values()]
+    return listSimulatorDevicesForUser(ctx.user)
       .map(buildDeviceInfo)
       .sort((a, b) => {
         const aTime = a.lastSyncAt?.getTime() ?? 0;
@@ -181,6 +229,7 @@ export async function listDevices(): Promise<DeviceInfo[]> {
   }
 
   const rows = await prisma.device.findMany({
+    where: deviceWhereForUser(ctx.user),
     include: {
       apps: {
         include: {
@@ -192,8 +241,7 @@ export async function listDevices(): Promise<DeviceInfo[]> {
   });
 
   if (rows.length === 0) {
-    ensureSimulatorDevices();
-    return [...simulatorDevices.values()].map(buildDeviceInfo);
+    return listSimulatorDevicesForUser(ctx.user).map(buildDeviceInfo);
   }
 
   return rows.map((row) => {
@@ -226,13 +274,16 @@ export async function listDevices(): Promise<DeviceInfo[]> {
   });
 }
 
-export async function getDeviceById(id: string): Promise<DeviceInfo | null> {
-  const devices = await listDevices();
+export async function getDeviceById(id: string, ctx: AccessContext): Promise<DeviceInfo | null> {
+  const devices = await listDevices(ctx);
   return devices.find((device) => device.id === id) ?? null;
 }
 
-export async function getDeviceSummary(id: string): Promise<DeviceSummary | null> {
-  const device = await getDeviceById(id);
+export async function getDeviceSummary(
+  id: string,
+  ctx: AccessContext,
+): Promise<DeviceSummary | null> {
+  const device = await getDeviceById(id, ctx);
   if (!device) return null;
 
   return {
@@ -241,13 +292,16 @@ export async function getDeviceSummary(id: string): Promise<DeviceSummary | null
   };
 }
 
-export async function registerDevice(input: {
-  id: string;
-  name?: string;
-  platform?: string;
-}): Promise<DeviceInfo> {
+export async function registerDevice(
+  input: {
+    id: string;
+    name?: string;
+    platform?: string;
+  },
+  ctx: AccessContext,
+): Promise<DeviceInfo> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    const state = registerSimulatorDevice(input.id, input.name);
+    const state = registerSimulatorDevice(input.id, ctx.user.id, input.name);
     if (input.platform) state.platform = input.platform;
     return buildDeviceInfo(state);
   }
@@ -258,11 +312,12 @@ export async function registerDevice(input: {
       id: input.id,
       name: input.name ?? `Device ${input.id.slice(0, 8)}`,
       platform: input.platform ?? 'android',
-      userId: await ensureDefaultUserId(),
+      userId: ctx.user.id,
     },
     update: {
       name: input.name ?? undefined,
       platform: input.platform ?? undefined,
+      userId: ctx.user.id,
     },
   });
 
@@ -278,19 +333,16 @@ export async function registerDevice(input: {
   };
 }
 
-async function ensureDefaultUserId(): Promise<string> {
-  const user = await prisma.user.upsert({
-    where: { email: 'lab@guardian.local' },
-    create: { email: 'lab@guardian.local', name: 'Lab User' },
-    update: {},
-  });
-  return user.id;
-}
-
-export async function listAppsWithRisk(deviceId?: string): Promise<AppWithRisk[]> {
+export async function listAppsWithRisk(
+  ctx: AccessContext,
+  deviceId?: string,
+): Promise<AppWithRisk[]> {
+  if (deviceId && !(await assertDeviceAccess(deviceId, ctx))) {
+    return [];
+  }
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
     if (deviceId) {
-      await getDeviceById(deviceId);
+      await getDeviceById(deviceId, ctx);
     }
     const { apps, assessments } = fromSimulator();
     const resolvedDeviceId = deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID;
@@ -306,7 +358,10 @@ export async function listAppsWithRisk(deviceId?: string): Promise<AppWithRisk[]
   }
 
   const rows = await prisma.app.findMany({
-    where: deviceId ? { deviceId } : undefined,
+    where: {
+      ...(deviceId ? { deviceId } : {}),
+      ...(isAdmin(ctx.user) ? {} : { device: { userId: ctx.user.id } }),
+    },
     include: {
       riskAssessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
     },
@@ -338,7 +393,10 @@ export async function listAppsWithRisk(deviceId?: string): Promise<AppWithRisk[]
   }));
 }
 
-export async function getAppById(id: string): Promise<{
+export async function getAppById(
+  id: string,
+  ctx: AccessContext,
+): Promise<{
   app: App;
   assessment?: RiskAssessment;
 } | null> {
@@ -353,6 +411,7 @@ export async function getAppById(id: string): Promise<{
     where: { id },
     include: {
       riskAssessments: { orderBy: { assessedAt: 'desc' }, take: 1 },
+      device: true,
     },
   });
 
@@ -361,6 +420,10 @@ export async function getAppById(id: string): Promise<{
     const app = apps.find((a) => a.id === id);
     if (!app) return null;
     return { app, assessment: assessments.find((a) => a.appId === id) };
+  }
+
+  if (!canAccessOwner(row.device.userId, ctx.user)) {
+    return null;
   }
 
   const assessment = row.riskAssessments[0];
@@ -387,9 +450,9 @@ export async function getAppById(id: string): Promise<{
   };
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
+export async function getDashboardSummary(ctx: AccessContext): Promise<DashboardSummary> {
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    const devices = await listDevices();
+    const devices = await listDevices(ctx);
     const { counts, apps } = fromSimulator();
     return {
       counts,
@@ -399,8 +462,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     };
   }
 
-  const apps = await prisma.app.findMany();
-  const devices = await listDevices();
+  const apps = await prisma.app.findMany({
+    where: isAdmin(ctx.user) ? undefined : { device: { userId: ctx.user.id } },
+  });
+  const devices = await listDevices(ctx);
   if (apps.length === 0) {
     const sim = fromSimulator();
     return {
@@ -468,9 +533,20 @@ export interface BatchEventInput {
   }>;
 }
 
-export async function ingestEventBatch(input: BatchEventInput): Promise<{ accepted: number }> {
+export async function ingestEventBatch(
+  input: BatchEventInput,
+  ctx: AccessContext,
+): Promise<{ accepted: number }> {
+  const ownerId = await getDeviceOwnerId(input.deviceId);
+  if (ownerId && !canAccessOwner(ownerId, ctx.user)) {
+    return { accepted: 0 };
+  }
+  if (!ownerId) {
+    await registerDevice({ id: input.deviceId }, ctx);
+  }
+
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    registerSimulatorDevice(input.deviceId);
+    registerSimulatorDevice(input.deviceId, ctx.user.id);
     let accepted = 0;
     for (const event of input.networkEvents) {
       simulatorBatchEvents.push({
@@ -486,8 +562,6 @@ export async function ingestEventBatch(input: BatchEventInput): Promise<{ accept
     }
     return { accepted };
   }
-
-  await registerDevice({ id: input.deviceId });
 
   let accepted = 0;
   for (const event of input.networkEvents) {
@@ -512,11 +586,14 @@ export async function ingestEventBatch(input: BatchEventInput): Promise<{ accept
   return { accepted };
 }
 
-export async function runDeviceDemoScenario(deviceId: string): Promise<{ ok: true } | null> {
-  const device = await getDeviceById(deviceId);
+export async function runDeviceDemoScenario(
+  deviceId: string,
+  ctx: AccessContext,
+): Promise<{ ok: true } | null> {
+  const device = await getDeviceById(deviceId, ctx);
   if (!device) return null;
 
-  registerSimulatorDevice(deviceId, device.name);
+  registerSimulatorDevice(deviceId, ctx.user.id, device.name);
 
   const { networkEvents } = generateEvents('app-photo-editor', SimulatorScenario.HIGH_RISK);
 
@@ -558,14 +635,20 @@ export async function runDeviceDemoScenario(deviceId: string): Promise<{ ok: tru
   return { ok: true };
 }
 
-export async function listEvents(options: {
+export async function listEvents(
+  ctx: AccessContext,
+  options: {
   limit: number;
   appId?: string;
   deviceId?: string;
-}): Promise<NetworkEvent[]> {
+},
+): Promise<NetworkEvent[]> {
+  if (options.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
+    return [];
+  }
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
     if (options.deviceId) {
-      await getDeviceById(options.deviceId);
+      await getDeviceById(options.deviceId, ctx);
     }
     let events = simulatorNetworkEvents();
     if (options.appId) {
@@ -595,24 +678,34 @@ export async function listEvents(options: {
   }));
 }
 
-export async function getAppEvents(appId: string, limit: number): Promise<NetworkEvent[] | null> {
-  const app = await getAppById(appId);
+export async function getAppEvents(
+  appId: string,
+  limit: number,
+  ctx: AccessContext,
+): Promise<NetworkEvent[] | null> {
+  const app = await getAppById(appId, ctx);
   if (!app) return null;
-  return listEvents({ limit, appId });
+  return listEvents(ctx, { limit, appId });
 }
 
-export async function getAppRisk(appId: string): Promise<RiskAssessment | null> {
-  const result = await getAppById(appId);
+export async function getAppRisk(appId: string, ctx: AccessContext): Promise<RiskAssessment | null> {
+  const result = await getAppById(appId, ctx);
   return result?.assessment ?? null;
 }
 
-export async function listAlerts(options?: {
+export async function listAlerts(
+  ctx: AccessContext,
+  options?: {
   acknowledged?: boolean;
   deviceId?: string;
-}): Promise<Alert[]> {
+},
+): Promise<Alert[]> {
+  if (options?.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
+    return [];
+  }
   if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
     if (options?.deviceId) {
-      await getDeviceById(options.deviceId);
+      await getDeviceById(options.deviceId, ctx);
     }
     let alerts = simulatorAlerts();
     if (options?.acknowledged !== undefined) {
@@ -645,16 +738,17 @@ export async function listAlerts(options?: {
   }));
 }
 
-export async function getAlertById(id: string): Promise<Alert | null> {
-  const alerts = await listAlerts();
+export async function getAlertById(id: string, ctx: AccessContext): Promise<Alert | null> {
+  const alerts = await listAlerts(ctx);
   return alerts.find((a) => a.id === id) ?? null;
 }
 
 export async function updateAlertAction(
   id: string,
   action: AlertAction,
+  ctx: AccessContext,
 ): Promise<Alert | null> {
-  const alert = await getAlertById(id);
+  const alert = await getAlertById(id, ctx);
   if (!alert) return null;
 
   const updated: Alert = {

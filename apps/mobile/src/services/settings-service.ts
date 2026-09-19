@@ -6,6 +6,8 @@ export const SETTINGS_KEYS = {
   cloudSyncEnabled: 'cloud_sync_enabled',
   language: 'language',
   onboardingComplete: 'onboarding_complete',
+  apiAuthToken: 'api_auth_token',
+  apiAuthEmail: 'api_auth_email',
 } as const;
 async function getSetting(db: SQLite.SQLiteDatabase, key: string) { const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]); return row?.value ?? null; }
 async function setSetting(db: SQLite.SQLiteDatabase, key: string, value: string) { await db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]); }
@@ -19,3 +21,13 @@ export async function getLanguage(db: SQLite.SQLiteDatabase) { const raw = await
 export async function setLanguage(db: SQLite.SQLiteDatabase, lang: 'en' | 'he') { await setSetting(db, SETTINGS_KEYS.language, lang); }
 export async function isOnboardingComplete(db: SQLite.SQLiteDatabase) { const raw = await getSetting(db, SETTINGS_KEYS.onboardingComplete); return raw === 'true'; }
 export async function setOnboardingComplete(db: SQLite.SQLiteDatabase, complete: boolean) { await setSetting(db, SETTINGS_KEYS.onboardingComplete, complete ? 'true' : 'false'); }
+export async function getApiAuthToken(db: SQLite.SQLiteDatabase) { return getSetting(db, SETTINGS_KEYS.apiAuthToken); }
+export async function getApiAuthEmail(db: SQLite.SQLiteDatabase) { return getSetting(db, SETTINGS_KEYS.apiAuthEmail); }
+export async function setApiAuthSession(db: SQLite.SQLiteDatabase, email: string, token: string) {
+  await setSetting(db, SETTINGS_KEYS.apiAuthEmail, email);
+  await setSetting(db, SETTINGS_KEYS.apiAuthToken, token);
+}
+export async function clearApiAuthSession(db: SQLite.SQLiteDatabase) {
+  await setSetting(db, SETTINGS_KEYS.apiAuthEmail, '');
+  await setSetting(db, SETTINGS_KEYS.apiAuthToken, '');
+}

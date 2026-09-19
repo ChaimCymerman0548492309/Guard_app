@@ -9,12 +9,13 @@ import {
   registerDevice,
   runDeviceDemoScenario,
 } from '../lib/data-source.js';
+import { accessContext } from '../lib/request-context.js';
 import { sendError, sendSuccess } from '../lib/response.js';
 
 export const devicesRouter: Router = Router();
 
 devicesRouter.get('/', async (req, res) => {
-  const data = await listDevices();
+  const data = await listDevices(accessContext(req));
   sendSuccess(res, data, req.requestId);
 });
 
@@ -31,12 +32,12 @@ devicesRouter.post('/register', async (req, res) => {
     return;
   }
 
-  const device = await registerDevice(parsed.data);
+  const device = await registerDevice(parsed.data, accessContext(req));
   sendSuccess(res, device, req.requestId, 201);
 });
 
 devicesRouter.get('/:id/summary', async (req, res) => {
-  const summary = await getDeviceSummary(req.params.id);
+  const summary = await getDeviceSummary(req.params.id, accessContext(req));
   if (!summary) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);
     return;
@@ -45,17 +46,17 @@ devicesRouter.get('/:id/summary', async (req, res) => {
 });
 
 devicesRouter.get('/:id/apps', async (req, res) => {
-  const device = await getDeviceById(req.params.id);
+  const device = await getDeviceById(req.params.id, accessContext(req));
   if (!device) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);
     return;
   }
-  const apps = await listAppsWithRisk(req.params.id);
+  const apps = await listAppsWithRisk(accessContext(req), req.params.id);
   sendSuccess(res, apps, req.requestId);
 });
 
 devicesRouter.get('/:id/alerts', async (req, res) => {
-  const device = await getDeviceById(req.params.id);
+  const device = await getDeviceById(req.params.id, accessContext(req));
   if (!device) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);
     return;
@@ -68,12 +69,15 @@ devicesRouter.get('/:id/alerts', async (req, res) => {
         ? false
         : undefined;
 
-  const alerts = await listAlerts({ acknowledged, deviceId: req.params.id });
+  const alerts = await listAlerts(accessContext(req), {
+    acknowledged,
+    deviceId: req.params.id,
+  });
   sendSuccess(res, alerts, req.requestId);
 });
 
 devicesRouter.post('/:id/demo', async (req, res) => {
-  const result = await runDeviceDemoScenario(req.params.id);
+  const result = await runDeviceDemoScenario(req.params.id, accessContext(req));
   if (!result) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);
     return;
@@ -82,7 +86,7 @@ devicesRouter.post('/:id/demo', async (req, res) => {
 });
 
 devicesRouter.get('/:id', async (req, res) => {
-  const device = await getDeviceById(req.params.id);
+  const device = await getDeviceById(req.params.id, accessContext(req));
   if (!device) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);
     return;

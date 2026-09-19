@@ -1,3 +1,8 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER',
+}
+
 export enum RiskLevel {
   SAFE = 'SAFE',
   UNUSUAL = 'UNUSUAL',

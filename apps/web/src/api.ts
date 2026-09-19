@@ -1,12 +1,16 @@
 import type {
   Alert,
   App,
+  AuthTokenResponse,
+  AuthUser,
   DashboardSummary,
   DeviceInfo,
   DeviceSummary,
   RiskAssessment,
   RiskLevel,
 } from '@guardian/shared';
+import { UserRole } from '@guardian/shared';
+import { authHeaders } from './auth-storage';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -20,13 +24,46 @@ export interface AppWithRisk extends App {
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+      ...(init?.headers ?? {}),
+    },
+  });
   const body = (await response.json()) as ApiEnvelope<T> | { success: false; error: { message: string } };
   if (!response.ok || !('data' in body)) {
     const message = 'error' in body ? body.error.message : response.statusText;
     throw new Error(message || 'Request failed');
   }
   return body.data;
+}
+
+export function login(email: string, password: string): Promise<AuthTokenResponse> {
+  return fetchJson('/api/v1/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function fetchMe(): Promise<AuthUser> {
+  return fetchJson('/api/v1/auth/me');
+}
+
+export function listUsers(): Promise<AuthUser[]> {
+  return fetchJson('/api/v1/auth/users');
+}
+
+export function createCustomerUser(input: {
+  email: string;
+  password: string;
+  name?: string;
+}): Promise<AuthUser> {
+  return fetchJson('/api/v1/auth/users', {
+    method: 'POST',
+    body: JSON.stringify({ ...input, role: UserRole.CUSTOMER }),
+  });
 }
 
 export function getDashboardSummary(): Promise<DashboardSummary> {

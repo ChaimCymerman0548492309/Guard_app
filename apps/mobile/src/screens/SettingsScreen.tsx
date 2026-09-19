@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   TouchableOpacity,
+  TextInput,
   Share,
   Alert,
 } from 'react-native';
@@ -20,7 +21,9 @@ import {
   setCloudSyncEnabled,
   getLanguage,
   setLanguage,
+  getApiAuthEmail,
 } from '../services/settings-service';
+import { loginToCloudApi, logoutFromCloudApi } from '../services/cloud-auth-service';
 import i18n from '../i18n';
 import { exportDataAsJson } from '../services/export-service';
 import { colors } from '../theme';
@@ -35,6 +38,82 @@ const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
   { code: 'en', label: 'English' },
   { code: 'he', label: 'עברית' },
 ];
+
+import type { TFunction } from 'i18next';
+
+function CloudAccountSection({
+  rtl,
+  t,
+}: {
+  rtl: { text: object; row: object };
+  t: TFunction;
+}) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loggedInAs, setLoggedInAs] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getDatabase().then(async (db) => {
+      setLoggedInAs(await getApiAuthEmail(db));
+    });
+  }, []);
+
+  return (
+    <View style={styles.cloudSection}>
+      <Text style={[styles.sectionTitle, rtl.text]}>{t('settings.cloudAccount')}</Text>
+      {loggedInAs ? (
+        <>
+          <Text style={[styles.hint, rtl.text]}>{t('settings.cloudLoggedIn', { email: loggedInAs })}</Text>
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={() => {
+              void getDatabase().then(async (db) => {
+                await logoutFromCloudApi(db);
+                setLoggedInAs(null);
+              });
+            }}
+          >
+            <Text style={styles.exportText}>{t('settings.cloudLogout')}</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder={t('settings.cloudEmail')}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t('settings.cloudPassword')}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={() => {
+              void getDatabase().then(async (db) => {
+                const result = await loginToCloudApi(db, email, password);
+                if (result.ok) {
+                  setLoggedInAs(email.trim().toLowerCase());
+                  setPassword('');
+                } else {
+                  Alert.alert(t('settings.cloudLoginError'), result.error);
+                }
+              });
+            }}
+          >
+            <Text style={styles.exportText}>{t('settings.cloudLogin')}</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
+}
 
 export function SettingsScreen() {
   const { t } = useTranslation();
@@ -135,6 +214,10 @@ export function SettingsScreen() {
         />
       </View>
 
+      {cloudSyncOn && (
+        <CloudAccountSection rtl={rtl} t={t} />
+      )}
+
       <TouchableOpacity style={styles.exportButton} onPress={() => void handleExport()}>
         <Text style={styles.exportText}>{t('settings.export')}</Text>
       </TouchableOpacity>
@@ -189,4 +272,14 @@ const styles = StyleSheet.create({
   linkRow: { paddingVertical: 14, minHeight: 44, justifyContent: 'center' },
   linkText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   versionText: { fontSize: 12, color: colors.textSecondary, marginTop: 16, textAlign: 'center' },
+  cloudSection: { marginBottom: 16 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    color: colors.text,
+    backgroundColor: colors.card,
+  },
 });

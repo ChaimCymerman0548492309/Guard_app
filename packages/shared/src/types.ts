@@ -6,8 +6,22 @@ import type {
   RiskLevel,
   SecurityEventType,
   TrustLevel,
+  UserRole,
   VpnStatus,
 } from './enums.js';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: UserRole;
+}
+
+export interface AuthTokenResponse {
+  token: string;
+  user: AuthUser;
+  expiresIn: string;
+}
 
 export interface App {
   id: string;

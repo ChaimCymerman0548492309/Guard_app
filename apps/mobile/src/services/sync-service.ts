@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../db/database';
 import { isCloudSyncEnabled } from './settings-service';
+import { getCloudAuthHeader } from './cloud-auth-service';
 
 export interface SyncResult {
   synced: number;
@@ -111,6 +112,7 @@ async function postBatchWithRetry(
   deviceId: string,
   payload: unknown,
   fetchFn: typeof fetch,
+  authHeaders: Record<string, string>,
 ): Promise<{ ok: true; accepted: number } | { ok: false; error: string; offline: boolean }> {
   let lastError = 'Sync request failed';
 
@@ -118,7 +120,11 @@ async function postBatchWithRetry(
     try {
       const response = await fetchFn(`${baseUrl}/api/v1/events/batch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Device-Id': deviceId,
+          ...authHeaders,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -167,6 +173,10 @@ export async function syncPendingEvents(
   }
 
   const deviceId = await getOrCreateDeviceId(db);
+  const authHeaders = await getCloudAuthHeader(db);
+  if (!authHeaders.Authorization) {
+    return { synced: 0, skipped: false, pending, error: 'Cloud login required' };
+  }
   const payload = {
     deviceId,
     networkEvents: rows.map((row) => ({
@@ -179,7 +189,7 @@ export async function syncPendingEvents(
     })),
   };
 
-  const result = await postBatchWithRetry(baseUrl, deviceId, payload, fetchFn);
+  const result = await postBatchWithRetry(baseUrl, deviceId, payload, fetchFn, authHeaders);
   if (!result.ok) {
     return {
       synced: 0,

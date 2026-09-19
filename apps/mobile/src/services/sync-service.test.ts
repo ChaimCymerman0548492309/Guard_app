@@ -11,6 +11,10 @@ vi.mock('./settings-service', () => ({
   isCloudSyncEnabled: vi.fn(async () => true),
 }));
 
+vi.mock('./cloud-auth-service', () => ({
+  getCloudAuthHeader: vi.fn(async () => ({ Authorization: 'Bearer test-token' })),
+}));
+
 const mockDb = {
   getFirstAsync: vi.fn(),
   runAsync: vi.fn(),

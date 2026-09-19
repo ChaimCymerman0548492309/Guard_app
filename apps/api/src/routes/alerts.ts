@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AlertAction } from '@guardian/shared';
 import { getAlertById, listAlerts, updateAlertAction } from '../lib/data-source.js';
+import { accessContext } from '../lib/request-context.js';
 import { sendError, sendSuccess } from '../lib/response.js';
 
 export const alertsRouter: Router = Router();
@@ -9,12 +10,12 @@ alertsRouter.get('/', async (req, res) => {
   const acknowledged = req.query.acknowledged;
   const filter =
     acknowledged === 'true' ? true : acknowledged === 'false' ? false : undefined;
-  const data = await listAlerts({ acknowledged: filter });
+  const data = await listAlerts(accessContext(req), { acknowledged: filter });
   sendSuccess(res, data, req.requestId);
 });
 
 alertsRouter.get('/:id', async (req, res) => {
-  const alert = await getAlertById(req.params.id);
+  const alert = await getAlertById(req.params.id, accessContext(req));
   if (!alert) {
     sendError(res, 'NOT_FOUND', 'Alert not found', req.requestId, 404);
     return;
@@ -23,7 +24,7 @@ alertsRouter.get('/:id', async (req, res) => {
 });
 
 alertsRouter.post('/:id/block', async (req, res) => {
-  const result = await updateAlertAction(req.params.id, AlertAction.BLOCK);
+  const result = await updateAlertAction(req.params.id, AlertAction.BLOCK, accessContext(req));
   if (!result) {
     sendError(res, 'NOT_FOUND', 'Alert not found', req.requestId, 404);
     return;
@@ -32,7 +33,7 @@ alertsRouter.post('/:id/block', async (req, res) => {
 });
 
 alertsRouter.post('/:id/allow', async (req, res) => {
-  const result = await updateAlertAction(req.params.id, AlertAction.ALLOW);
+  const result = await updateAlertAction(req.params.id, AlertAction.ALLOW, accessContext(req));
   if (!result) {
     sendError(res, 'NOT_FOUND', 'Alert not found', req.requestId, 404);
     return;
@@ -41,7 +42,7 @@ alertsRouter.post('/:id/allow', async (req, res) => {
 });
 
 alertsRouter.post('/:id/ignore', async (req, res) => {
-  const result = await updateAlertAction(req.params.id, AlertAction.IGNORE);
+  const result = await updateAlertAction(req.params.id, AlertAction.IGNORE, accessContext(req));
   if (!result) {
     sendError(res, 'NOT_FOUND', 'Alert not found', req.requestId, 404);
     return;

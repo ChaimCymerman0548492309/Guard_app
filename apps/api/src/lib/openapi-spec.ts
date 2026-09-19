@@ -2,7 +2,7 @@ export const OPENAPI_SPEC = {
   openapi: '3.0.3',
   info: {
     title: 'Guardian API',
-    version: '1.0.1',
+    version: '1.0.2',
     description:
       'Local-first security monitoring API. Risk assessments and alerts are derived from network metadata only — no packet payloads.',
   },
@@ -21,6 +21,79 @@ export const OPENAPI_SPEC = {
               },
             },
           },
+        },
+      },
+    },
+    '/api/v1/auth/login': {
+      post: {
+        summary: 'Login with email and password',
+        tags: ['Auth'],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', minLength: 6 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'JWT access token and user profile' },
+          '401': { description: 'Invalid credentials' },
+        },
+      },
+    },
+    '/api/v1/auth/me': {
+      get: {
+        summary: 'Current authenticated user',
+        tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'User profile' },
+          '401': { description: 'Missing or invalid token' },
+        },
+      },
+    },
+    '/api/v1/auth/users': {
+      get: {
+        summary: 'List users (admin only)',
+        tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'All customer and admin accounts' },
+          '403': { description: 'Requires ADMIN role' },
+        },
+      },
+      post: {
+        summary: 'Create user (admin only)',
+        tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', minLength: 8 },
+                  name: { type: 'string' },
+                  role: { type: 'string', enum: ['ADMIN', 'CUSTOMER'] },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'User created' },
+          '409': { description: 'Email already registered' },
         },
       },
     },
@@ -250,6 +323,13 @@ export const OPENAPI_SPEC = {
     },
   },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
     schemas: {
       ApiResponseHealth: {
         type: 'object',

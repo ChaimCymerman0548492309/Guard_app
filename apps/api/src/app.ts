@@ -13,6 +13,8 @@ import { alertsRouter } from './routes/alerts.js';
 import { openapiRouter } from './routes/openapi.js';
 import { domainsRouter } from './routes/domains.js';
 import { devicesRouter } from './routes/devices.js';
+import { authRouter } from './routes/auth.js';
+import { authenticate } from './middleware/auth.js';
 
 export function createApp(): express.Application {
   const app = express();
@@ -37,11 +39,13 @@ export function createApp(): express.Application {
   );
 
   app.use('/health', healthRouter);
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/openapi', openapiRouter);
+  app.use(authenticate(true));
   app.use('/api/v1/apps', appsRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/events', eventsRouter);
   app.use('/api/v1/alerts', alertsRouter);
-  app.use('/api/v1/openapi', openapiRouter);
   app.use('/api/v1/devices', devicesRouter);
   app.use('/api/v1/domains', domainsRouter);
 

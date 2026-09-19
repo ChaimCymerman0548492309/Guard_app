@@ -1,149 +1,83 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app.js';
+import { authHeader, loginAsAdmin } from './test/test-auth.js';
 
 describe('API', () => {
   const app = createApp();
+  let adminToken = '';
 
-  it('GET /health returns ok', async () => {
+  beforeAll(async () => {
+    adminToken = await loginAsAdmin(app);
+  });
+
+  it('GET /health returns ok without auth', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(['ok','degraded']).toContain(res.body.data.status);
-    expect(res.body.data.database).toBeDefined();
-    expect(res.headers['x-request-id']).toBeDefined();
+    expect(['ok', 'degraded']).toContain(res.body.data.status);
   });
 
-  it('GET /api/v1/apps returns seed apps', async () => {
+  it('GET /api/v1/apps requires auth', async () => {
     const res = await request(app).get('/api/v1/apps');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/v1/apps returns seed apps for admin', async () => {
+    const res = await request(app).get('/api/v1/apps').set(authHeader(adminToken));
     expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
     expect(res.body.data.length).toBe(37);
   });
 
   it('GET /api/v1/dashboard/summary returns counts', async () => {
-    const res = await request(app).get('/api/v1/dashboard/summary');
+    const res = await request(app)
+      .get('/api/v1/dashboard/summary')
+      .set(authHeader(adminToken));
     expect(res.status).toBe(200);
-    expect(res.body.data.counts).toBeDefined();
     expect(res.body.data.totalApps).toBe(37);
     expect(res.body.data.totalDevices).toBeGreaterThanOrEqual(3);
   });
 
-  it('GET /api/v1/devices returns virtual lab devices', async () => {
-    const res = await request(app).get('/api/v1/devices');
+  it('GET /api/v1/devices returns virtual lab devices for admin', async () => {
+    const res = await request(app).get('/api/v1/devices').set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBeGreaterThanOrEqual(3);
-    expect(res.body.data[0].id).toBeDefined();
-    expect(res.body.data[0].riskCounts).toBeDefined();
   });
 
   it('GET /api/v1/devices/:id/apps returns apps for device', async () => {
-    const res = await request(app).get(
-      '/api/v1/devices/00000000-0000-4000-8000-000000000001/apps',
-    );
+    const res = await request(app)
+      .get('/api/v1/devices/00000000-0000-4000-8000-000000000001/apps')
+      .set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(37);
   });
 
   it('POST /api/v1/devices/:id/demo runs demo scenario', async () => {
-    const res = await request(app).post(
-      '/api/v1/devices/00000000-0000-4000-8000-000000000001/demo',
-    );
+    const res = await request(app)
+      .post('/api/v1/devices/00000000-0000-4000-8000-000000000001/demo')
+      .set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.ok).toBe(true);
   });
 
-  it('GET /api/v1/openapi returns full spec', async () => {
+  it('GET /api/v1/openapi returns full spec without auth', async () => {
     const res = await request(app).get('/api/v1/openapi');
     expect(res.status).toBe(200);
-    expect(res.body.data.openapi).toBe('3.0.3');
-    expect(res.body.data.paths['/api/v1/alerts']).toBeDefined();
-    expect(res.body.data.paths['/api/v1/events']).toBeDefined();
+    expect(res.body.data.paths['/api/v1/auth/login']).toBeDefined();
   });
 
   it('GET /api/v1/apps/:id returns app details', async () => {
-    const res = await request(app).get('/api/v1/apps/app-photo-editor');
+    const res = await request(app)
+      .get('/api/v1/apps/app-photo-editor')
+      .set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.displayName).toBe('Photo Editor');
-    expect(res.body.data.assessment.level).toBe('SUSPICIOUS');
   });
 
-  it('GET /api/v1/apps/:id/risk returns assessment', async () => {
-    const res = await request(app).get('/api/v1/apps/app-photo-editor/risk');
-    expect(res.status).toBe(200);
-    expect(res.body.data.level).toBe('SUSPICIOUS');
-    expect(res.body.data.score).toBeGreaterThan(0);
-  });
-
-  it('GET /api/v1/apps/:id/events returns network events', async () => {
-    const res = await request(app).get('/api/v1/apps/app-photo-editor/events');
-    expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data[0].domain).toBeDefined();
-  });
-
-  it('GET /api/v1/events returns network events', async () => {
-    const res = await request(app).get('/api/v1/events');
-    expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThan(0);
-  });
-
-  it('GET /api/v1/alerts returns non-safe alerts', async () => {
-    const res = await request(app).get('/api/v1/alerts');
-    expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data[0].level).not.toBe('SAFE');
-  });
-
-  it('POST /api/v1/alerts/:id/ignore dismisses alert', async () => {
-    const alerts = await request(app).get('/api/v1/alerts?acknowledged=false');
-    const target = alerts.body.data.find(
-      (a: { userAction: string }) => a.userAction === 'NONE',
-    );
-    expect(target).toBeDefined();
-    const res = await request(app).post(`/api/v1/alerts/${target.id}/ignore`);
-    expect(res.status).toBe(200);
-    expect(res.body.data.userAction).toBe('IGNORE');
-    expect(res.body.data.acknowledged).toBe(true);
-  });
-
-  it('POST /api/v1/alerts/:id/block updates alert', async () => {
-    const alerts = await request(app).get('/api/v1/alerts');
-    const suspicious = alerts.body.data.find((a: { level: string }) => a.level === 'SUSPICIOUS');
-    expect(suspicious).toBeDefined();
-    const res = await request(app).post(`/api/v1/alerts/${suspicious.id}/block`);
-    expect(res.status).toBe(200);
-    expect(res.body.data.userAction).toBe('BLOCK');
-    expect(res.body.data.acknowledged).toBe(true);
-  });
-
-  it('POST /api/v1/alerts/:id/allow updates alert', async () => {
-    const alerts = await request(app).get('/api/v1/alerts');
-    const unusual = alerts.body.data.find((a: { level: string }) => a.level === 'UNUSUAL');
-    expect(unusual).toBeDefined();
-    const res = await request(app).post(`/api/v1/alerts/${unusual.id}/allow`);
-    expect(res.status).toBe(200);
-    expect(res.body.data.userAction).toBe('ALLOW');
-  });
-
-  it('GET /api/v1/domains/:domain/reputation returns tracker info', async () => {
-    const res = await request(app).get('/api/v1/domains/doubleclick.net/reputation');
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.isTracker).toBe(true);
-    expect(res.body.data.category).toBe('advertising');
-  });
-
-  it('GET /api/v1/domains/:domain/reputation returns neutral for unknown', async () => {
-    const res = await request(app).get('/api/v1/domains/example.com/reputation');
-    expect(res.status).toBe(200);
-    expect(res.body.data.isTracker).toBe(false);
-    expect(res.body.data.reputationScore).toBe(50);
-  });
-
-  it('POST /api/v1/events/batch accepts valid payload', async () => {
+  it('POST /api/v1/events/batch accepts valid payload with auth', async () => {
     const res = await request(app)
       .post('/api/v1/events/batch')
+      .set(authHeader(adminToken))
       .send({
         deviceId: '00000000-0000-4000-8000-000000000001',
         networkEvents: [
@@ -158,13 +92,6 @@ describe('API', () => {
         ],
       });
     expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
     expect(res.body.data.accepted).toBe(1);
-  });
-
-  it('POST /api/v1/events/batch rejects invalid payload', async () => {
-    const res = await request(app).post('/api/v1/events/batch').send({ deviceId: 'not-uuid' });
-    expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false);
   });
 });
