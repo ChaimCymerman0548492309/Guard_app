@@ -9,7 +9,7 @@ set -euo pipefail
 #   ./scripts/eas-preview-android.sh
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT/apps/mobile"
+cd "$ROOT"
 
 if [[ -z "${EXPO_TOKEN:-}" ]]; then
   echo "ERROR: Set EXPO_TOKEN to your Expo access token (not your password)." >&2
@@ -18,7 +18,6 @@ if [[ -z "${EXPO_TOKEN:-}" ]]; then
   exit 1
 fi
 
-# Common mistakes that cause: \"Bearer ... is not a legal HTTP header value\"
 if [[ "$EXPO_TOKEN" == Bearer* ]]; then
   echo "ERROR: Do not include 'Bearer ' in EXPO_TOKEN — paste the token only." >&2
   exit 1
@@ -28,7 +27,31 @@ if [[ ! "$EXPO_TOKEN" =~ ^[A-Za-z0-9._-]+$ ]]; then
   exit 1
 fi
 
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "ERROR: pnpm is required. Install: npm install -g pnpm" >&2
+  exit 1
+fi
+
+echo "==> Installing monorepo dependencies (required before EAS reads app.config.ts)..."
+pnpm install --ignore-scripts
+pnpm --filter @guardian/shared build
+pnpm --filter @guardian/ui build
+pnpm --filter @guardian/risk-engine build
+pnpm --filter @guardian/simulator build
+
+MOBILE="$ROOT/apps/mobile"
+if [[ ! -e "$MOBILE/node_modules/expo-localization/app.plugin.js" ]]; then
+  echo "ERROR: expo-localization is missing under apps/mobile/node_modules." >&2
+  echo "  From repo root run: pnpm install" >&2
+  echo "  Use pnpm (not npm) — this is a monorepo." >&2
+  exit 1
+fi
+
+echo "==> Verifying Expo config..."
+(cd "$MOBILE" && npx expo config --type public >/dev/null)
+
 echo "==> EAS Android preview (APK, API: https://guard-app-pe2n.onrender.com)"
+cd "$MOBILE"
 npx eas-cli@latest build \
   --platform android \
   --profile preview \

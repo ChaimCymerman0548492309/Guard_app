@@ -16,6 +16,7 @@
     "dev:api": "pnpm --filter @guardian/api dev",
     "dev:web": "pnpm --filter @guardian/web dev",
     "dev:mobile": "pnpm --filter @guardian/mobile start",
+    "eas:android:preview": "./scripts/eas-preview-android.sh",
     "dev:lab": "./scripts/dev-lab.sh",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
