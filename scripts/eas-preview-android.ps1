@@ -18,6 +18,9 @@ if ($env:EXPO_TOKEN -match "^Bearer") {
 }
 
 & (Join-Path $Root "scripts\install-monorepo.ps1")
+if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
+    exit $LASTEXITCODE
+}
 
 Write-Host "==> Verifying Expo config..." -ForegroundColor Cyan
 Set-Location (Join-Path $Root "apps\mobile")
