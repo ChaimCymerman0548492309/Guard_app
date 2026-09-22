@@ -1,19 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { KNOWN_TRACKER_DOMAINS } from '@guardian/shared';
-import { UserRole } from '@guardian/shared';
 
 const prisma = new PrismaClient();
 
+/** Production/Docker-safe seed — no workspace imports (Render entrypoint). */
 async function main() {
-  for (const domain of KNOWN_TRACKER_DOMAINS) {
-    await prisma.domainReputation.upsert({
-      where: { domain },
-      create: { domain, isTracker: true, category: 'TRACKER', reputationScore: 10 },
-      update: { isTracker: true },
-    });
-  }
-
   const adminEmail = (process.env.ADMIN_EMAIL ?? 'admin@guardian.local').toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin123';
   const passwordHash = await bcrypt.hash(adminPassword, 12);
@@ -24,14 +15,22 @@ async function main() {
       email: adminEmail,
       name: 'Platform Admin',
       passwordHash,
-      role: UserRole.ADMIN,
+      role: 'ADMIN',
     },
     update: {
       name: 'Platform Admin',
       passwordHash,
-      role: UserRole.ADMIN,
+      role: 'ADMIN',
     },
   });
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .then(() => {
+    console.info('Admin user seeded:', (process.env.ADMIN_EMAIL ?? 'admin@guardian.local').toLowerCase());
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

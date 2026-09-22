@@ -22,7 +22,8 @@
     "db:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",
     "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
     "prepare": "pnpm db:generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:trackers": "tsx prisma/seed-trackers.ts"
   },
   "engines": {
     "node": ">=20"
