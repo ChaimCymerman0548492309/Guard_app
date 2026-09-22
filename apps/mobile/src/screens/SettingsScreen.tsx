@@ -26,6 +26,7 @@ import {
 import { loginToCloudApi, logoutFromCloudApi } from '../services/cloud-auth-service';
 import i18n from '../i18n';
 import { exportDataAsJson } from '../services/export-service';
+import { syncPendingEvents } from '../services/sync-service';
 import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
 import { useNavigation } from '@react-navigation/native';
