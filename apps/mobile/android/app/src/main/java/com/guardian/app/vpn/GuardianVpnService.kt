@@ -11,6 +11,7 @@ import android.net.ConnectivityManager
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import android.system.OsConstants
 import android.util.Log
 import com.guardian.app.MainActivity
 import com.guardian.app.R
@@ -341,8 +342,8 @@ class GuardianVpnService : VpnService() {
         return try {
             val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val protocol = when (metadata.protocol) {
-                "TCP" -> ConnectivityManager.IPPROTO_TCP
-                "UDP" -> ConnectivityManager.IPPROTO_UDP
+                "TCP" -> OsConstants.IPPROTO_TCP
+                "UDP" -> OsConstants.IPPROTO_UDP
                 else -> return null
             }
 
