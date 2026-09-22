@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
 import android.os.Build
+import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -19,7 +20,20 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
         const val EVENT_NETWORK = "GuardianVpnNetworkEvent"
     }
 
+    private val activityEventListener = object : ActivityEventListener {
+        override fun onActivityResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?) {
+            if (requestCode == VpnPermissionCallback.REQUEST_CODE) {
+                VpnPermissionCallback.onActivityResult(resultCode, this@GuardianVpnModule)
+            }
+        }
+
+        override fun onNewIntent(intent: Intent) {
+            // no-op
+        }
+    }
+
     init {
+        reactContext.addActivityEventListener(activityEventListener)
         GuardianVpnService.eventListener = { payload ->
             val map = Arguments.createMap().apply {
                 putString("id", payload.id)
@@ -81,7 +95,8 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
                 return
             }
             VpnPermissionCallback.pendingPromise = promise
-            activity.startActivityForResult(prepareIntent, VpnPermissionCallback.REQUEST_CODE)
+            @Suppress("DEPRECATION")
+            reactContext.startActivityForResult(prepareIntent, VpnPermissionCallback.REQUEST_CODE, null)
             return
         }
 
@@ -119,6 +134,11 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
         } catch (e: Exception) {
             promise.reject("START_FAILED", e.message, e)
         }
+    }
+
+    override fun invalidate() {
+        reactContext.removeActivityEventListener(activityEventListener)
+        super.invalidate()
     }
 }
 
