@@ -382,10 +382,10 @@ class GuardianVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Guardian Network Monitor",
+                getString(R.string.vpn_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows when Guardian is monitoring network activity"
+                description = getString(R.string.vpn_channel_description)
             }
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(channel)
@@ -405,8 +405,8 @@ class GuardianVpnService : VpnService() {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
         }
-            .setContentTitle("Guardian is active")
-            .setContentText("Monitoring network activity on this device")
+            .setContentTitle(getString(R.string.vpn_notification_title))
+            .setContentText(getString(R.string.vpn_notification_text))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pending)
             .setOngoing(true)

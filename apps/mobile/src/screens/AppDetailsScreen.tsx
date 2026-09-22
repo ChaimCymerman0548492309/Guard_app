@@ -67,8 +67,14 @@ export function AppDetailsScreen() {
             <>
               <Text style={[styles.sectionTitle, rtl.text]}>{t('appDetails.rulesTriggered')}</Text>
               {assessment.triggeredRules.map((rule) => (
-                <View key={rule} style={styles.ruleChip} accessibilityLabel={formatRule(rule)}>
-                  <Text style={styles.ruleText}>{formatRule(rule)}</Text>
+                <View
+                  key={rule}
+                  style={styles.ruleChip}
+                  accessibilityLabel={t(`ruleIds.${rule}`, { defaultValue: rule })}
+                >
+                  <Text style={styles.ruleText}>
+                    {t(`ruleIds.${rule}`, { defaultValue: rule })}
+                  </Text>
                 </View>
               ))}
             </>
@@ -98,7 +104,10 @@ export function AppDetailsScreen() {
                 {t('appDetails.appId')}: {app.id}
               </Text>
               <Text style={styles.techLine}>
-                {t('appDetails.rules')}: {assessment.triggeredRules.join(', ') || '—'}
+                {t('appDetails.rules')}:{' '}
+                {assessment.triggeredRules
+                  .map((rule) => t(`ruleIds.${rule}`, { defaultValue: rule }))
+                  .join(', ') || '—'}
               </Text>
             </View>
           )}
@@ -106,13 +115,6 @@ export function AppDetailsScreen() {
       )}
     </ScrollView>
   );
-}
-
-function formatRule(rule: string): string {
-  return rule
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/^\w/, (c) => c.toUpperCase());
 }
 
 const styles = StyleSheet.create({

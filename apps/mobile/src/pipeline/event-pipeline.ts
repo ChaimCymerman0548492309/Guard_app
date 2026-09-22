@@ -15,6 +15,8 @@ import { applyRetentionPolicy } from '../services/retention-service';
 import { StubDomainReputationProvider } from '../services/domain-reputation';
 import { syncPendingEvents } from '../services/sync-service';
 import { getDatabase } from '../db/database';
+import i18n from '../i18n';
+import type { ExplanationLocale } from '@guardian/risk-engine';
 import {
   insertNetworkEvent,
   insertTimelineEvent,
@@ -28,6 +30,17 @@ import {
   loadSecurityEventsForApp,
   loadTimelineEvents,
 } from '../db/repositories';
+
+function pipelineLocale(): ExplanationLocale {
+  return i18n.language === 'he' ? 'he' : 'en';
+}
+
+function formatTrafficBytes(totalBytes: number, locale: ExplanationLocale): string {
+  if (locale === 'he') {
+    return `${totalBytes.toLocaleString('he-IL')} בתים`;
+  }
+  return `${totalBytes} bytes`;
+}
 
 export interface PipelineState {
   apps: App[];
@@ -105,7 +118,7 @@ export class EventPipeline {
         appId: event.appId,
         type: 'network',
         title: event.domain,
-        description: `${event.bytesSent + event.bytesReceived} bytes`,
+        description: formatTrafficBytes(event.bytesSent + event.bytesReceived, pipelineLocale()),
         timestamp: event.timestamp,
         metadata: { protocol: event.protocol, isNewDomain: isNew },
       });
@@ -147,6 +160,7 @@ export class EventPipeline {
         securityEvents,
         baseline,
         trustLevel: app.trustLevel,
+        locale: pipelineLocale(),
       });
 
       await upsertAssessment(db, assessment);
@@ -159,7 +173,7 @@ export class EventPipeline {
         id: `tl-assess-${assessment.id}`,
         appId,
         type: 'assessment',
-        title: assessment.level,
+        title: i18n.t(`risk.${assessment.level}`),
         description: assessment.explanation,
         level: assessment.level,
         timestamp: assessment.assessedAt,
@@ -169,6 +183,13 @@ export class EventPipeline {
 
   async reassessApp(appId: string): Promise<void> {
     await this.reassessAffectedApps([appId]);
+  }
+
+  async reassessAllApps(): Promise<void> {
+    const db = await getDatabase();
+    const apps = await loadApps(db);
+    if (apps.length === 0) return;
+    await this.reassessAffectedApps(apps.map((a) => a.id));
   }
 
   async refreshState(): Promise<PipelineState> {

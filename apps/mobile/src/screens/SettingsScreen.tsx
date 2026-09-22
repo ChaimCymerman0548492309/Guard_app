@@ -20,11 +20,9 @@ import {
   isCloudSyncEnabled,
   setCloudSyncEnabled,
   getLanguage,
-  setLanguage,
   getApiAuthEmail,
 } from '../services/settings-service';
 import { loginToCloudApi, logoutFromCloudApi } from '../services/cloud-auth-service';
-import i18n from '../i18n';
 import { exportDataAsJson } from '../services/export-service';
 import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
@@ -32,6 +30,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { APP_VERSION } from '../config/app-config';
+import { useGuardianStore } from '../store/guardian-store';
 
 const RETENTION_OPTIONS = [7, 14, 30, 60, 90];
 const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
@@ -119,6 +118,7 @@ export function SettingsScreen() {
   const { t } = useTranslation();
   const rtl = useRtl();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const applyLanguage = useGuardianStore((s) => s.applyLanguage);
   const [retentionDays, setRetentionDaysState] = useState(30);
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [cloudSyncOn, setCloudSyncOn] = useState(false);
@@ -186,9 +186,7 @@ export function SettingsScreen() {
             key={option.code}
             style={[styles.chip, language === option.code && styles.chipActive]}
             onPress={() => {
-              void getDatabase().then(async (db) => {
-                await setLanguage(db, option.code);
-                await i18n.changeLanguage(option.code);
+              void applyLanguage(option.code).then(() => {
                 setLanguageState(option.code);
               });
             }}

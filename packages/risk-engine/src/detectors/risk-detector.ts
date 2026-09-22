@@ -44,7 +44,7 @@ export class RiskDetector {
       score,
       level,
       triggeredRules,
-      explanation: buildExplanation(level, results),
+      explanation: buildExplanation(level, results, input.locale ?? 'en'),
       assessedAt: new Date(),
     };
   }

@@ -3,7 +3,7 @@ import { t } from './i18n';
 
 describe('i18n', () => {
   it('returns Hebrew strings', () => {
-    expect(t('he', 'title')).toBe('Guardian Dashboard');
+    expect(t('he', 'title')).toBe('לוח בקרה — גארדיין');
   });
 
   it('returns English strings', () => {

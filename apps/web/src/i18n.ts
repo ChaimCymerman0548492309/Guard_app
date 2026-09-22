@@ -2,7 +2,7 @@ export type Locale = 'he' | 'en';
 
 const messages = {
   he: {
-    title: 'Guardian Dashboard',
+    title: 'לוח בקרה — גארדיין',
     subtitle: 'דוחות מכשירים מחוברים — מצב מעבדה',
     refresh: 'רענון',
     devices: 'מכשירים',

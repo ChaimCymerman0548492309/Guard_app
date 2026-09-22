@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">גארדיין</string>
+  <string name="vpn_channel_name">ניטור רשת Guardian</string>
+  <string name="vpn_channel_description">מוצג כשגארדיין עוקב אחר פעילות רשת</string>
+  <string name="vpn_notification_title">גארדיין פעיל</string>
+  <string name="vpn_notification_text">מנטר פעילות רשת במכשיר זה</string>
+</resources>

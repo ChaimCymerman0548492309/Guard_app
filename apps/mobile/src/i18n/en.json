@@ -61,7 +61,8 @@
   },
   "apps": {
     "title": "Your Apps",
-    "noApps": "No apps to show"
+    "noApps": "No apps to show",
+    "unknownApp": "Unknown app"
   },
   "appDetails": {
     "title": "App Details",
@@ -100,7 +101,7 @@
     "notificationsBody": "We'll notify you when something looks unusual. Safe activity stays silent; serious concerns appear immediately.",
     "start": "Start monitoring",
     "stop": "Stop monitoring",
-    "startHint": "Opens the Android VPN permission dialog",
+    "startHint": "Opens Android's VPN permission dialog",
     "continue": "Continue to dashboard",
     "unsupported": "Network monitoring is not available on this device.",
     "simulatorNote": "Demo mode uses simulated events \u2014 no VPN permission needed.",
@@ -113,6 +114,17 @@
     "SAFE": "Safe",
     "UNUSUAL": "Unusual",
     "SUSPICIOUS": "Suspicious"
+  },
+  "ruleIds": {
+    "KNOWN_TRACKER": "Known tracker domain",
+    "NEW_DOMAIN": "New domain contact",
+    "LARGE_UPLOAD": "Large upload",
+    "SENSITIVE_APP_BEHAVIOR": "Sensitive data access",
+    "UNUSUAL_NETWORK_ACTIVITY": "Unusual network activity"
+  },
+  "push": {
+    "channelName": "Security alerts",
+    "alertTitle": "Alert: {{name}}"
   },
   "nav": {
     "home": "Home",

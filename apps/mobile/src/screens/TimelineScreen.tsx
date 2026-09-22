@@ -6,13 +6,13 @@ import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
 
 export function TimelineScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const rtl = useRtl();
   const { timeline, apps } = useGuardianStore();
 
   const items = timeline.map((item) => {
     const app = apps.find((ap) => ap.id === item.appId);
-    return { ...item, appName: app?.displayName ?? 'Unknown' };
+    return { ...item, appName: app?.displayName ?? t('apps.unknownApp') };
   });
 
   return (
@@ -38,7 +38,9 @@ export function TimelineScreen() {
             </View>
             <Text style={styles.eventTitle}>{item.title}</Text>
             <Text style={styles.explanation}>{item.description}</Text>
-            <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleString()}</Text>
+            <Text style={styles.timestamp}>
+              {new Date(item.timestamp).toLocaleString(i18n.language === 'he' ? 'he-IL' : undefined)}
+            </Text>
           </View>
         )}
       />

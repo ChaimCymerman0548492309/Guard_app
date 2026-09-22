@@ -85,6 +85,17 @@ describe('RiskDetector', () => {
     expect(result.triggeredRules).toContain('SENSITIVE_APP_BEHAVIOR');
   });
 
+  it('builds Hebrew explanations when locale is he', () => {
+    const result = detector.assess({
+      appId: APP_ID,
+      networkEvents: [makeNetworkEvent({ domain: 'ads.doubleclick.net' })],
+      securityEvents: [],
+      locale: 'he',
+    });
+    expect(result.explanation).toContain('דומיינים מעקב');
+    expect(result.explanation).not.toContain('Connected to known');
+  });
+
   it('Photo Cleaner demo scenario yields HIGH RISK (SUSPICIOUS)', () => {
     const result = detector.assess({
       appId: APP_ID,

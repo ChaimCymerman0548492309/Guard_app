@@ -61,6 +61,14 @@ End-to-end validation covers the critical user journey from monitoring setup thr
 
 **Expected:** Best-effort drop of DNS/TCP to blocked domain; DoH may bypass.
 
+### Test 6: Real device alert (Hebrew + VPN)
+
+1. Preview/dev APK, VPN **connected**, app language **Hebrew**
+2. Follow `docs/phone-alert-demo-he.md` — e.g. Chrome visit ad-heavy sites
+3. Confirm push title **«התראה: …»** and Hebrew explanation in app details
+
+**Expected:** At least UNUSUAL on Chrome; SUSPICIOUS when multiple rules fire.
+
 ## API + Docker smoke
 
 ```bash

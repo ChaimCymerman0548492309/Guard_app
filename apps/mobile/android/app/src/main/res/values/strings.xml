@@ -1,5 +1,9 @@
 <resources>
   <string name="app_name">Guardian</string>
+  <string name="vpn_channel_name">Guardian network monitor</string>
+  <string name="vpn_channel_description">Shown while Guardian monitors network activity</string>
+  <string name="vpn_notification_title">Guardian is active</string>
+  <string name="vpn_notification_text">Monitoring network activity on this device</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
 </resources>

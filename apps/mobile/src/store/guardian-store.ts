@@ -26,11 +26,13 @@ import {
 import {
   getLanguage,
   isOnboardingComplete,
+  setLanguage,
   setOnboardingComplete,
 } from '../services/settings-service';
 import i18n from '../i18n';
 import { isDevSimulatorEnabled } from '../config/app-flags';
 import { isVpnErrorKey, mapVpnErrorMessage } from '../utils/vpn-errors';
+import { refreshNotificationChannel } from '../services/notification-service';
 
 interface GuardianState {
   apps: App[];
@@ -57,6 +59,7 @@ interface GuardianState {
   trustApp: (appId: string) => Promise<void>;
   refreshFromDb: () => Promise<void>;
   runDemoScenario: () => Promise<void>;
+  applyLanguage: (code: 'en' | 'he') => Promise<void>;
 }
 
 const SCENARIO_MAP: Record<string, SimulatorScenario> = {
@@ -350,5 +353,15 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       counts: computeRiskCounts(state.assessments),
       isSimulator: true,
     });
+  },
+
+  applyLanguage: async (code: 'en' | 'he') => {
+    const db = await getDatabase();
+    await setLanguage(db, code);
+    await i18n.changeLanguage(code);
+    await refreshNotificationChannel();
+    const pipe = await getPipeline();
+    await pipe.reassessAllApps();
+    await get().refreshFromDb();
   },
 }));

@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import type { Alert } from '@guardian/shared';
 import { RiskLevel } from '@guardian/shared';
 import { getNotificationPolicy } from './alert-service';
+import i18n from '../i18n';
 
 let initialized = false;
 
@@ -20,7 +21,7 @@ export async function initNotifications(): Promise<void> {
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('guardian-alerts', {
-        name: 'Security Alerts',
+        name: i18n.t('push.channelName'),
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
       });
@@ -32,6 +33,13 @@ export async function initNotifications(): Promise<void> {
   }
 }
 
+/** Re-create the Android channel after the user changes language. */
+export async function refreshNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  initialized = false;
+  await initNotifications();
+}
+
 export async function notifyForAlert(alert: Alert): Promise<void> {
   const policy = getNotificationPolicy(alert.level);
   if (policy.silent || alert.level === RiskLevel.SAFE) return;
@@ -40,7 +48,7 @@ export async function notifyForAlert(alert: Alert): Promise<void> {
     const Notifications = await import('expo-notifications');
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: alert.title,
+        title: i18n.t('push.alertTitle', { name: alert.title }),
         body: alert.message,
         data: { alertId: alert.id },
         ...(Platform.OS === 'android' ? { channelId: 'guardian-alerts' } : {}),

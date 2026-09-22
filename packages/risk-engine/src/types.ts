@@ -31,6 +31,8 @@ export interface RiskRule {
   evaluate(context: RiskContext): RuleResult;
 }
 
+export type ExplanationLocale = 'en' | 'he';
+
 export interface AssessmentInput {
   appId: string;
   appCategory?: AppCategory;
@@ -39,4 +41,5 @@ export interface AssessmentInput {
   baseline?: AppBehaviorBaseline;
   knownTrackerDomains?: readonly string[];
   trustLevel?: TrustLevel;
+  locale?: ExplanationLocale;
 }
