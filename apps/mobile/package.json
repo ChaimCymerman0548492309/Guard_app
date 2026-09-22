@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "eas-build-pre-install": "bash ../../scripts/eas-pre-install.sh"
+    "eas-build-pre-install": "node ../../scripts/eas-pre-install.mjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.0",
