@@ -56,12 +56,17 @@ if (-not (Ensure-PnpmOnPath)) {
 Write-Host "==> Using pnpm $(pnpm -v)" -ForegroundColor Green
 Write-Host "==> pnpm install (repo root)..." -ForegroundColor Cyan
 pnpm install --ignore-scripts
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "==> Building workspace packages for mobile..." -ForegroundColor Cyan
 pnpm --filter @guardian/shared build
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 pnpm --filter @guardian/ui build
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 pnpm --filter @guardian/risk-engine build
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 pnpm --filter @guardian/simulator build
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $pluginApp = Join-Path $Root "apps\mobile\node_modules\expo-localization\app.plugin.js"
 $pluginRoot = Join-Path $Root "node_modules\expo-localization\app.plugin.js"

@@ -1,7 +1,5 @@
-import type { RuleResult } from '../types.js';
+import type { ExplanationLocale, RuleResult } from '../types.js';
 import { RiskLevel, RuleId } from '@guardian/shared';
-
-export type ExplanationLocale = 'en' | 'he';
 
 const LEVEL_INTROS: Record<ExplanationLocale, Record<RiskLevel, string>> = {
   en: {
