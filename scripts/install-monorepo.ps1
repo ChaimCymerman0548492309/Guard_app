@@ -1,4 +1,5 @@
 # Install all monorepo dependencies (required before EAS / Expo on Windows).
+# Uses your existing Node/npm to bootstrap pnpm once, then pnpm install.
 # Run from repo root in PowerShell:
 #   Set-ExecutionPolicy -Scope Process Bypass
 #   .\scripts\install-monorepo.ps1
@@ -7,24 +8,52 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $Root
 
-if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+function Ensure-PnpmOnPath {
+    if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+        return $true
+    }
+
+    $npmGlobal = Join-Path $env:APPDATA "npm"
+    if (Test-Path $npmGlobal) {
+        $env:Path = "$npmGlobal;$env:Path"
+    }
+    if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+        return $true
+    }
+
+    $pnpmCmd = Join-Path $npmGlobal "pnpm.cmd"
+    if (Test-Path $pnpmCmd) {
+        Set-Alias -Name pnpm -Value $pnpmCmd -Scope Script -Force
+        return $true
+    }
+
+    return $false
+}
+
+if (-not (Ensure-PnpmOnPath)) {
     if (Get-Command corepack -ErrorAction SilentlyContinue) {
-        Write-Host "pnpm not on PATH — enabling via corepack..." -ForegroundColor Yellow
+        Write-Host "==> Enabling pnpm via corepack (Node $(node -v))..." -ForegroundColor Yellow
         corepack enable
         corepack prepare pnpm@10.33.3 --activate
     }
 }
 
-if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    Write-Host "ERROR: pnpm not found." -ForegroundColor Red
-    Write-Host "  Install Node.js LTS, then run ONE of:" -ForegroundColor Yellow
-    Write-Host "    corepack enable" -ForegroundColor Yellow
-    Write-Host "    corepack prepare pnpm@10.33.3 --activate" -ForegroundColor Yellow
-    Write-Host "  OR: npm install -g pnpm" -ForegroundColor Yellow
-    Write-Host "  Close and reopen PowerShell, then run this script again." -ForegroundColor Yellow
+if (-not (Ensure-PnpmOnPath)) {
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
+        Write-Host "==> Installing pnpm globally with npm $(npm -v)..." -ForegroundColor Yellow
+        npm install -g pnpm@10.33.3
+    }
+}
+
+if (-not (Ensure-PnpmOnPath)) {
+    Write-Host "ERROR: Could not run pnpm after install." -ForegroundColor Red
+    Write-Host "  Close PowerShell, open a new window, cd to repo root, run:" -ForegroundColor Yellow
+    Write-Host "    pnpm -v" -ForegroundColor Yellow
+    Write-Host "  Then: .\scripts\install-monorepo.ps1" -ForegroundColor Yellow
     exit 1
 }
 
+Write-Host "==> Using pnpm $(pnpm -v)" -ForegroundColor Green
 Write-Host "==> pnpm install (repo root)..." -ForegroundColor Cyan
 pnpm install --ignore-scripts
 
