@@ -7,8 +7,22 @@ $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $Root
 
 if (-not $env:EXPO_TOKEN) {
+    $fromUser = [System.Environment]::GetEnvironmentVariable('EXPO_TOKEN', 'User')
+    if ($fromUser) {
+        $env:EXPO_TOKEN = $fromUser
+    } else {
+        $fromMachine = [System.Environment]::GetEnvironmentVariable('EXPO_TOKEN', 'Machine')
+        if ($fromMachine) {
+            $env:EXPO_TOKEN = $fromMachine
+        }
+    }
+}
+
+if (-not $env:EXPO_TOKEN) {
     Write-Host "ERROR: Set EXPO_TOKEN first (Expo access token, no 'Bearer ' prefix)." -ForegroundColor Red
     Write-Host "  https://expo.dev/settings/access-tokens" -ForegroundColor Yellow
+    Write-Host "  Same session: `$env:EXPO_TOKEN = 'your_token'" -ForegroundColor Yellow
+    Write-Host "  Or User env (new terminals pick it up; this script also reads User/Machine)." -ForegroundColor Yellow
     exit 1
 }
 
