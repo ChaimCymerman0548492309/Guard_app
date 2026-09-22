@@ -20,6 +20,7 @@ describe('baseline-service', () => {
 
   it('updates baseline with new event data', () => {
     const baselines: Parameters<typeof updateBaseline>[0] = [];
+    const timestamp = new Date('2026-01-15T14:00:00Z');
     const updated = updateBaseline(baselines, {
       id: 'n1',
       appId: 'app-1',
@@ -27,10 +28,10 @@ describe('baseline-service', () => {
       bytesSent: 500,
       bytesReceived: 100,
       isNewDomain: true,
-      timestamp: new Date('2026-01-15T14:00:00Z'),
+      timestamp,
     });
     expect(updated.knownDomains).toContain('example.com');
-    expect(updated.activeHours).toContain(14);
+    expect(updated.activeHours).toContain(timestamp.getHours());
     expect(updated.avgUploadBytes).toBeGreaterThan(0);
   });
 });
