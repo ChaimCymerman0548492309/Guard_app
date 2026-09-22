@@ -40,9 +40,11 @@ pnpm --filter @guardian/risk-engine build
 pnpm --filter @guardian/simulator build
 
 MOBILE="$ROOT/apps/mobile"
-if [[ ! -e "$MOBILE/node_modules/expo-localization/app.plugin.js" ]]; then
-  echo "ERROR: expo-localization is missing under apps/mobile/node_modules." >&2
+if [[ ! -e "$MOBILE/node_modules/expo-localization/app.plugin.js" ]] \
+  && [[ ! -e "$ROOT/node_modules/expo-localization/app.plugin.js" ]]; then
+  echo "ERROR: expo-localization is missing — dependencies were not installed." >&2
   echo "  From repo root run: pnpm install" >&2
+  echo "  Windows PowerShell: .\\scripts\\install-monorepo.ps1" >&2
   echo "  Use pnpm (not npm) — this is a monorepo." >&2
   exit 1
 fi
