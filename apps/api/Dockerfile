@@ -35,10 +35,14 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/risk-engine/package.json ./packages/risk-engine/
 COPY packages/simulator/package.json ./packages/simulator/
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=builder /app/packages/risk-engine/dist ./packages/risk-engine/dist
+COPY --from=builder /app/packages/risk-engine/node_modules ./packages/risk-engine/node_modules
 COPY --from=builder /app/packages/simulator/dist ./packages/simulator/dist
+COPY --from=builder /app/packages/simulator/node_modules ./packages/simulator/node_modules
 RUN chmod +x ./scripts/docker-entrypoint.sh
 ENV NODE_ENV=production
 EXPOSE 3000
