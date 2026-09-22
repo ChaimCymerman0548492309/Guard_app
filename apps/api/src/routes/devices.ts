@@ -11,6 +11,7 @@ import {
 } from '../lib/data-source.js';
 import { accessContext } from '../lib/request-context.js';
 import { sendError, sendSuccess } from '../lib/response.js';
+import { REAL_DEVICES_ERROR, shouldUseSimulatorDatastore } from '../lib/runtime-mode.js';
 
 export const devicesRouter: Router = Router();
 
@@ -77,6 +78,16 @@ devicesRouter.get('/:id/alerts', async (req, res) => {
 });
 
 devicesRouter.post('/:id/demo', async (req, res) => {
+  if (!(await shouldUseSimulatorDatastore())) {
+    sendError(
+      res,
+      REAL_DEVICES_ERROR.code,
+      REAL_DEVICES_ERROR.message,
+      req.requestId,
+      403,
+    );
+    return;
+  }
   const result = await runDeviceDemoScenario(req.params.id, accessContext(req));
   if (!result) {
     sendError(res, 'NOT_FOUND', 'Device not found', req.requestId, 404);

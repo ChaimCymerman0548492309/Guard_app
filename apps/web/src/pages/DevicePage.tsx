@@ -6,7 +6,6 @@ import {
   getDeviceSummary,
   listDeviceAlerts,
   listDeviceApps,
-  runDeviceDemo,
   type AppWithRisk,
 } from '../api';
 import { Layout } from '../components/Layout';
@@ -27,12 +26,13 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [demoRunning, setDemoRunning] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     if (!deviceId) return;
     setLoading(true);
     setError(null);
+    setNotFound(false);
     try {
       const [summary, appList, alertList] = await Promise.all([
         getDeviceSummary(deviceId),
@@ -43,7 +43,12 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
       setApps(appList);
       setAlerts(alertList);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t(locale, 'error'));
+      const message = err instanceof Error ? err.message : t(locale, 'error');
+      if (message.toLowerCase().includes('not found') || message.includes('404')) {
+        setNotFound(true);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -52,17 +57,6 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   useEffect(() => {
     void load();
   }, [load]);
-
-  async function handleDemo() {
-    if (!deviceId) return;
-    setDemoRunning(true);
-    try {
-      await runDeviceDemo(deviceId);
-      await load();
-    } finally {
-      setDemoRunning(false);
-    }
-  }
 
   async function handleAlertAction(alertId: string, action: 'block' | 'allow' | 'ignore') {
     await alertAction(alertId, action);
@@ -76,7 +70,16 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
       </Link>
 
       {loading && <p>{t(locale, 'loading')}</p>}
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {notFound && !loading && (
+        <section className="panel empty-state" role="alert">
+          <p className="error">{t(locale, 'deviceNotFound')}</p>
+        </section>
+      )}
 
       {device && (
         <>
@@ -87,14 +90,6 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                 {device.platform} · {t(locale, 'lastSync')}: {formatDate(device.lastSyncAt, locale)}
               </p>
             </div>
-            <button
-              type="button"
-              className="button primary"
-              disabled={demoRunning}
-              onClick={() => void handleDemo()}
-            >
-              {t(locale, 'runDemo')}
-            </button>
           </section>
 
           <section className="summary-grid compact">
@@ -156,32 +151,38 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
           </section>
 
           <section className="panel">
-            <h2>{t(locale, 'appsOnDevice')} ({apps.length})</h2>
-            <div className="apps-table-wrap">
-              <table className="apps-table">
-                <thead>
-                  <tr>
-                    <th>{t(locale, 'totalApps')}</th>
-                    <th>{t(locale, 'suspicious')}</th>
-                    <th>{t(locale, 'explanation')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {apps.map((app) => (
-                    <tr key={app.id}>
-                      <td>
-                        <strong>{app.displayName}</strong>
-                        <div className="muted">{app.packageName}</div>
-                      </td>
-                      <td>
-                        <RiskBadge level={app.riskLevel} locale={locale} />
-                      </td>
-                      <td>{app.riskScore > 0 ? `${app.riskScore}` : '—'}</td>
+            <h2>
+              {t(locale, 'appsOnDevice')} ({apps.length})
+            </h2>
+            {apps.length === 0 ? (
+              <p className="muted">{t(locale, 'noAppsOnDevice')}</p>
+            ) : (
+              <div className="apps-table-wrap">
+                <table className="apps-table">
+                  <thead>
+                    <tr>
+                      <th>{t(locale, 'totalApps')}</th>
+                      <th>{t(locale, 'suspicious')}</th>
+                      <th>{t(locale, 'explanation')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {apps.map((app) => (
+                      <tr key={app.id}>
+                        <td>
+                          <strong>{app.displayName}</strong>
+                          <div className="muted">{app.packageName}</div>
+                        </td>
+                        <td>
+                          <RiskBadge level={app.riskLevel} locale={locale} />
+                        </td>
+                        <td>{app.riskScore > 0 ? `${app.riskScore}` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         </>
       )}

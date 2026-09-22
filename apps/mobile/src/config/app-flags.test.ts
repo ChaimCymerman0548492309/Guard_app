@@ -15,28 +15,15 @@ describe('app production flags', () => {
     }
   });
 
-  it('isDevSimulatorEnabled is false when env is unset', async () => {
-    delete process.env.EXPO_PUBLIC_DEV_SIMULATOR;
-    const { isDevSimulatorEnabled } = await import('./app-flags');
-    expect(isDevSimulatorEnabled()).toBe(false);
-  });
-
-  it('isDevSimulatorEnabled is true only when explicitly set', async () => {
+  it('isDevSimulatorEnabled is always false (real devices only)', async () => {
     process.env.EXPO_PUBLIC_DEV_SIMULATOR = 'true';
     const { isDevSimulatorEnabled } = await import('./app-flags');
-    expect(isDevSimulatorEnabled()).toBe(true);
-  });
-
-  it('isDevSimulatorEnabled is false when set to false', async () => {
-    process.env.EXPO_PUBLIC_DEV_SIMULATOR = 'false';
-    const { isDevSimulatorEnabled } = await import('./app-flags');
     expect(isDevSimulatorEnabled()).toBe(false);
   });
 
-  it('showDevUi requires both __DEV__ and simulator flag', async () => {
+  it('showDevUi is always false', async () => {
     process.env.EXPO_PUBLIC_DEV_SIMULATOR = 'true';
     const { showDevUi } = await import('./app-flags');
-    // In vitest/node, __DEV__ is undefined/falsy — mirrors production
     expect(showDevUi()).toBe(false);
   });
 });

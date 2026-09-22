@@ -15,7 +15,7 @@ describe('API', () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(['ok', 'degraded']).toContain(res.body.data.status);
+    expect(['ok', 'degraded', 'simulator']).toContain(res.body.data.status);
   });
 
   it('GET /api/v1/apps requires auth', async () => {

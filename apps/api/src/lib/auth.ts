@@ -4,6 +4,7 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 import type { AuthUser, UserRole } from '@guardian/shared';
 import { UserRole as UserRoleEnum } from '@guardian/shared';
 import { isDatabaseAvailable, prisma } from './prisma.js';
+import { shouldUseSimulatorDatastore, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-insecure-change-me';
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 12;
@@ -93,7 +94,7 @@ export function verifyAccessToken(token: string): AuthUser | null {
 async function findUserByEmail(email: string): Promise<SimulatorUserRecord | null> {
   const normalized = email.trim().toLowerCase();
 
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     ensureSimulatorUsers();
     return SIMULATOR_USERS.get(normalized) ?? null;
   }
@@ -121,7 +122,7 @@ export async function authenticateUser(
 }
 
 export async function getUserById(id: string): Promise<AuthUser | null> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     ensureSimulatorUsers();
     for (const user of SIMULATOR_USERS.values()) {
       if (user.id === id) return toAuthUser(user);
@@ -143,7 +144,7 @@ export async function createUser(input: {
   const role = input.role ?? UserRoleEnum.CUSTOMER;
   const passwordHash = await hashPassword(input.password);
 
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     ensureSimulatorUsers();
     if (SIMULATOR_USERS.has(email)) {
       throw new Error('USER_EXISTS');
@@ -172,7 +173,7 @@ export async function createUser(input: {
 }
 
 export async function listUsers(): Promise<AuthUser[]> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     ensureSimulatorUsers();
     return [...SIMULATOR_USERS.values()].map(toAuthUser);
   }

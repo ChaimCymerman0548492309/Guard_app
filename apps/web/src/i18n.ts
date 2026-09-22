@@ -3,7 +3,7 @@ export type Locale = 'he' | 'en';
 const messages = {
   he: {
     title: 'לוח בקרה — גארדיין',
-    subtitle: 'דוחות מכשירים מחוברים — מצב מעבדה',
+    subtitle: 'מכשירים אמיתיים בלבד — נתונים מהטלפון אחרי סנכרון ענן',
     refresh: 'רענון',
     devices: 'מכשירים',
     totalApps: 'אפליקציות',
@@ -50,10 +50,16 @@ const messages = {
     adminOnly: 'רק מנהל יכול לגשת לעמוד זה',
     roleAdmin: 'מנהל',
     roleCustomer: 'לקוח',
+    noDevices: 'אין מכשירים מחוברים',
+    noDevicesHint:
+      'בטלפון: הפעל ניטור VPN, סנכרון ענן והתחברות עם אותו משתמש. אחרי פעילות ברשת הנתונים יופיעו כאן.',
+    noAppsOnDevice: 'אין אפליקציות לדוח זה עדיין',
+    deviceNotFound: 'המכשיר לא נמצא או שאין לך הרשאה',
+    serviceUnavailable: 'השרת לא מחובר למסד נתונים. נדרש PostgreSQL לנתונים אמיתיים.',
   },
   en: {
     title: 'Guardian Dashboard',
-    subtitle: 'Connected device reports — lab environment',
+    subtitle: 'Real devices only — data from phones after cloud sync',
     refresh: 'Refresh',
     devices: 'Devices',
     totalApps: 'Apps',
@@ -100,6 +106,12 @@ const messages = {
     adminOnly: 'Admin access only',
     roleAdmin: 'Admin',
     roleCustomer: 'Customer',
+    noDevices: 'No connected devices',
+    noDevicesHint:
+      'On the phone: enable VPN monitoring, cloud sync, and sign in with the same account. Data appears here after network activity.',
+    noAppsOnDevice: 'No apps on this device yet',
+    deviceNotFound: 'Device not found or access denied',
+    serviceUnavailable: 'Server database is not connected. PostgreSQL is required for real device data.',
   },
 } as const;
 

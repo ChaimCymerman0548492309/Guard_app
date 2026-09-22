@@ -145,6 +145,7 @@
     "cloudLogout": "Sign out",
     "cloudLoggedIn": "Signed in as {{email}}",
     "cloudLoginError": "Cloud sign-in failed",
+    "cloudLoginRequiredSync": "Sign in to cloud in Settings to sync",
     "cloudSyncHint": "Upload aggregated metadata to API (opt-in)",
     "language": "Language",
     "restartHint": "Restart the app for layout direction to apply.",

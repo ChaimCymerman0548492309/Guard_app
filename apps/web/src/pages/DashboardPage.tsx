@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { DashboardSummary, DeviceInfo } from '@guardian/shared';
 import { getDashboardSummary, listDevices } from '../api';
+import { apiUrl } from '../api-base';
 import { DeviceCard } from '../components/DeviceCard';
 import { Layout } from '../components/Layout';
 import { RiskBadge } from '../components/RiskBadge';
@@ -17,13 +18,25 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dbDegraded, setDbDegraded] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setDbDegraded(false);
     try {
+      const healthRes = await fetch(apiUrl('/health'));
+      if (healthRes.ok) {
+        const health = (await healthRes.json()) as {
+          data?: { mode?: string; database?: { connected?: boolean } };
+        };
+        if (health.data?.mode === 'real' && health.data.database?.connected === false) {
+          setDbDegraded(true);
+        }
+      }
+
       const [deviceList, dashboard] = await Promise.all([listDevices(), getDashboardSummary()]);
-      setDevices(deviceList);
+      setDevices(deviceList.filter((d) => !d.isVirtual));
       setSummary(dashboard);
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, 'error'));
@@ -38,11 +51,13 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
 
   return (
     <Layout locale={locale} onToggleLocale={onToggleLocale} onRefresh={() => void load()}>
-      <section className="banner">{t(locale, 'demoMode')}</section>
-      <p className="hint">{t(locale, 'emulatorHint')}</p>
-
       {loading && <p>{t(locale, 'loading')}</p>}
       {error && <p className="error">{error}</p>}
+      {dbDegraded && !error && (
+        <p className="error" role="alert">
+          {t(locale, 'serviceUnavailable')}
+        </p>
+      )}
 
       {summary && (
         <section className="summary-grid">
@@ -66,6 +81,13 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
             <strong>{summary.counts.suspicious}</strong>
             <span>{t(locale, 'suspicious')}</span>
           </div>
+        </section>
+      )}
+
+      {!loading && !error && devices.length === 0 && (
+        <section className="panel empty-state" role="status">
+          <h2>{t(locale, 'noDevices')}</h2>
+          <p className="muted">{t(locale, 'noDevicesHint')}</p>
         </section>
       )}
 

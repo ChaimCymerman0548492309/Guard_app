@@ -29,6 +29,7 @@ import {
   getSimulatorCustomerUserId,
 } from './auth.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
+import { shouldUseSimulatorDatastore, isSimulatorEnabled, isRealPersistenceActive, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
 import type { EventBatchPayload } from './sync-batch-schema.js';
 import { canUseDatabaseSync, ingestSyncBatchToDatabase } from './sync-batch-ingest.js';
 
@@ -120,7 +121,7 @@ function listSimulatorDevicesForUser(user: AuthUser): SimulatorDeviceState[] {
 }
 
 async function getDeviceOwnerId(deviceId: string): Promise<string | null> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     ensureSimulatorDevices();
     return simulatorDevices.get(deviceId)?.ownerUserId ?? null;
   }
@@ -220,7 +221,7 @@ function buildRecentAlerts(deviceId?: string) {
 }
 
 export async function listDevices(ctx: AccessContext): Promise<DeviceInfo[]> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     return listSimulatorDevicesForUser(ctx.user)
       .map(buildDeviceInfo)
       .sort((a, b) => {
@@ -288,7 +289,7 @@ export async function getDeviceSummary(
   const device = await getDeviceById(id, ctx);
   if (!device) return null;
 
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     return {
       ...device,
       recentAlerts: buildRecentAlerts(id).slice(0, 10),
@@ -322,7 +323,7 @@ export async function registerDevice(
   },
   ctx: AccessContext,
 ): Promise<DeviceInfo> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     const state = registerSimulatorDevice(input.id, ctx.user.id, input.name);
     if (input.platform) state.platform = input.platform;
     return buildDeviceInfo(state);
@@ -362,7 +363,7 @@ export async function listAppsWithRisk(
   if (deviceId && !(await assertDeviceAccess(deviceId, ctx))) {
     return [];
   }
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     if (deviceId) {
       await getDeviceById(deviceId, ctx);
     }
@@ -390,18 +391,6 @@ export async function listAppsWithRisk(
   });
 
   if (rows.length === 0) {
-    if (process.env.DEV_SIMULATOR === 'true') {
-      const { apps, assessments } = fromSimulator();
-      return apps.map((app) => {
-        const assessment = assessments.find((a) => a.appId === app.id);
-        return {
-          ...app,
-          deviceId: deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID,
-          riskLevel: assessment?.level ?? 'SAFE',
-          riskScore: assessment?.score ?? 0,
-        };
-      });
-    }
     return [];
   }
 
@@ -425,7 +414,7 @@ export async function getAppById(
   app: App;
   assessment?: RiskAssessment;
 } | null> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     const { apps, assessments } = fromSimulator();
     const app = apps.find((a) => a.id === id);
     if (!app) return null;
@@ -441,10 +430,7 @@ export async function getAppById(
   });
 
   if (!row) {
-    const { apps, assessments } = fromSimulator();
-    const app = apps.find((a) => a.id === id);
-    if (!app) return null;
-    return { app, assessment: assessments.find((a) => a.appId === id) };
+    return null;
   }
 
   if (!canAccessOwner(row.device.userId, ctx.user)) {
@@ -476,7 +462,7 @@ export async function getAppById(
 }
 
 export async function getDashboardSummary(ctx: AccessContext): Promise<DashboardSummary> {
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     const devices = await listDevices(ctx);
     const { counts, apps } = fromSimulator();
     return {
@@ -492,15 +478,6 @@ export async function getDashboardSummary(ctx: AccessContext): Promise<Dashboard
   });
   const devices = await listDevices(ctx);
   if (apps.length === 0) {
-    if (process.env.DEV_SIMULATOR === 'true') {
-      const sim = fromSimulator();
-      return {
-        counts: sim.counts,
-        totalApps: sim.apps.length,
-        totalDevices: devices.length,
-        recentAlerts: buildRecentAlerts(),
-      };
-    }
     return {
       counts: { safe: 0, unusual: 0, suspicious: 0 },
       totalApps: 0,
@@ -579,21 +556,30 @@ export async function ingestEventBatch(
   }
 
   if (!(await canUseDatabaseSync())) {
-    registerSimulatorDevice(input.deviceId, ctx.user.id, input.deviceName);
-    const acceptedEventIds: string[] = [];
-    for (const event of input.networkEvents) {
-      simulatorBatchEvents.push({
-        id: event.clientEventId,
-        appId: `pkg-${event.appPackageName}`,
-        domain: event.domain,
-        bytesSent: event.bytesSent,
-        bytesReceived: event.bytesReceived,
-        isNewDomain: event.isNewDomain,
-        timestamp: new Date(event.timestamp),
-      });
-      acceptedEventIds.push(event.clientEventId);
+    if (await shouldUseSimulatorDatastore()) {
+      registerSimulatorDevice(input.deviceId, ctx.user.id, input.deviceName);
+      const acceptedEventIds: string[] = [];
+      for (const event of input.networkEvents) {
+        simulatorBatchEvents.push({
+          id: event.clientEventId,
+          appId: `pkg-${event.appPackageName}`,
+          domain: event.domain,
+          bytesSent: event.bytesSent,
+          bytesReceived: event.bytesReceived,
+          isNewDomain: event.isNewDomain,
+          timestamp: new Date(event.timestamp),
+        });
+        acceptedEventIds.push(event.clientEventId);
+      }
+      return { accepted: acceptedEventIds.length, acceptedEventIds };
     }
-    return { accepted: acceptedEventIds.length, acceptedEventIds };
+    const error = new Error(DATABASE_UNAVAILABLE_ERROR.message) as Error & {
+      status: number;
+      code: string;
+    };
+    error.status = 503;
+    error.code = DATABASE_UNAVAILABLE_ERROR.code;
+    throw error;
   }
 
   return ingestSyncBatchToDatabase(input, ctx, getDeviceOwnerId);
@@ -603,6 +589,10 @@ export async function runDeviceDemoScenario(
   deviceId: string,
   ctx: AccessContext,
 ): Promise<{ ok: true } | null> {
+  if (!(await shouldUseSimulatorDatastore())) {
+    return null;
+  }
+
   const device = await getDeviceById(deviceId, ctx);
   if (!device) return null;
 
@@ -659,7 +649,7 @@ export async function listEvents(
   if (options.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
     return [];
   }
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     if (options.deviceId) {
       await getDeviceById(options.deviceId, ctx);
     }
@@ -716,7 +706,7 @@ export async function listAlerts(
   if (options?.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
     return [];
   }
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  if ((await shouldUseSimulatorDatastore())) {
     if (options?.deviceId) {
       await getDeviceById(options.deviceId, ctx);
     }
@@ -738,13 +728,6 @@ export async function listAlerts(
   });
 
   if (rows.length === 0) {
-    if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-      let alerts = simulatorAlerts();
-      if (options?.acknowledged !== undefined) {
-        alerts = alerts.filter((a) => a.acknowledged === options.acknowledged);
-      }
-      return alerts;
-    }
     return [];
   }
 
@@ -791,12 +774,12 @@ export async function updateAlertAction(
     }
   }
 
-  if ((await isDatabaseAvailable()) && process.env.DEV_SIMULATOR !== 'true') {
+  if (await isRealPersistenceActive()) {
     await prisma.alert.update({
       where: { id },
       data: { userAction: action, acknowledged: true },
     });
-  } else if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+  } else if (await shouldUseSimulatorDatastore()) {
     simulatorAlertOverrides.set(id, updated);
   }
 

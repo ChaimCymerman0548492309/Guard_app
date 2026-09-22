@@ -2,6 +2,7 @@ import type { AccessContext } from './access-control.js';
 import { canAccessOwner } from './access-control.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
 import type { EventBatchPayload } from './sync-batch-schema.js';
+import { isRealPersistenceActive } from './runtime-mode.js';
 
 import type { z } from 'zod';
 import type { syncAppSchema } from './sync-batch-schema.js';
@@ -228,5 +229,5 @@ export async function ingestSyncBatchToDatabase(
 }
 
 export async function canUseDatabaseSync(): Promise<boolean> {
-  return process.env.DEV_SIMULATOR !== 'true' && (await isDatabaseAvailable());
+  return await isRealPersistenceActive();
 }

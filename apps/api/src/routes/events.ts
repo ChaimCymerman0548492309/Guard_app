@@ -5,6 +5,7 @@ import { accessContext } from '../lib/request-context.js';
 import { deviceRateLimiter } from '../middleware/device-rate-limit.js';
 import { eventBatchSchema } from '../lib/sync-batch-schema.js';
 import { listEvents } from '../lib/data-source.js';
+import { DATABASE_UNAVAILABLE_ERROR } from '../lib/runtime-mode.js';
 
 export const eventsRouter: Router = Router();
 
@@ -25,6 +26,21 @@ eventsRouter.post('/batch', deviceRateLimiter, async (req, res) => {
     return;
   }
 
-  const result = await ingestEventBatch(parsed.data, accessContext(req));
-  sendSuccess(res, result, req.requestId);
+  try {
+    const result = await ingestEventBatch(parsed.data, accessContext(req));
+    sendSuccess(res, result, req.requestId);
+  } catch (error) {
+    const err = error as Error & { status?: number; code?: string };
+    if (err.status === 503) {
+      res.status(503).json({
+        success: false,
+        error: {
+          code: err.code ?? DATABASE_UNAVAILABLE_ERROR.code,
+          message: err.message ?? DATABASE_UNAVAILABLE_ERROR.message,
+        },
+      });
+      return;
+    }
+    throw error;
+  }
 });

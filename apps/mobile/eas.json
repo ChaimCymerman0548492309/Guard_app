@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_DEV_SIMULATOR": "true"
+        "EXPO_PUBLIC_DEV_SIMULATOR": "false"
       }
     },
     "preview": {
