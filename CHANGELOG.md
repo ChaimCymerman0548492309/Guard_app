@@ -2,6 +2,27 @@
 
 All notable changes to Guardian are documented in this file.
 
+## [1.1.0] - 2026-09-22
+
+### Web dashboard & dev lab
+
+- `apps/web` — devices, alerts, Hebrew/English, Photo Cleaner demo
+- `./scripts/dev-lab.sh` — API simulator + dashboard locally
+- `docs/DEV-LAB.md`
+
+### Multi-tenant auth
+
+- Roles **ADMIN** / **CUSTOMER**; JWT login; devices scoped by owner
+- Web login, admin customer management (`/admin/users`)
+- Mobile cloud account login + Bearer sync
+- Prisma user `passwordHash` / `role`, migration + seed
+- `docs/CUSTOMERS-AUTH.md`
+
+### Cloud & Render
+
+- `docker-compose.cloud.yml`, web Docker/nginx image, `docs/REMOTE-ACCESS.md`
+- `render.yaml` + `docs/RENDER.md` (PostgreSQL + API + static dashboard)
+
 ## [1.0.1] - 2026-09-10
 
 ### Gap audit fixes
