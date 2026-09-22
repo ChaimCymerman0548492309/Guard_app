@@ -15,11 +15,14 @@ import { domainsRouter } from './routes/domains.js';
 import { devicesRouter } from './routes/devices.js';
 import { authRouter } from './routes/auth.js';
 import { authenticate } from './middleware/auth.js';
+import { mountDashboard } from './lib/serve-dashboard.js';
 
 export function createApp(): express.Application {
   const app = express();
 
-  app.use(helmet());
+  const serveDashboard = process.env.SERVE_WEB_DASHBOARD !== 'false';
+
+  app.use(serveDashboard ? helmet({ contentSecurityPolicy: false }) : helmet());
   app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
   app.use(
     rateLimit({
@@ -41,6 +44,7 @@ export function createApp(): express.Application {
   app.use('/health', healthRouter);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/openapi', openapiRouter);
+  mountDashboard(app);
   app.use(authenticate(true));
   app.use('/api/v1/apps', appsRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
