@@ -44,14 +44,18 @@ export function createApp(): express.Application {
   app.use('/health', healthRouter);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/openapi', openapiRouter);
+
+  const apiProtected = express.Router();
+  apiProtected.use(authenticate(true));
+  apiProtected.use('/apps', appsRouter);
+  apiProtected.use('/dashboard', dashboardRouter);
+  apiProtected.use('/events', eventsRouter);
+  apiProtected.use('/alerts', alertsRouter);
+  apiProtected.use('/devices', devicesRouter);
+  apiProtected.use('/domains', domainsRouter);
+  app.use('/api/v1', apiProtected);
+
   mountDashboard(app);
-  app.use(authenticate(true));
-  app.use('/api/v1/apps', appsRouter);
-  app.use('/api/v1/dashboard', dashboardRouter);
-  app.use('/api/v1/events', eventsRouter);
-  app.use('/api/v1/alerts', alertsRouter);
-  app.use('/api/v1/devices', devicesRouter);
-  app.use('/api/v1/domains', domainsRouter);
 
   return app;
 }

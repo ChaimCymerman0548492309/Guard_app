@@ -48,6 +48,7 @@ COPY --from=builder /app/packages/simulator/dist ./packages/simulator/dist
 COPY --from=builder /app/packages/simulator/node_modules ./packages/simulator/node_modules
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 ENV SERVE_WEB_DASHBOARD=true
+ENV WEB_DASHBOARD_DIR=/app/apps/web/dist
 RUN chmod +x ./scripts/docker-entrypoint.sh
 ENV NODE_ENV=production
 EXPOSE 3000
