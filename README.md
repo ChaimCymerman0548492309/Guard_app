@@ -28,6 +28,10 @@ See [docs/architecture.md](docs/architecture.md) for the full overview.
 
 See **[docs/DEV-LAB.md](docs/DEV-LAB.md)** for Android Emulator setup (install APKs on a virtual phone).
 
+### Cloud (phone + dashboard off Wi‑Fi)
+
+Deploy API + dashboard on **[Render](https://render.com)** with the repo **`render.yaml`** blueprint — see **[docs/RENDER.md](docs/RENDER.md)** (עברית).
+
 ```
 apps/web        → Web dashboard (device reports)
 apps/mobile     → Expo React Native dashboard + Android VPN module

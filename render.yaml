@@ -1,0 +1,62 @@
+# Render Blueprint — Guardian API + Web + PostgreSQL
+# https://render.com/docs/blueprint-spec
+#
+# Deploy: Render Dashboard → New → Blueprint → connect repo → select render.yaml
+# After deploy: set ADMIN_PASSWORD on guardian-api (required). Redeploy API if seed missed.
+
+databases:
+  - name: guardian-db
+    databaseName: guardian
+    user: guardian
+    plan: free
+
+services:
+  - type: web
+    name: guardian-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEV_SIMULATOR
+        value: 'false'
+      - key: RUN_DB_SEED
+        value: 'true'
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: ADMIN_EMAIL
+        value: admin@guardian.local
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guardian-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: '*'
+
+  - type: web
+    name: guardian-web
+    runtime: static
+    plan: free
+    buildCommand: >-
+      corepack enable &&
+      pnpm install &&
+      pnpm --filter @guardian/shared build &&
+      pnpm --filter @guardian/ui build &&
+      pnpm --filter @guardian/web build
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: guardian-api
+          envVarKey: RENDER_EXTERNAL_URL

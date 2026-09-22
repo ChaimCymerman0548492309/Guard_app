@@ -88,7 +88,17 @@ EXPO_PUBLIC_API_URL=https://guardian.yourdomain.com \
 
 ---
 
-## אפשרות ב' — שירותים מנוהלים (בלי VPS)
+## אפשרות ב' — Render (Blueprint)
+
+מדריך מלא: **[RENDER.md](./RENDER.md)** — `render.yaml` ב-repo, PostgreSQL + API (Docker) + דשבורד Static, HTTPS מובנה.
+
+```text
+Render Dashboard → New → Blueprint → repo → הגדר ADMIN_PASSWORD → Apply
+```
+
+---
+
+## אפשרות ג' — שירותים מנוהלים אחרים (בלי VPS)
 
 | רכיב | שירות לדוגמה |
 |------|----------------|
