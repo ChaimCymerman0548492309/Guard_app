@@ -179,6 +179,33 @@ export async function upsertAlert(db: SQLite.SQLiteDatabase, alert: Alert): Prom
   );
 }
 
+export async function loadLatestAssessmentsPerApp(db: SQLite.SQLiteDatabase): Promise<RiskAssessment[]> {
+  const rows = await db.getAllAsync<{
+    id: string;
+    app_id: string;
+    score: number;
+    level: string;
+    triggered_rules: string;
+    explanation: string;
+    assessed_at: string;
+  }>('SELECT * FROM risk_assessments ORDER BY assessed_at DESC');
+
+  const byApp = new Map<string, RiskAssessment>();
+  for (const row of rows) {
+    if (byApp.has(row.app_id)) continue;
+    byApp.set(row.app_id, {
+      id: row.id,
+      appId: row.app_id,
+      score: row.score,
+      level: row.level as RiskAssessment['level'],
+      triggeredRules: JSON.parse(row.triggered_rules) as string[],
+      explanation: row.explanation,
+      assessedAt: new Date(row.assessed_at),
+    });
+  }
+  return [...byApp.values()];
+}
+
 export async function loadAlerts(db: SQLite.SQLiteDatabase): Promise<Alert[]> {
   const rows = await db.getAllAsync<{
     id: string;

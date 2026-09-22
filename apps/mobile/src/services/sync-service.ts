@@ -1,7 +1,13 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../db/database';
+import {
+  loadApps,
+  loadAlerts,
+  loadLatestAssessmentsPerApp,
+} from '../db/repositories';
 import { isCloudSyncEnabled } from './settings-service';
 import { getCloudAuthHeader } from './cloud-auth-service';
+import * as Device from 'expo-device';
 
 export interface SyncResult {
   synced: number;
@@ -27,6 +33,13 @@ const DEVICE_ID_KEY = 'device_id';
 const BATCH_LIMIT = 100;
 const MAX_RETRIES = 3;
 const BASE_RETRY_DELAY_MS = 500;
+const METADATA_SYNC_INTERVAL_MS = 30_000;
+
+let lastMetadataSyncAt = 0;
+
+export function resetMetadataSyncThrottle(): void {
+  lastMetadataSyncAt = 0;
+}
 
 export function getApiBaseUrl(): string | null {
   const url = process.env.EXPO_PUBLIC_API_URL;
@@ -54,6 +67,14 @@ function generateDeviceId(): string {
     return crypto.randomUUID();
   }
   return '00000000-0000-4000-8000-000000000001';
+}
+
+function buildDeviceDisplayName(): string {
+  const model = Device.modelName ?? Device.deviceName;
+  if (model && model.length > 0) {
+    return model;
+  }
+  return 'Android device';
 }
 
 export async function countUnsyncedNetworkEvents(db: SQLiteDatabase): Promise<number> {
@@ -113,7 +134,14 @@ async function postBatchWithRetry(
   payload: unknown,
   fetchFn: typeof fetch,
   authHeaders: Record<string, string>,
-): Promise<{ ok: true; accepted: number } | { ok: false; error: string; offline: boolean }> {
+): Promise<
+  | {
+      ok: true;
+      accepted: number;
+      acceptedEventIds: string[];
+    }
+  | { ok: false; error: string; offline: boolean }
+> {
   let lastError = 'Sync request failed';
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
@@ -131,12 +159,16 @@ async function postBatchWithRetry(
       if (response.ok) {
         const body = (await response.json()) as {
           success?: boolean;
-          data?: { accepted?: number };
+          data?: { accepted?: number; acceptedEventIds?: string[] };
         };
         if (!body.success) {
           return { ok: false, error: 'Sync response indicated failure', offline: false };
         }
-        return { ok: true, accepted: body.data?.accepted ?? 0 };
+        return {
+          ok: true,
+          accepted: body.data?.accepted ?? 0,
+          acceptedEventIds: body.data?.acceptedEventIds ?? [],
+        };
       }
 
       lastError = `Sync failed with status ${response.status}`;
@@ -156,6 +188,16 @@ async function postBatchWithRetry(
   return { ok: false, error: lastError, offline: true };
 }
 
+function shouldSendMetadata(pendingNetworkEvents: number): boolean {
+  if (pendingNetworkEvents > 0) return true;
+  const now = Date.now();
+  if (now - lastMetadataSyncAt >= METADATA_SYNC_INTERVAL_MS) {
+    lastMetadataSyncAt = now;
+    return true;
+  }
+  return false;
+}
+
 export async function syncPendingEvents(
   fetchFn: typeof fetch = fetch,
 ): Promise<SyncResult> {
@@ -166,20 +208,58 @@ export async function syncPendingEvents(
 
   const db = await getDatabase();
   if (!(await isCloudSyncEnabled(db))) return { synced: 0, skipped: true };
+
   const pending = await countUnsyncedNetworkEvents(db);
-  const rows = await loadUnsyncedNetworkEvents(db);
-  if (rows.length === 0) {
-    return { synced: 0, skipped: false, pending: 0 };
+  if (!shouldSendMetadata(pending)) {
+    return { synced: 0, skipped: false, pending };
   }
 
-  const deviceId = await getOrCreateDeviceId(db);
+  const rows = await loadUnsyncedNetworkEvents(db);
   const authHeaders = await getCloudAuthHeader(db);
   if (!authHeaders.Authorization) {
     return { synced: 0, skipped: false, pending, error: 'Cloud login required' };
   }
+
+  const apps = await loadApps(db);
+  const assessments = await loadLatestAssessmentsPerApp(db);
+  const alerts = await loadAlerts(db);
+  const appIdToPackage = new Map(apps.map((a) => [a.id, a.packageName]));
+
+  const deviceId = await getOrCreateDeviceId(db);
   const payload = {
     deviceId,
+    deviceName: buildDeviceDisplayName(),
+    platform: 'android',
+    apps: apps.map((app) => ({
+      packageName: app.packageName,
+      displayName: app.displayName,
+      category: app.category,
+      isSystem: app.isSystem,
+      trustLevel: app.trustLevel,
+    })),
+    assessments: assessments.map((assessment) => ({
+      id: assessment.id,
+      packageName: appIdToPackage.get(assessment.appId) ?? assessment.appId.replace(/^pkg-/, ''),
+      score: assessment.score,
+      level: assessment.level,
+      triggeredRules: assessment.triggeredRules,
+      explanation: assessment.explanation,
+      assessedAt: assessment.assessedAt.toISOString(),
+    })),
+    alerts: alerts.slice(0, 100).map((alert) => ({
+      id: alert.id,
+      packageName: appIdToPackage.get(alert.appId) ?? alert.appId.replace(/^pkg-/, ''),
+      riskAssessmentId: alert.riskAssessmentId,
+      title: alert.title,
+      message: alert.message,
+      level: alert.level,
+      acknowledged: alert.acknowledged,
+      userAction: alert.userAction,
+      domain: alert.domain,
+      createdAt: alert.createdAt.toISOString(),
+    })),
     networkEvents: rows.map((row) => ({
+      clientEventId: row.id,
       appPackageName: row.package_name,
       domain: row.domain,
       bytesSent: row.bytes_sent,
@@ -188,6 +268,15 @@ export async function syncPendingEvents(
       timestamp: new Date(row.timestamp).toISOString(),
     })),
   };
+
+  if (
+    payload.networkEvents.length === 0 &&
+    payload.apps.length === 0 &&
+    payload.assessments.length === 0 &&
+    payload.alerts.length === 0
+  ) {
+    return { synced: 0, skipped: false, pending: 0 };
+  }
 
   const result = await postBatchWithRetry(baseUrl, deviceId, payload, fetchFn, authHeaders);
   if (!result.ok) {
@@ -199,10 +288,13 @@ export async function syncPendingEvents(
     };
   }
 
-  await markEventsSynced(db, rows.map((row) => row.id));
-  const remaining = Math.max(0, pending - (result.accepted || rows.length));
+  if (result.acceptedEventIds.length > 0) {
+    await markEventsSynced(db, result.acceptedEventIds);
+  }
+
+  const remaining = Math.max(0, pending - result.acceptedEventIds.length);
   return {
-    synced: result.accepted || rows.length,
+    synced: result.acceptedEventIds.length,
     skipped: false,
     pending: remaining,
   };

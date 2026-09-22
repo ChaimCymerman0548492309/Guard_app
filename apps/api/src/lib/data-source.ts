@@ -29,6 +29,8 @@ import {
   getSimulatorCustomerUserId,
 } from './auth.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
+import type { EventBatchPayload } from './sync-batch-schema.js';
+import { canUseDatabaseSync, ingestSyncBatchToDatabase } from './sync-batch-ingest.js';
 
 export type { AccessContext };
 
@@ -241,7 +243,7 @@ export async function listDevices(ctx: AccessContext): Promise<DeviceInfo[]> {
   });
 
   if (rows.length === 0) {
-    return listSimulatorDevicesForUser(ctx.user).map(buildDeviceInfo);
+    return [];
   }
 
   return rows.map((row) => {
@@ -286,9 +288,29 @@ export async function getDeviceSummary(
   const device = await getDeviceById(id, ctx);
   if (!device) return null;
 
+  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+    return {
+      ...device,
+      recentAlerts: buildRecentAlerts(id).slice(0, 10),
+    };
+  }
+
+  const alertRows = await prisma.alert.findMany({
+    where: { app: { deviceId: id } },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    include: { app: true },
+  });
+
   return {
     ...device,
-    recentAlerts: buildRecentAlerts(id).slice(0, 10),
+    recentAlerts: alertRows.map((row) => ({
+      appId: row.appId,
+      appName: row.app.displayName,
+      level: row.level,
+      explanation: row.message,
+      assessedAt: row.createdAt,
+    })),
   };
 }
 
@@ -368,16 +390,19 @@ export async function listAppsWithRisk(
   });
 
   if (rows.length === 0) {
-    const { apps, assessments } = fromSimulator();
-    return apps.map((app) => {
-      const assessment = assessments.find((a) => a.appId === app.id);
-      return {
-        ...app,
-        deviceId: deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID,
-        riskLevel: assessment?.level ?? 'SAFE',
-        riskScore: assessment?.score ?? 0,
-      };
-    });
+    if (process.env.DEV_SIMULATOR === 'true') {
+      const { apps, assessments } = fromSimulator();
+      return apps.map((app) => {
+        const assessment = assessments.find((a) => a.appId === app.id);
+        return {
+          ...app,
+          deviceId: deviceId ?? DEFAULT_VIRTUAL_DEVICE_ID,
+          riskLevel: assessment?.level ?? 'SAFE',
+          riskScore: assessment?.score ?? 0,
+        };
+      });
+    }
+    return [];
   }
 
   return rows.map((row) => ({
@@ -467,19 +492,28 @@ export async function getDashboardSummary(ctx: AccessContext): Promise<Dashboard
   });
   const devices = await listDevices(ctx);
   if (apps.length === 0) {
-    const sim = fromSimulator();
+    if (process.env.DEV_SIMULATOR === 'true') {
+      const sim = fromSimulator();
+      return {
+        counts: sim.counts,
+        totalApps: sim.apps.length,
+        totalDevices: devices.length,
+        recentAlerts: buildRecentAlerts(),
+      };
+    }
     return {
-      counts: sim.counts,
-      totalApps: sim.apps.length,
+      counts: { safe: 0, unusual: 0, suspicious: 0 },
+      totalApps: 0,
       totalDevices: devices.length,
-      recentAlerts: buildRecentAlerts(),
+      recentAlerts: [],
     };
   }
 
   const assessments = await prisma.riskAssessment.findMany({
     orderBy: { assessedAt: 'desc' },
-    take: 50,
+    take: 500,
     include: { app: { include: { device: true } } },
+    where: isAdmin(ctx.user) ? undefined : { app: { device: { userId: ctx.user.id } } },
   });
 
   const latestByApp = new Map<string, (typeof assessments)[0]>();
@@ -502,55 +536,54 @@ export async function getDashboardSummary(ctx: AccessContext): Promise<Dashboard
     }
   }
 
+  const alertRows = await prisma.alert.findMany({
+    where: isAdmin(ctx.user) ? undefined : { app: { device: { userId: ctx.user.id } } },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    include: { app: { include: { device: true } } },
+  });
+
   return {
     counts,
     totalApps: apps.length,
     totalDevices: devices.length,
-    recentAlerts: assessments
-      .filter((a) => a.level !== 'SAFE')
-      .slice(0, 10)
-      .map((a) => ({
-        appId: a.appId,
-        appName: a.app.displayName,
-        level: a.level,
-        explanation: a.explanation,
-        assessedAt: a.assessedAt,
-        deviceId: a.app.deviceId,
-        deviceName: a.app.device.name,
-      })),
+    recentAlerts: alertRows.map((row) => ({
+      appId: row.appId,
+      appName: row.app.displayName,
+      level: row.level,
+      explanation: row.message,
+      assessedAt: row.createdAt,
+      deviceId: row.app.deviceId,
+      deviceName: row.app.device.name,
+    })),
   };
 }
 
-export interface BatchEventInput {
-  deviceId: string;
-  networkEvents: Array<{
-    appPackageName: string;
-    domain: string;
-    bytesSent: number;
-    bytesReceived: number;
-    isNewDomain: boolean;
-    timestamp: string;
-  }>;
+export type { EventBatchPayload } from './sync-batch-schema.js';
+
+export interface SyncBatchResult {
+  accepted: number;
+  acceptedEventIds: string[];
+  appsUpserted?: number;
+  assessmentsUpserted?: number;
+  alertsUpserted?: number;
 }
 
 export async function ingestEventBatch(
-  input: BatchEventInput,
+  input: EventBatchPayload,
   ctx: AccessContext,
-): Promise<{ accepted: number }> {
+): Promise<SyncBatchResult> {
   const ownerId = await getDeviceOwnerId(input.deviceId);
   if (ownerId && !canAccessOwner(ownerId, ctx.user)) {
-    return { accepted: 0 };
-  }
-  if (!ownerId) {
-    await registerDevice({ id: input.deviceId }, ctx);
+    return { accepted: 0, acceptedEventIds: [] };
   }
 
-  if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
-    registerSimulatorDevice(input.deviceId, ctx.user.id);
-    let accepted = 0;
+  if (!(await canUseDatabaseSync())) {
+    registerSimulatorDevice(input.deviceId, ctx.user.id, input.deviceName);
+    const acceptedEventIds: string[] = [];
     for (const event of input.networkEvents) {
       simulatorBatchEvents.push({
-        id: `batch-${input.deviceId}-${simulatorBatchEvents.length}`,
+        id: event.clientEventId,
         appId: `pkg-${event.appPackageName}`,
         domain: event.domain,
         bytesSent: event.bytesSent,
@@ -558,32 +591,12 @@ export async function ingestEventBatch(
         isNewDomain: event.isNewDomain,
         timestamp: new Date(event.timestamp),
       });
-      accepted++;
+      acceptedEventIds.push(event.clientEventId);
     }
-    return { accepted };
+    return { accepted: acceptedEventIds.length, acceptedEventIds };
   }
 
-  let accepted = 0;
-  for (const event of input.networkEvents) {
-    const app = await prisma.app.findFirst({
-      where: { packageName: event.appPackageName, deviceId: input.deviceId },
-    });
-    if (!app) continue;
-
-    await prisma.networkEvent.create({
-      data: {
-        appId: app.id,
-        domain: event.domain,
-        bytesSent: event.bytesSent,
-        bytesReceived: event.bytesReceived,
-        isNewDomain: event.isNewDomain,
-        timestamp: new Date(event.timestamp),
-      },
-    });
-    accepted++;
-  }
-
-  return { accepted };
+  return ingestSyncBatchToDatabase(input, ctx, getDeviceOwnerId);
 }
 
 export async function runDeviceDemoScenario(
@@ -715,13 +728,24 @@ export async function listAlerts(
   }
 
   const rows = await prisma.alert.findMany({
-    where: options?.acknowledged !== undefined ? { acknowledged: options.acknowledged } : undefined,
+    where: {
+      ...(options?.deviceId ? { app: { deviceId: options.deviceId } } : {}),
+      ...(isAdmin(ctx.user) ? {} : { app: { device: { userId: ctx.user.id } } }),
+      ...(options?.acknowledged !== undefined ? { acknowledged: options.acknowledged } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     include: { app: true },
   });
 
   if (rows.length === 0) {
-    return simulatorAlerts();
+    if (process.env.DEV_SIMULATOR === 'true' || !(await isDatabaseAvailable())) {
+      let alerts = simulatorAlerts();
+      if (options?.acknowledged !== undefined) {
+        alerts = alerts.filter((a) => a.acknowledged === options.acknowledged);
+      }
+      return alerts;
+    }
+    return [];
   }
 
   return rows.map((row) => ({

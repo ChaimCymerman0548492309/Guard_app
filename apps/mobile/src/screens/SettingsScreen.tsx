@@ -101,6 +101,7 @@ function CloudAccountSection({
                 if (result.ok) {
                   setLoggedInAs(email.trim().toLowerCase());
                   setPassword('');
+                  void syncPendingEvents().catch(() => undefined);
                 } else {
                   Alert.alert(t('settings.cloudLoginError'), result.error);
                 }

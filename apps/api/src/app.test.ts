@@ -82,6 +82,7 @@ describe('API', () => {
         deviceId: '00000000-0000-4000-8000-000000000001',
         networkEvents: [
           {
+            clientEventId: 'test-event-1',
             appPackageName: 'com.example.app',
             domain: 'example.com',
             bytesSent: 1024,
