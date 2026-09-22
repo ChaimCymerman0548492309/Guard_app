@@ -8,7 +8,20 @@ $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $Root
 
 if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    Write-Host "pnpm not found. Install with: npm install -g pnpm" -ForegroundColor Red
+    if (Get-Command corepack -ErrorAction SilentlyContinue) {
+        Write-Host "pnpm not on PATH — enabling via corepack..." -ForegroundColor Yellow
+        corepack enable
+        corepack prepare pnpm@10.33.3 --activate
+    }
+}
+
+if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+    Write-Host "ERROR: pnpm not found." -ForegroundColor Red
+    Write-Host "  Install Node.js LTS, then run ONE of:" -ForegroundColor Yellow
+    Write-Host "    corepack enable" -ForegroundColor Yellow
+    Write-Host "    corepack prepare pnpm@10.33.3 --activate" -ForegroundColor Yellow
+    Write-Host "  OR: npm install -g pnpm" -ForegroundColor Yellow
+    Write-Host "  Close and reopen PowerShell, then run this script again." -ForegroundColor Yellow
     exit 1
 }
 
