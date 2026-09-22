@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('expo-device', () => ({
+  modelName: 'Test Phone',
+  deviceName: 'Test Phone',
+}));
+
 import {
   getApiBaseUrl,
   syncPendingEvents,
@@ -50,22 +56,29 @@ describe('sync-service', () => {
     mockDb.getFirstAsync
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ value: '00000000-0000-4000-8000-000000000001' });
-    mockDb.getAllAsync.mockResolvedValue([
-      {
-        id: 'evt-1',
-        app_id: 'app-1',
-        package_name: 'com.example.app',
-        domain: 'tracker.example',
-        bytes_sent: 100,
-        bytes_received: 50,
-        is_new_domain: 1,
-        timestamp: '2026-01-01T12:00:00.000Z',
-      },
-    ]);
+    mockDb.getAllAsync
+      .mockResolvedValueOnce([
+        {
+          id: 'evt-1',
+          app_id: 'app-1',
+          package_name: 'com.example.app',
+          domain: 'tracker.example',
+          bytes_sent: 100,
+          bytes_received: 50,
+          is_new_domain: 1,
+          timestamp: '2026-01-01T12:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
 
     const fetchFn = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, data: { accepted: 1 } }),
+      json: async () => ({
+        success: true,
+        data: { accepted: 1, acceptedEventIds: ['evt-1'] },
+      }),
     });
 
     const result = await syncPendingEvents(fetchFn);

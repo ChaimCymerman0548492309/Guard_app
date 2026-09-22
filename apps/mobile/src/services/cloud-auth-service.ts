@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { getApiBaseUrl } from './sync-service';
+import { getApiBaseUrl, resetMetadataSyncThrottle } from './sync-service';
 import {
   clearApiAuthSession,
   getApiAuthToken,
@@ -32,6 +32,7 @@ export async function loginToCloudApi(
       return { ok: false, error: body.error?.message ?? 'Login failed' };
     }
     await setApiAuthSession(db, email.trim().toLowerCase(), body.data.token);
+    resetMetadataSyncThrottle();
     return { ok: true };
   } catch (error) {
     return {

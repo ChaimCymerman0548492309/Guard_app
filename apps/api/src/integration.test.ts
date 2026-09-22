@@ -58,6 +58,7 @@ describe('Critical flow integration', () => {
         deviceId,
         networkEvents: [
           {
+            clientEventId: 'sync-test-1',
             appPackageName: 'com.guardian.sync.test',
             domain: 'sync-test.example.com',
             bytesSent: 2048,

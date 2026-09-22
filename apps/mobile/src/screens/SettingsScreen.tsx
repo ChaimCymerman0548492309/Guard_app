@@ -24,6 +24,7 @@ import {
 } from '../services/settings-service';
 import { loginToCloudApi, logoutFromCloudApi } from '../services/cloud-auth-service';
 import { exportDataAsJson } from '../services/export-service';
+import { syncPendingEvents } from '../services/sync-service';
 import { colors } from '../theme';
 import { useRtl } from '../hooks/use-rtl';
 import { useNavigation } from '@react-navigation/native';
@@ -100,6 +101,7 @@ function CloudAccountSection({
                 if (result.ok) {
                   setLoggedInAs(email.trim().toLowerCase());
                   setPassword('');
+                  void syncPendingEvents().catch(() => undefined);
                 } else {
                   Alert.alert(t('settings.cloudLoginError'), result.error);
                 }
