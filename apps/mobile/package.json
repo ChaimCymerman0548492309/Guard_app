@@ -8,9 +8,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eas-build-pre-install": "bash ../../scripts/eas-pre-install.sh"
   },
   "dependencies": {
+    "@babel/runtime": "^7.26.0",
     "@guardian/risk-engine": "workspace:*",
     "@guardian/shared": "workspace:*",
     "@guardian/simulator": "workspace:*",

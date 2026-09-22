@@ -27,6 +27,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: ['expo-localization', 'expo-sqlite', 'expo-notifications'],
   extra: {
+    ...config?.extra,
     privacyPolicyUrl: process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ?? 'https://guardian.app/privacy',
+    eas: {
+      projectId: '2d168942-629c-407f-b54e-3e16c1b60293',
+    },
   },
 });

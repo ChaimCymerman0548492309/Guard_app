@@ -14,7 +14,8 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_DEV_SIMULATOR": "false"
+        "EXPO_PUBLIC_DEV_SIMULATOR": "false",
+        "EXPO_PUBLIC_API_URL": "https://guard-app-pe2n.onrender.com"
       },
       "android": {
         "buildType": "apk"

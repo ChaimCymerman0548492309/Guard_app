@@ -23,6 +23,16 @@
       "package": "com.guardian.app",
       "versionCode": 100
     },
-    "plugins": ["expo-localization", "expo-sqlite", "expo-notifications"]
+    "plugins": [
+      "expo-localization",
+      "expo-sqlite",
+      "expo-notifications"
+    ],
+    "extra": {
+      "privacyPolicyUrl": "https://guardian.app/privacy",
+      "eas": {
+        "projectId": "2d168942-629c-407f-b54e-3e16c1b60293"
+      }
+    }
   }
 }

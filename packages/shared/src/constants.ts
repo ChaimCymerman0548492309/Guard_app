@@ -17,6 +17,9 @@ export const RISK_LEVEL_COLORS = {
 
 export const API_VERSION = 'v1';
 
+/** Demo / lab app id (Photo Cleaner scenario). */
+export const PHOTO_CLEANER_APP_ID = 'app-photo-editor';
+
 import { TRACKER_REPUTATION_DB } from './domain-reputation.js';
 
 export const KNOWN_TRACKER_DOMAINS = TRACKER_REPUTATION_DB.map(
