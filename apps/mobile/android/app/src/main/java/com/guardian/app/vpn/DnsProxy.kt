@@ -104,7 +104,7 @@ class DnsProxy(
         private const val TAG = "GuardianVpn"
         private val UPSTREAM = arrayOf("1.1.1.1", "8.8.8.8")
 
-        fun parseDnsPacket(packet: ByteArray): DnsPacket? {
+        private fun parseDnsPacket(packet: ByteArray): DnsPacket? {
             if (packet.size < 20) return null
             val version = (packet[0].toInt() ushr 4) and 0xF
             if (version != 4) return null
@@ -121,7 +121,7 @@ class DnsProxy(
             return DnsPacket(srcIp, dstIp, srcPort, domain, payload)
         }
 
-        fun parseQName(payload: ByteArray): String? {
+        private fun parseQName(payload: ByteArray): String? {
             if (payload.size < 12) return null
             val labels = mutableListOf<String>()
             var pos = 12
