@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.VpnService
 import android.os.Build
@@ -126,13 +127,17 @@ class GuardianVpnService : VpnService() {
     )
 
     private var vpnInterface: ParcelFileDescriptor? = null
+    private var relay: PacketRelay? = null
     private val running = AtomicBoolean(false)
     private var workerThread: Thread? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                stopVpn()
+                lastError = null
+                status = VpnRuntimeStatus.STOPPED
+                teardownTunnel()
+                stopSelf()
                 return START_NOT_STICKY
             }
             ACTION_START, null -> {
@@ -144,14 +149,16 @@ class GuardianVpnService : VpnService() {
     }
 
     override fun onDestroy() {
-        stopVpn()
+        teardownTunnel()
         super.onDestroy()
     }
 
     override fun onRevoke() {
+        Log.w(TAG, "System revoked the VPN")
         lastError = "VPN permission was revoked by the system"
         status = VpnRuntimeStatus.ERROR
-        stopVpn()
+        teardownTunnel()
+        stopSelf()
         super.onRevoke()
     }
 
@@ -162,7 +169,12 @@ class GuardianVpnService : VpnService() {
         resetSessionStats()
         status = VpnRuntimeStatus.STARTING
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification())
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
 
         try {
             val builder = Builder()
@@ -171,11 +183,16 @@ class GuardianVpnService : VpnService() {
                 .addAddress("10.0.0.2", 32)
                 .addRoute("0.0.0.0", 0)
                 .setBlocking(true)
+            try {
+                builder.addDisallowedApplication(packageName)
+            } catch (_: PackageManager.NameNotFoundException) {
+            }
 
             vpnInterface = builder.establish()
             if (vpnInterface == null) {
                 lastError = "Failed to establish VPN interface"
                 status = VpnRuntimeStatus.ERROR
+                teardownTunnel()
                 stopSelf()
                 return
             }
@@ -187,22 +204,26 @@ class GuardianVpnService : VpnService() {
             Log.e(TAG, "Failed to start VPN", e)
             lastError = e.message ?: "Failed to start VPN"
             status = VpnRuntimeStatus.ERROR
-            stopVpn()
+            teardownTunnel()
+            stopSelf()
         }
     }
 
-    private fun stopVpn() {
+    private fun teardownTunnel() {
         running.set(false)
         workerThread?.interrupt()
         workerThread = null
+        relay?.close()
+        relay = null
         try {
             vpnInterface?.close()
         } catch (_: Exception) {
         }
         vpnInterface = null
-        status = VpnRuntimeStatus.STOPPED
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        try {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } catch (_: Exception) {
+        }
     }
 
     /**
@@ -213,6 +234,8 @@ class GuardianVpnService : VpnService() {
         val fd = vpnInterface?.fileDescriptor ?: return
         val input = FileInputStream(fd)
         val output = FileOutputStream(fd)
+        val forwarder = PacketRelay(this, output)
+        relay = forwarder
         val packet = ByteBuffer.allocate(32767)
 
         while (running.get() && !Thread.currentThread().isInterrupted) {
@@ -222,19 +245,16 @@ class GuardianVpnService : VpnService() {
                 if (length <= 0) continue
                 recordPacketProcessed()
 
-                val metadata = parsePacketMetadata(packet.array(), length)
-                if (metadata != null) {
-                    if (!metadata.blocked) {
-                        emitEvent(metadata)
-                    }
-                    if (metadata.blocked) {
-                        Log.d(TAG, "Dropped packet to blocked destination: ${metadata.domain ?: metadata.destIp}")
-                        continue
-                    }
+                val snapshot = packet.array().copyOf(length)
+                val metadata = parsePacketMetadata(snapshot, snapshot.size)
+                if (metadata?.blocked == true) {
+                    Log.d(TAG, "Dropped packet to blocked destination: ${metadata.domain ?: metadata.destIp}")
+                    continue
                 }
-
-                // Forward packet so device connectivity is not broken
-                output.write(packet.array(), 0, length)
+                if (metadata?.domain != null) {
+                    emitEvent(metadata)
+                }
+                forwarder.forward(snapshot)
             } catch (e: Exception) {
                 if (running.get()) {
                     Log.w(TAG, "Packet processing error", e)

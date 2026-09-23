@@ -38,6 +38,15 @@ import {
 import i18n from '../i18n';
 import { isDevSimulatorEnabled } from '../config/app-flags';
 import { isVpnErrorKey, mapVpnErrorMessage } from '../utils/vpn-errors';
+
+function localizeVpnStatus<T extends { errorMessage?: string }>(status: T): T {
+  if (!status.errorMessage) return status;
+  const mapped = mapVpnErrorMessage(status.errorMessage);
+  return {
+    ...status,
+    errorMessage: isVpnErrorKey(mapped) ? i18n.t(mapped) : mapped,
+  };
+}
 import { refreshNotificationChannel } from '../services/notification-service';
 
 interface GuardianState {
@@ -161,9 +170,9 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     const isSimulator = isDevSimulatorEnabled();
     const vpn = getGuardianVpnService();
     const isSupported = await vpn.isSupported();
-    const vpnStatus = isSupported
-      ? await vpn.getStatus()
-      : { status: VpnStatus.UNSUPPORTED, isSupported: false };
+    const vpnStatus = localizeVpnStatus(
+      isSupported ? await vpn.getStatus() : { status: VpnStatus.UNSUPPORTED, isSupported: false },
+    );
 
     const pipe = await getPipeline();
 
@@ -229,7 +238,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
 
       if (vpnStatsTimer) clearInterval(vpnStatsTimer);
       vpnStatsTimer = setInterval(() => {
-        void vpn.getStatus().then((status) => set({ vpnStatus: status }));
+        void vpn.getStatus().then((status) => set({ vpnStatus: localizeVpnStatus(status) }));
       }, 10_000);
 
       await refreshSyncState(set);
@@ -254,7 +263,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     const vpn = getGuardianVpnService();
     try {
       await vpn.start();
-      const vpnStatus = await vpn.getStatus();
+      const vpnStatus = localizeVpnStatus(await vpn.getStatus());
       set({ vpnStatus });
     } catch (error) {
       const mapped = mapVpnErrorMessage(error);
@@ -274,7 +283,7 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
     pipeline?.stopFlushTimer();
     if (vpnStatsTimer) clearInterval(vpnStatsTimer);
     vpnStatsTimer = null;
-    const vpnStatus = await vpn.getStatus();
+    const vpnStatus = localizeVpnStatus(await vpn.getStatus());
     set({ vpnStatus });
   },
 
