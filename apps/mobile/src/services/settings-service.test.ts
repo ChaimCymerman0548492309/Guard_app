@@ -39,7 +39,9 @@ describe('settings-service', () => {
   it('language defaults from device when unset', async () => {
     mockDb.getFirstAsync.mockResolvedValue(null);
     expect(await getLanguage(mockDb as never)).toBe('en');
-    vi.mocked(Localization.getLocales).mockReturnValueOnce([{ languageCode: 'he' }]);
+    vi.mocked(Localization.getLocales).mockReturnValueOnce([{ languageCode: 'he' }] as ReturnType<
+      typeof Localization.getLocales
+    >);
     expect(await getLanguage(mockDb as never)).toBe('he');
   });
   it('persists hebrew language', async () => {
