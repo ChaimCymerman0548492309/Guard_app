@@ -30,9 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * DNS-only VPN. App traffic stays on the normal network, so Android does not
  * revoke the session for a broken tunnel. Only DNS questions are recorded.
  *
- * Plain DNS to this VPN and to public resolvers is recorded. Encrypted DNS to
- * those resolvers is reset so the app falls back to a lookup we can name.
- * Strict Private DNS still bypasses the tunnel until it is turned off.
+ * Only this VPN's own DNS address is routed in. Other traffic stays on the
+ * normal network, which keeps Samsung from shutting the tunnel down.
  */
 class GuardianVpnService : VpnService() {
 
@@ -135,7 +134,15 @@ class GuardianVpnService : VpnService() {
     private val running = AtomicBoolean(false)
     private var workerThread: Thread? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private var userStopped = false
+    private var restartAttempts = 0
+    private val restartScheduled = AtomicBoolean(false)
     private val uploadHandler = Handler(Looper.getMainLooper())
+    private val resetRestarts = Runnable { restartAttempts = 0 }
+    private val restartRunnable = Runnable {
+        restartScheduled.set(false)
+        if (!userStopped) startVpn()
+    }
     private val recentQueries = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private val uploadRunnable = object : Runnable {
         override fun run() {
@@ -154,6 +161,10 @@ class GuardianVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
+                userStopped = true
+                uploadHandler.removeCallbacks(restartRunnable)
+                uploadHandler.removeCallbacks(resetRestarts)
+                restartScheduled.set(false)
                 lastError = null
                 status = VpnRuntimeStatus.STOPPED
                 teardownTunnel()
@@ -161,6 +172,8 @@ class GuardianVpnService : VpnService() {
                 return START_NOT_STICKY
             }
             ACTION_START, null -> {
+                userStopped = false
+                restartAttempts = 0
                 startVpn()
                 return START_STICKY
             }
@@ -169,6 +182,9 @@ class GuardianVpnService : VpnService() {
     }
 
     override fun onDestroy() {
+        userStopped = true
+        uploadHandler.removeCallbacks(restartRunnable)
+        uploadHandler.removeCallbacks(resetRestarts)
         teardownTunnel()
         super.onDestroy()
     }
@@ -193,11 +209,14 @@ class GuardianVpnService : VpnService() {
 
     override fun onRevoke() {
         Log.w(TAG, "System revoked the VPN")
-        lastError = "VPN permission was revoked by the system"
-        status = VpnRuntimeStatus.ERROR
-        teardownTunnel()
-        stopSelf()
-        super.onRevoke()
+        val stoppedByUser = userStopped
+        teardownTunnel(stopNotification = false)
+        if (stoppedByUser) {
+            status = VpnRuntimeStatus.STOPPED
+            stopSelf()
+            return
+        }
+        scheduleRestart()
     }
 
     private fun startVpn() {
@@ -218,11 +237,11 @@ class GuardianVpnService : VpnService() {
             val builder = Builder()
                 .setSession("Guardian")
                 .setMtu(1500)
-                .addAddress("10.8.0.1", 32)
+                .addAddress("10.8.0.1", 24)
                 .addDnsServer("10.8.0.1")
+                .addRoute("10.8.0.0", 24)
                 .allowFamily(OsConstants.AF_INET6)
                 .setBlocking(true)
-            addCapturedResolverRoutes(builder)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 builder.setMetered(false)
             }
@@ -233,63 +252,48 @@ class GuardianVpnService : VpnService() {
 
             vpnInterface = builder.establish()
             if (vpnInterface == null) {
-                lastError = "Failed to establish VPN interface"
-                status = VpnRuntimeStatus.ERROR
-                teardownTunnel()
-                stopSelf()
+                teardownTunnel(stopNotification = false)
+                scheduleRestart("Failed to establish VPN interface")
                 return
             }
 
             running.set(true)
             status = VpnRuntimeStatus.ACTIVE
+            lastError = null
             acquireWakeLock()
             uploadHandler.removeCallbacks(uploadRunnable)
             uploadHandler.postDelayed(uploadRunnable, UPLOAD_INTERVAL_MS)
+            uploadHandler.removeCallbacks(resetRestarts)
+            uploadHandler.postDelayed(resetRestarts, 2 * 60 * 1000L)
             workerThread = Thread({ processPackets() }, "GuardianVpnWorker").also { it.start() }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start VPN", e)
-            lastError = e.message ?: "Failed to start VPN"
-            status = VpnRuntimeStatus.ERROR
-            teardownTunnel()
+            teardownTunnel(stopNotification = false)
+            scheduleRestart(e.message ?: "Failed to start VPN")
+        }
+    }
+
+    private fun scheduleRestart(finalError: String = "VPN permission was revoked by the system") {
+        if (userStopped) {
+            status = VpnRuntimeStatus.STOPPED
             stopSelf()
+            return
         }
+        if (!restartScheduled.compareAndSet(false, true)) return
+        restartAttempts += 1
+        if (restartAttempts > 3) {
+            restartScheduled.set(false)
+            lastError = finalError
+            status = VpnRuntimeStatus.ERROR
+            stopSelf()
+            return
+        }
+        lastError = null
+        status = VpnRuntimeStatus.STARTING
+        uploadHandler.postDelayed(restartRunnable, 1_500L)
     }
 
-    /**
-     * Keeps ordinary traffic on the physical network. Only the VPN DNS address
-     * and well-known public resolvers enter the tunnel, so a failed connection
-     * check does not revoke the session.
-     */
-    private fun addCapturedResolverRoutes(builder: Builder) {
-        listOf(
-            "10.8.0.1",
-            "1.1.1.1",
-            "1.0.0.1",
-            "8.8.8.8",
-            "8.8.4.4",
-            "9.9.9.9",
-            "149.112.112.112",
-            "208.67.222.222",
-            "208.67.220.220",
-        ).forEach { builder.addRoute(it, 32) }
-        try {
-            builder.addAddress("fd00:8::1", 128)
-            builder.addDnsServer("fd00:8::1")
-            listOf(
-                "fd00:8::1",
-                "2001:4860:4860::8888",
-                "2001:4860:4860::8844",
-                "2606:4700:4700::1111",
-                "2606:4700:4700::1001",
-                "2620:fe::fe",
-                "2620:fe::9",
-            ).forEach { builder.addRoute(it, 128) }
-        } catch (e: Exception) {
-            Log.w(TAG, "IPv6 DNS capture skipped", e)
-        }
-    }
-
-    private fun teardownTunnel() {
+    private fun teardownTunnel(stopNotification: Boolean = true) {
         running.set(false)
         uploadHandler.removeCallbacks(uploadRunnable)
         releaseWakeLock()
@@ -302,9 +306,11 @@ class GuardianVpnService : VpnService() {
         } catch (_: Exception) {
         }
         vpnInterface = null
-        try {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } catch (_: Exception) {
+        if (stopNotification) {
+            try {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } catch (_: Exception) {
+            }
         }
     }
 

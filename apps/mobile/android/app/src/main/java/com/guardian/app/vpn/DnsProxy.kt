@@ -10,9 +10,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Answers DNS that arrives on the tunnel and forwards the same query upstream.
- * TCP/443 and TCP/853 to a captured resolver are reset so encrypted DNS falls
- * back to plain DNS, which is the only lookup this monitor can name.
+ * Answers DNS on the VPN address and forwards the same query upstream.
+ * Ordinary traffic is not routed into the tunnel, so Android keeps the VPN up.
  */
 class DnsProxy(
     private val vpn: VpnService,
@@ -24,29 +23,29 @@ class DnsProxy(
     private val ipId = AtomicInteger(1)
 
     fun handle(packet: ByteArray) {
-        val query = parseDnsQuery(packet)
-        if (query != null) {
-            executor.execute {
-                try {
-                    onQuery(query.domain, query.srcIp, query.srcPort)
-                    val response = if (isBlocked(query.domain) || isDohBootstrap(query.domain)) {
-                        nxDomain(query.payload)
-                    } else {
-                        forward(query.payload) ?: return@execute
-                    }
-                    writeTun(buildUdpReply(query, response))
-                } catch (e: Exception) {
-                    Log.w(TAG, "DNS proxy failed for ${query.domain}", e)
-                }
+        val echo = icmpEchoReply(packet)
+        if (echo != null) {
+            try {
+                writeTun(echo)
+            } catch (e: Exception) {
+                Log.w(TAG, "ICMP reply failed", e)
             }
             return
         }
 
-        val reset = tcpReset(packet) ?: return
-        try {
-            writeTun(reset)
-        } catch (e: Exception) {
-            Log.w(TAG, "TCP reset failed", e)
+        val query = parseDnsQuery(packet) ?: return
+        executor.execute {
+            try {
+                onQuery(query.domain, query.srcIp, query.srcPort)
+                val response = if (isBlocked(query.domain) || isDohBootstrap(query.domain)) {
+                    nxDomain(query.payload)
+                } else {
+                    forward(query.payload) ?: servFail(query.payload)
+                }
+                writeTun(buildUdpReply(query, response))
+            } catch (e: Exception) {
+                Log.w(TAG, "DNS proxy failed for ${query.domain}", e)
+            }
         }
     }
 
@@ -328,11 +327,36 @@ class DnsProxy(
             return labels.joinToString(".").lowercase()
         }
 
-        private fun nxDomain(query: ByteArray): ByteArray {
+        private fun nxDomain(query: ByteArray): ByteArray = dnsError(query, 0x03)
+
+        private fun servFail(query: ByteArray): ByteArray = dnsError(query, 0x02)
+
+        private fun dnsError(query: ByteArray, code: Int): ByteArray {
             val response = query.copyOf()
             response[2] = (response[2].toInt() or 0x80).toByte()
-            response[3] = ((response[3].toInt() and 0xF0) or 0x03).toByte()
+            response[3] = ((response[3].toInt() and 0xF0) or code).toByte()
             return response
+        }
+
+        private fun icmpEchoReply(packet: ByteArray): ByteArray? {
+            if (packet.size < 28) return null
+            if ((packet[0].toInt() ushr 4) and 0xF != 4) return null
+            if ((packet[9].toInt() and 0xFF) != 1) return null
+            val headerLen = (packet[0].toInt() and 0xF) * 4
+            if (headerLen < 20 || packet.size < headerLen + 8) return null
+            if ((packet[headerLen].toInt() and 0xFF) != 8) return null
+            val reply = packet.copyOf()
+            packet.copyInto(reply, 12, 16, 20)
+            packet.copyInto(reply, 16, 12, 16)
+            reply[headerLen] = 0
+            reply[headerLen + 2] = 0
+            reply[headerLen + 3] = 0
+            val icmpSum = internetChecksum(reply.copyOfRange(headerLen, reply.size))
+            writeShort(reply, headerLen + 2, icmpSum)
+            reply[10] = 0
+            reply[11] = 0
+            writeShort(reply, 10, ipChecksum(reply, headerLen))
+            return reply
         }
 
         private fun ipv4String(packet: ByteArray, offset: Int): String {

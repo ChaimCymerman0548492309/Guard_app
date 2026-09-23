@@ -38,9 +38,9 @@ const messages = {
     newDomain: 'דומיין חדש',
     sinceConnection: 'מהחיבור האחרון',
     monitoringBlind:
-      'הטלפון מסתנכרן, אבל אין כאן שמות אתרים — רק כתובות IP ישנות. כתובת IP נשארת «בטוח» ולא יוצרת התראה. התקן את ה-APK החדש מה-Actions, כבה DNS פרטי וגם «DNS מאובטח» ב-Chrome, הפעל ניטור מחדש, גלוש, חכה כדקה ולחץ רענון.',
+      'הניטור בטלפון נעצר, ולכן אין שמות אתרים חדשים. התקן את ה-APK החדש, לחץ התחל ניטור, גלוש, חכה כדקה ולחץ רענון. DNS פרטי שכבר כבוי נשאר כבוי.',
     alertScenario:
-      'התראה אמיתית ברמה «חריג» (לא «חשוד»): כבה DNS פרטי וגם «DNS מאובטח» ב-Chrome, הפעל ניטור וסנכרון, וגלוש אל https://www.google-analytics.com. אחרי כדקה לחץ רענון. הציון מגיע ל-30 ונוצרת התראה. «חשוד» דורש ציון 70.',
+      'התראה אמיתית ברמה «חריג»: DNS פרטי כבוי ו-DNS מאובטח ב-Chrome כבוי, ואז ניטור וסנכרון פעילים. גלוש אל https://www.google-analytics.com, חכה כדקה ולחץ רענון. הציון מגיע ל-30. «חשוד» דורש ציון 70.',
     lastSync: 'סנכרון אחרון',
     emulatorHint: 'להתקנת אפליקציות אמיתיות: הפעל Android Emulator (ראה docs/DEV-LAB.md)',
     loginTitle: 'התחברות ל-Guardian',
@@ -105,9 +105,9 @@ const messages = {
     newDomain: 'New domain',
     sinceConnection: 'Since the last connection',
     monitoringBlind:
-      'The phone is syncing, but this page only has old IP addresses, not website names. An IP stays Safe and does not raise an alert. Install the new Actions APK, turn off Private DNS and Chrome secure DNS, start monitoring again, browse, wait about a minute, then click Refresh.',
+      'Monitoring on the phone stopped, so no new website names arrived. Install the new APK, tap Start monitoring, browse, wait about a minute, then click Refresh. Private DNS that is already off stays off.',
     alertScenario:
-      'A real Unusual alert, not Suspicious: turn off Private DNS and Chrome secure DNS, start monitoring and cloud sync, then visit https://www.google-analytics.com. After about a minute, click Refresh. The score reaches 30 and an alert appears. Suspicious requires a score of 70.',
+      'A real Unusual alert: with Private DNS off and Chrome secure DNS off, start monitoring and cloud sync, visit https://www.google-analytics.com, wait about a minute, then click Refresh. The score reaches 30. Suspicious requires a score of 70.',
     lastSync: 'Last sync',
     emulatorHint: 'To install real apps: run Android Emulator (see docs/DEV-LAB.md)',
     loginTitle: 'Sign in to Guardian',
