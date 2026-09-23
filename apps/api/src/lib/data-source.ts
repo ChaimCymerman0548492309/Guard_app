@@ -40,6 +40,8 @@ export interface AppWithRisk extends App {
   riskLevel: string;
   riskScore: number;
   deviceId?: string;
+  explanation?: string;
+  assessedAt?: Date;
 }
 
 const SCENARIO_MAP: Record<string, SimulatorScenario> = {
@@ -377,6 +379,8 @@ export async function listAppsWithRisk(
         deviceId: resolvedDeviceId,
         riskLevel: assessment?.level ?? 'SAFE',
         riskScore: assessment?.score ?? 0,
+        explanation: assessment?.explanation,
+        assessedAt: assessment?.assessedAt,
       };
     });
   }
@@ -405,6 +409,8 @@ export async function listAppsWithRisk(
     deviceId: row.deviceId,
     riskLevel: row.riskAssessments[0]?.level ?? 'SAFE',
     riskScore: row.riskAssessments[0]?.score ?? 0,
+    explanation: row.riskAssessments[0]?.explanation,
+    assessedAt: row.riskAssessments[0]?.assessedAt,
   }));
 }
 
@@ -662,12 +668,15 @@ export async function listEvents(
   }
 
   const rows = await prisma.networkEvent.findMany({
-    where: options.appId ? { appId: options.appId } : undefined,
+    where: {
+      ...(options.appId ? { appId: options.appId } : {}),
+      ...(options.deviceId ? { app: { deviceId: options.deviceId } } : {}),
+    },
     orderBy: { timestamp: 'desc' },
     take: options.limit,
   });
 
-  if (rows.length === 0 && !options.appId) {
+  if (rows.length === 0 && !options.appId && !options.deviceId) {
     return simulatorNetworkEvents().slice(0, options.limit);
   }
 

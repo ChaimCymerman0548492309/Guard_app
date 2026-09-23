@@ -59,6 +59,8 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
         </p>
       )}
 
+      <p className="banner scenario-banner">{t(locale, 'alertScenario')}</p>
+
       {summary && (
         <section className="summary-grid">
           <div className="summary-card">

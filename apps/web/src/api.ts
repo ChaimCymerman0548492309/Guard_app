@@ -6,6 +6,7 @@ import type {
   DashboardSummary,
   DeviceInfo,
   DeviceSummary,
+  NetworkEvent,
   RiskAssessment,
   RiskLevel,
 } from '@guardian/shared';
@@ -22,6 +23,8 @@ export interface AppWithRisk extends App {
   riskLevel: string;
   riskScore: number;
   deviceId?: string;
+  explanation?: string;
+  assessedAt?: string | Date;
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -82,6 +85,10 @@ export function getDeviceSummary(deviceId: string): Promise<DeviceSummary> {
 
 export function listDeviceApps(deviceId: string): Promise<AppWithRisk[]> {
   return fetchJson(`/api/v1/devices/${deviceId}/apps`);
+}
+
+export function listDeviceEvents(deviceId: string, limit = 40): Promise<NetworkEvent[]> {
+  return fetchJson(`/api/v1/events?deviceId=${encodeURIComponent(deviceId)}&limit=${limit}`);
 }
 
 export function listDeviceAlerts(deviceId: string, acknowledged?: boolean): Promise<Alert[]> {

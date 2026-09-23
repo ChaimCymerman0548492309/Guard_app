@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Alert, DeviceSummary } from '@guardian/shared';
+import type { Alert, DeviceSummary, NetworkEvent } from '@guardian/shared';
 import {
   alertAction,
+  formatDate,
   getDeviceSummary,
   listDeviceAlerts,
   listDeviceApps,
+  listDeviceEvents,
   type AppWithRisk,
 } from '../api';
 import { Layout } from '../components/Layout';
 import { RiskBadge } from '../components/RiskBadge';
 import type { Locale } from '../i18n';
 import { t } from '../i18n';
-import { formatDate } from '../api';
 
 interface DevicePageProps {
   locale: Locale;
@@ -24,6 +25,7 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   const [device, setDevice] = useState<DeviceSummary | null>(null);
   const [apps, setApps] = useState<AppWithRisk[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [events, setEvents] = useState<NetworkEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -34,14 +36,16 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
     setError(null);
     setNotFound(false);
     try {
-      const [summary, appList, alertList] = await Promise.all([
+      const [summary, appList, alertList, eventList] = await Promise.all([
         getDeviceSummary(deviceId),
         listDeviceApps(deviceId),
         listDeviceAlerts(deviceId, false),
+        listDeviceEvents(deviceId),
       ]);
       setDevice(summary);
       setApps(appList);
       setAlerts(alertList);
+      setEvents(eventList);
     } catch (err) {
       const message = err instanceof Error ? err.message : t(locale, 'error');
       if (message.toLowerCase().includes('not found') || message.includes('404')) {
@@ -61,6 +65,10 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   async function handleAlertAction(alertId: string, action: 'block' | 'allow' | 'ignore') {
     await alertAction(alertId, action);
     await load();
+  }
+
+  function appLabel(appId: string): string {
+    return apps.find((app) => app.id === appId)?.displayName ?? appId;
   }
 
   return (
@@ -107,6 +115,8 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
             </div>
           </section>
 
+          <p className="banner scenario-banner">{t(locale, 'alertScenario')}</p>
+
           <section className="panel">
             <h2>{t(locale, 'recentAlerts')}</h2>
             {alerts.length === 0 ? (
@@ -151,6 +161,30 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
           </section>
 
           <section className="panel">
+            <h2>{t(locale, 'timeline')}</h2>
+            {events.length === 0 ? (
+              <p className="muted">{t(locale, 'noTimeline')}</p>
+            ) : (
+              <ol className="timeline">
+                {events.map((event) => (
+                  <li key={event.id}>
+                    <time dateTime={new Date(event.timestamp).toISOString()}>
+                      {formatDate(event.timestamp, locale)}
+                    </time>
+                    <div className="timeline-body">
+                      <strong>{appLabel(event.appId)}</strong>
+                      <code>{event.domain}</code>
+                      {event.isNewDomain && (
+                        <span className="domain-pill">{t(locale, 'newDomain')}</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+
+          <section className="panel">
             <h2>
               {t(locale, 'appsOnDevice')} ({apps.length})
             </h2>
@@ -162,7 +196,8 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                   <thead>
                     <tr>
                       <th>{t(locale, 'totalApps')}</th>
-                      <th>{t(locale, 'suspicious')}</th>
+                      <th>{t(locale, 'level')}</th>
+                      <th>{t(locale, 'score')}</th>
                       <th>{t(locale, 'explanation')}</th>
                     </tr>
                   </thead>
@@ -177,6 +212,16 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                           <RiskBadge level={app.riskLevel} locale={locale} />
                         </td>
                         <td>{app.riskScore > 0 ? `${app.riskScore}` : '—'}</td>
+                        <td className="explanation-cell">
+                          {app.explanation?.trim() ? (
+                            app.explanation
+                          ) : (
+                            <span className="muted">{t(locale, 'noExplanation')}</span>
+                          )}
+                          {app.assessedAt && (
+                            <div className="muted">{formatDate(app.assessedAt, locale)}</div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

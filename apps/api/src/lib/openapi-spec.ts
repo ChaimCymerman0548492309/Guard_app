@@ -246,6 +246,7 @@ export const OPENAPI_SPEC = {
         parameters: [
           { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
           { name: 'appId', in: 'query', schema: { type: 'string' } },
+          { name: 'deviceId', in: 'query', schema: { type: 'string' } },
         ],
         responses: { '200': { description: 'Paginated network events' } },
       },

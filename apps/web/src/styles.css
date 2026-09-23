@@ -281,6 +281,65 @@ a {
   text-align: start;
   padding: 12px 8px;
   border-bottom: 1px solid var(--panel-border);
+  vertical-align: top;
+}
+
+.explanation-cell {
+  max-width: 420px;
+  line-height: 1.45;
+}
+
+.scenario-banner {
+  line-height: 1.6;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr;
+  gap: 12px;
+  padding-block: 12px;
+  padding-inline-start: 16px;
+  border-inline-start: 2px solid var(--panel-border);
+  position: relative;
+}
+
+.timeline li::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  inset-inline-start: -6px;
+  top: 18px;
+}
+
+.timeline time {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.timeline-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.domain-pill {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--unusual);
+  border: 1px solid #f59e0b55;
+  background: #f59e0b18;
 }
 
 .device-header {
@@ -316,6 +375,10 @@ code {
   }
 
   .summary-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline li {
     grid-template-columns: 1fr;
   }
 }

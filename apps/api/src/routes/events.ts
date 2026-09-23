@@ -12,7 +12,8 @@ export const eventsRouter: Router = Router();
 eventsRouter.get('/', async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 200);
   const appId = typeof req.query.appId === 'string' ? req.query.appId : undefined;
-  const data = await listEvents(accessContext(req), { limit, appId });
+  const deviceId = typeof req.query.deviceId === 'string' ? req.query.deviceId : undefined;
+  const data = await listEvents(accessContext(req), { limit, appId, deviceId });
   sendSuccess(res, data, req.requestId);
 });
 

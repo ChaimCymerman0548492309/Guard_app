@@ -303,6 +303,13 @@ class GuardianVpnService : VpnService() {
         if (protocolNum == 17 && destPort == 53 && length > headerLen + 12) {
             domain = parseDnsQuery(data, headerLen + 8, length)
         }
+        if (domain == null && protocolNum == 6 && destPort == 443 && length > headerLen + 20) {
+            val tcpHeaderLen = ((data[headerLen + 12].toInt() ushr 4) and 0xF) * 4
+            val payloadOffset = headerLen + tcpHeaderLen
+            if (tcpHeaderLen >= 20 && payloadOffset < length) {
+                domain = parseTlsServerName(data, payloadOffset, length)
+            }
+        }
 
         val identifier = domain ?: destIp
         val blocked = isDomainBlocked(identifier)
@@ -318,6 +325,42 @@ class GuardianVpnService : VpnService() {
             isOutbound = true,
             blocked = blocked
         )
+    }
+
+    /** Server name from a TLS ClientHello. Works when DNS itself is encrypted. */
+    private fun parseTlsServerName(data: ByteArray, offset: Int, length: Int): String? {
+        if (offset + 5 >= length || data[offset] != 0x16.toByte()) return null
+        var pos = offset + 5
+        if (pos >= length || data[pos] != 0x01.toByte()) return null
+        pos += 4 + 2 + 32
+        if (pos >= length) return null
+        val sessionLen = data[pos].toInt() and 0xFF
+        pos += 1 + sessionLen
+        if (pos + 2 > length) return null
+        val cipherLen = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
+        pos += 2 + cipherLen
+        if (pos >= length) return null
+        val compressionLen = data[pos].toInt() and 0xFF
+        pos += 1 + compressionLen
+        if (pos + 2 > length) return null
+        val extensionsLen = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
+        pos += 2
+        val extensionsEnd = minOf(length, pos + extensionsLen)
+        while (pos + 4 <= extensionsEnd) {
+            val type = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
+            val extLen = ((data[pos + 2].toInt() and 0xFF) shl 8) or (data[pos + 3].toInt() and 0xFF)
+            pos += 4
+            if (pos + extLen > length) return null
+            if (type == 0 && extLen >= 5) {
+                val nameLen = ((data[pos + 3].toInt() and 0xFF) shl 8) or (data[pos + 4].toInt() and 0xFF)
+                val nameStart = pos + 5
+                if (nameLen > 0 && nameStart + nameLen <= length) {
+                    return String(data, nameStart, nameLen, Charsets.US_ASCII)
+                }
+            }
+            pos += extLen
+        }
+        return null
     }
 
     /** Extract QNAME from DNS query — metadata only, no answer payload stored. */
