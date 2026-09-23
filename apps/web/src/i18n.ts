@@ -36,6 +36,7 @@ const messages = {
     noTimeline: 'עדיין אין פעילות רשת מהמכשיר.',
     noExplanation: 'עדיין לא נרשמה פעילות רשת לאפליקציה הזו.',
     newDomain: 'דומיין חדש',
+    sinceConnection: 'מהחיבור האחרון',
     alertScenario:
       'התראה אמיתית ברמה «חריג» (לא «חשוד»): כבה DNS פרטי וגם «DNS מאובטח» ב-Chrome, הפעל ניטור וסנכרון, וגלוש אל https://www.google-analytics.com. אחרי כחצי דקה לחץ רענון. הציון מגיע ל-30 ונוצרת התראה. «חשוד» דורש ציון 70.',
     lastSync: 'סנכרון אחרון',
@@ -100,6 +101,7 @@ const messages = {
     noTimeline: 'No network activity from this device yet.',
     noExplanation: 'No network activity has been recorded for this app yet.',
     newDomain: 'New domain',
+    sinceConnection: 'Since the last connection',
     alertScenario:
       'A real Unusual alert, not Suspicious: turn off Private DNS and Chrome secure DNS, start monitoring and cloud sync, then visit https://www.google-analytics.com. After about half a minute, click Refresh. The score reaches 30 and an alert appears. Suspicious requires a score of 70.',
     lastSync: 'Last sync',

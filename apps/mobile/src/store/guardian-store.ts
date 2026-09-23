@@ -18,6 +18,7 @@ import { createSimulator, generateEvents } from '@guardian/simulator';
 import { getDatabase, clearDatabase } from '../db/database';
 import { computeRiskCounts, loadAlerts, upsertAlert, upsertApp } from '../db/repositories';
 import { EventPipeline, seedSimulatorData } from '../pipeline/event-pipeline';
+import { AppState } from 'react-native';
 import { getGuardianVpnService } from '../native/guardian-vpn';
 import { applyAlertAction } from '../services/alert-service';
 import { initNotifications, notifyForAlert } from '../services/notification-service';
@@ -88,6 +89,32 @@ const SCENARIO_MAP: Record<string, SimulatorScenario> = {
 let pipeline: EventPipeline | null = null;
 let vpnSubscription: { remove: () => void } | null = null;
 let vpnStatsTimer: ReturnType<typeof setInterval> | null = null;
+let foregroundDrain: { remove: () => void } | null = null;
+let drainChain: Promise<void> = Promise.resolve();
+
+export function drainVpnQueue(options?: { sync?: boolean }): Promise<void> {
+  const job = drainChain.then(() => drainVpnQueueOnce(options));
+  drainChain = job.then(
+    () => undefined,
+    () => undefined,
+  );
+  return job;
+}
+
+async function drainVpnQueueOnce(options?: { sync?: boolean }): Promise<void> {
+  const vpn = getGuardianVpnService();
+  const pending = await vpn.peekPendingEvents();
+  if (pending.length > 0) {
+    const pipe = await getPipeline();
+    for (const event of pending) {
+      await pipe.handleNativeEvent(event);
+    }
+    await pipe.flushPending();
+    await vpn.ackPendingEvents(pending.map((event) => event.id));
+  }
+  if (options?.sync === false) return;
+  await syncPendingEvents(fetch, { onlyIfEvents: true });
+}
 
 async function refreshSyncState(
   set: (partial: Partial<GuardianState>) => void,
@@ -225,11 +252,8 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       const alerts = await loadAlerts(db);
 
       vpnSubscription?.remove();
-      vpnSubscription = vpn.onNetworkEvent((payload) => {
-        void pipe
-          .handleNativeEvent(payload)
-          .then(() => get().refreshFromDb())
-          .then(() => runCloudSync(set));
+      vpnSubscription = vpn.onNetworkEvent(() => {
+        void drainVpnQueue({ sync: false }).then(() => get().refreshFromDb());
       });
 
       pipe.startFlushTimer(() => {
@@ -241,8 +265,14 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
         void vpn.getStatus().then((status) => set({ vpnStatus: localizeVpnStatus(status) }));
       }, 10_000);
 
+      if (!foregroundDrain) {
+        foregroundDrain = AppState.addEventListener('change', (state) => {
+          if (state === 'active') void drainVpnQueue();
+        });
+      }
+
       await refreshSyncState(set);
-      void runCloudSync(set);
+      void drainVpnQueue().finally(() => runCloudSync(set));
 
       set({
         apps: state.apps,

@@ -86,6 +86,17 @@ describe('sync-service', () => {
     expect(fetchFn).toHaveBeenCalled();
   });
 
+  it('syncPendingEvents does not call the network when onlyIfEvents and nothing is pending', async () => {
+    vi.stubEnv('EXPO_PUBLIC_API_URL', 'http://localhost:3000');
+    mockDb.getFirstAsync.mockResolvedValueOnce({ count: 0 });
+    const fetchFn = vi.fn();
+
+    const result = await syncPendingEvents(fetchFn, { onlyIfEvents: true });
+
+    expect(result).toEqual({ synced: 0, skipped: false, pending: 0 });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
   it('countUnsyncedNetworkEvents returns pending count', async () => {
     mockDb.getFirstAsync.mockResolvedValue({ count: 7 });
     expect(await countUnsyncedNetworkEvents(mockDb as never)).toBe(7);

@@ -10,6 +10,7 @@ export interface AggregatedNetworkEvent {
   bytesReceived: number;
   protocol: NetworkProtocol;
   count: number;
+  sourceId: string;
   firstTimestamp: Date;
   lastTimestamp: Date;
 }
@@ -67,6 +68,7 @@ export class EventAggregator {
       bytesReceived: payload.bytesReceived,
       protocol: payload.protocol,
       count: 1,
+      sourceId: payload.id || `net-${key}-${now.getTime()}`,
       firstTimestamp: now,
       lastTimestamp: now,
     });
@@ -109,7 +111,7 @@ export class EventAggregator {
 
   private toNetworkEvent(agg: AggregatedNetworkEvent, isNewDomain: boolean): NetworkEvent {
     return {
-      id: `net-${agg.key}-${agg.lastTimestamp.getTime()}`,
+      id: agg.sourceId,
       appId: agg.appId,
       domain: agg.domain,
       bytesSent: agg.bytesSent,

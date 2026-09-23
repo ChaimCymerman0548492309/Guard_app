@@ -194,7 +194,10 @@ function shouldSendMetadata(pendingNetworkEvents: number): boolean {
   return false;
 }
 
-export async function syncPendingEvents(fetchFn: typeof fetch = fetch): Promise<SyncResult> {
+export async function syncPendingEvents(
+  fetchFn: typeof fetch = fetch,
+  options?: { onlyIfEvents?: boolean },
+): Promise<SyncResult> {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
     return { synced: 0, skipped: true };
@@ -204,7 +207,10 @@ export async function syncPendingEvents(fetchFn: typeof fetch = fetch): Promise<
   if (!(await isCloudSyncEnabled(db))) return { synced: 0, skipped: true };
 
   const pending = await countUnsyncedNetworkEvents(db);
-  if (!shouldSendMetadata(pending)) {
+  if (options?.onlyIfEvents && pending === 0) {
+    return { synced: 0, skipped: false, pending: 0 };
+  }
+  if (!options?.onlyIfEvents && !shouldSendMetadata(pending)) {
     return { synced: 0, skipped: false, pending };
   }
 

@@ -16,6 +16,8 @@ export interface GuardianVpnService {
   getStatus(): Promise<VpnServiceStatus>;
   isSupported(): Promise<boolean>;
   blockDomain(domain: string): Promise<boolean>;
+  peekPendingEvents(): Promise<NativeNetworkEventPayload[]>;
+  ackPendingEvents(ids: string[]): Promise<void>;
   onNetworkEvent(listener: (event: NativeNetworkEventPayload) => void): Subscription;
 }
 

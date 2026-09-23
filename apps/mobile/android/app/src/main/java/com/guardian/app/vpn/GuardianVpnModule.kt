@@ -1,15 +1,21 @@
 package com.guardian.app.vpn
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableArray
+import org.json.JSONObject
 import com.facebook.react.modules.core.DeviceEventManagerModule
 
 class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
@@ -113,6 +119,27 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun peekPendingEvents(promise: Promise) {
+        val queued = VpnEventQueue.peek(reactContext)
+        val result = Arguments.createArray()
+        for (index in 0 until queued.length()) {
+            val row = queued.optJSONObject(index) ?: continue
+            result.pushMap(row.toWritableMap())
+        }
+        promise.resolve(result)
+    }
+
+    @ReactMethod
+    fun ackPendingEvents(ids: ReadableArray, promise: Promise) {
+        val acknowledged = mutableSetOf<String>()
+        for (index in 0 until ids.size()) {
+            ids.getString(index)?.let { acknowledged.add(it) }
+        }
+        VpnEventQueue.ack(reactContext, acknowledged)
+        promise.resolve(null)
+    }
+
+    @ReactMethod
     fun blockDomain(domain: String, promise: Promise) {
         // Best-effort: drops DNS/TCP packets matching the domain in the VPN layer.
         // DoH/DoT and direct-IP connections may bypass this blocklist.
@@ -121,6 +148,7 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
     }
 
     internal fun startVpnService(promise: Promise) {
+        requestBatteryExemption()
         try {
             val intent = Intent(reactContext, GuardianVpnService::class.java).apply {
                 action = GuardianVpnService.ACTION_START
@@ -136,10 +164,35 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    private fun requestBatteryExemption() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        try {
+            val power = reactContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (power.isIgnoringBatteryOptimizations(reactContext.packageName)) return
+            val activity = reactContext.currentActivity ?: return
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:${reactContext.packageName}")
+            }
+            activity.startActivity(intent)
+        } catch (_: Exception) {
+        }
+    }
+
     override fun invalidate() {
         reactContext.removeActivityEventListener(activityEventListener)
         super.invalidate()
     }
+}
+
+private fun JSONObject.toWritableMap() = Arguments.createMap().apply {
+    putString("id", optString("id"))
+    putString("packageName", optString("packageName"))
+    putString("domain", optString("domain"))
+    putDouble("bytesSent", optLong("bytesSent").toDouble())
+    putDouble("bytesReceived", optLong("bytesReceived").toDouble())
+    putString("direction", optString("direction"))
+    putString("protocol", optString("protocol"))
+    putDouble("timestamp", optLong("timestamp").toDouble())
 }
 
 object VpnPermissionCallback {

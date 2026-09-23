@@ -43,7 +43,7 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
           getDeviceSummary(deviceId),
           listDeviceApps(deviceId),
           listDeviceAlerts(deviceId, false),
-          listDeviceEvents(deviceId),
+          listDeviceEvents(deviceId, 150),
         ]);
         setDevice(summary);
         setApps(appList);
@@ -77,6 +77,17 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
 
   function appLabel(appId: string): string {
     return apps.find((app) => app.id === appId)?.displayName ?? appId;
+  }
+
+  function domainsForApp(appId: string): string[] {
+    const seen = new Set<string>();
+    const names: string[] = [];
+    for (const event of events) {
+      if (event.appId !== appId || !event.domain || seen.has(event.domain)) continue;
+      seen.add(event.domain);
+      names.push(event.domain);
+    }
+    return names;
   }
 
   return (
@@ -234,6 +245,14 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                             )}
                             {app.assessedAt && (
                               <div className="muted">{formatDate(app.assessedAt, locale)}</div>
+                            )}
+                            {domainsForApp(app.id).length > 0 && (
+                              <div className="domain-snapshot">
+                                <span className="muted">{t(locale, 'sinceConnection')}</span>
+                                {domainsForApp(app.id).map((domain) => (
+                                  <code key={domain}>{domain}</code>
+                                ))}
+                              </div>
                             )}
                           </td>
                         </tr>

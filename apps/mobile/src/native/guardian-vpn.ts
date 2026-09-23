@@ -17,6 +17,8 @@ interface NativeModuleShape {
   }>;
   isSupported(): Promise<boolean>;
   blockDomain(domain: string): Promise<boolean>;
+  peekPendingEvents(): Promise<Record<string, unknown>[]>;
+  ackPendingEvents(ids: string[]): Promise<void>;
 }
 
 function createUnsupportedService(): GuardianVpnService {
@@ -35,6 +37,12 @@ function createUnsupportedService(): GuardianVpnService {
     },
     async blockDomain() {
       return false;
+    },
+    async peekPendingEvents() {
+      return [];
+    },
+    async ackPendingEvents() {
+      /* no-op */
     },
     onNetworkEvent() {
       return { remove() {} };
@@ -70,6 +78,11 @@ function createAndroidService(): GuardianVpnService {
     },
     isSupported: () => native.isSupported(),
     blockDomain: (domain) => native.blockDomain(domain),
+    peekPendingEvents: async () => {
+      const rows = await native.peekPendingEvents();
+      return rows.map((row) => mapNativeEvent(row));
+    },
+    ackPendingEvents: (ids) => native.ackPendingEvents(ids),
     onNetworkEvent(listener) {
       const subscription = emitter.addListener('GuardianVpnNetworkEvent', (event) => {
         listener(mapNativeEvent(event as Record<string, unknown>));

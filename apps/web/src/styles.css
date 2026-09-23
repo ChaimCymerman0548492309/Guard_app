@@ -289,6 +289,18 @@ a {
   line-height: 1.45;
 }
 
+.domain-snapshot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.domain-snapshot code {
+  margin-top: 0;
+}
+
 .scenario-banner {
   line-height: 1.6;
 }

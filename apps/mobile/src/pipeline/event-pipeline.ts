@@ -13,7 +13,6 @@ import { updateBaseline, isNewDomainForApp } from '../services/baseline-service'
 import { generateAlertsFromAssessments } from '../services/alert-service';
 import { applyRetentionPolicy } from '../services/retention-service';
 import { StubDomainReputationProvider } from '../services/domain-reputation';
-import { syncPendingEvents } from '../services/sync-service';
 import { getDatabase } from '../db/database';
 import i18n from '../i18n';
 import type { ExplanationLocale } from '@guardian/risk-engine';
@@ -126,7 +125,13 @@ export class EventPipeline {
 
     await this.reassessAffectedApps(events.map((e) => e.appId));
     await applyRetentionPolicy(db);
-    void syncPendingEvents().catch(() => undefined);
+  }
+
+  async flushPending(): Promise<void> {
+    const flushed = this.aggregator.flushAll();
+    if (flushed.length > 0) {
+      await this.processNetworkEvents(flushed);
+    }
   }
 
   private async reassessAffectedApps(appIds: string[]): Promise<void> {

@@ -11,7 +11,10 @@ import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.VpnService
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.os.PowerManager
 import android.system.OsConstants
 import android.util.Log
 import com.guardian.app.MainActivity
@@ -35,6 +38,7 @@ class GuardianVpnService : VpnService() {
         private const val TAG = "GuardianVpn"
         private const val CHANNEL_ID = "guardian_vpn"
         private const val NOTIFICATION_ID = 1001
+        private const val UPLOAD_INTERVAL_MS = 3 * 60 * 1000L
         const val ACTION_START = "com.guardian.app.vpn.START"
         const val ACTION_STOP = "com.guardian.app.vpn.STOP"
 
@@ -128,7 +132,22 @@ class GuardianVpnService : VpnService() {
     private var dnsProxy: DnsProxy? = null
     private val running = AtomicBoolean(false)
     private var workerThread: Thread? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private val uploadHandler = Handler(Looper.getMainLooper())
     private val recentQueries = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val uploadRunnable = object : Runnable {
+        override fun run() {
+            if (!running.get()) return
+            acquireWakeLock()
+            // The JS task returns before any HTTP call when nothing is waiting to upload.
+            try {
+                startService(Intent(this@GuardianVpnService, GuardianSyncTaskService::class.java))
+            } catch (e: Exception) {
+                Log.w(TAG, "Background sync start failed", e)
+            }
+            uploadHandler.postDelayed(this, UPLOAD_INTERVAL_MS)
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -150,6 +169,24 @@ class GuardianVpnService : VpnService() {
     override fun onDestroy() {
         teardownTunnel()
         super.onDestroy()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (status == VpnRuntimeStatus.ACTIVE) {
+            try {
+                val restart = Intent(this, GuardianVpnService::class.java).apply {
+                    action = ACTION_START
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(restart)
+                } else {
+                    startService(restart)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not restart VPN after task removal", e)
+            }
+        }
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onRevoke() {
@@ -203,6 +240,9 @@ class GuardianVpnService : VpnService() {
 
             running.set(true)
             status = VpnRuntimeStatus.ACTIVE
+            acquireWakeLock()
+            uploadHandler.removeCallbacks(uploadRunnable)
+            uploadHandler.postDelayed(uploadRunnable, UPLOAD_INTERVAL_MS)
             workerThread = Thread({ processPackets() }, "GuardianVpnWorker").also { it.start() }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start VPN", e)
@@ -215,6 +255,8 @@ class GuardianVpnService : VpnService() {
 
     private fun teardownTunnel() {
         running.set(false)
+        uploadHandler.removeCallbacks(uploadRunnable)
+        releaseWakeLock()
         workerThread?.interrupt()
         workerThread = null
         dnsProxy?.close()
@@ -312,7 +354,35 @@ class GuardianVpnService : VpnService() {
         )
 
         recordEventEmitted()
+        VpnEventQueue.enqueue(
+            this,
+            payload.id,
+            payload.packageName,
+            payload.domain,
+            payload.bytesSent,
+            payload.bytesReceived,
+            payload.direction,
+            payload.protocol,
+            payload.timestamp,
+        )
         eventListener?.invoke(payload)
+    }
+
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        val power = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "guardian:vpn").apply {
+            setReferenceCounted(false)
+            acquire(6 * 60 * 60 * 1000L)
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) wakeLock?.release()
+        } catch (_: Exception) {
+        }
+        wakeLock = null
     }
 
     private fun resolvePackageName(metadata: PacketMetadata): String? {
