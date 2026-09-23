@@ -20,37 +20,53 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [dbDegraded, setDbDegraded] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setDbDegraded(false);
-    try {
-      const healthRes = await fetch(apiUrl('/health'));
-      if (healthRes.ok) {
-        const health = (await healthRes.json()) as {
-          data?: { mode?: string; database?: { connected?: boolean } };
-        };
-        if (health.data?.mode === 'real' && health.data.database?.connected === false) {
-          setDbDegraded(true);
-        }
+  const load = useCallback(
+    async (mode: 'initial' | 'silent' = 'initial') => {
+      if (mode === 'initial') {
+        setLoading(true);
+        setError(null);
+        setDbDegraded(false);
       }
+      try {
+        const healthRes = await fetch(apiUrl('/health'));
+        if (healthRes.ok) {
+          const health = (await healthRes.json()) as {
+            data?: { mode?: string; database?: { connected?: boolean } };
+          };
+          if (health.data?.mode === 'real' && health.data.database?.connected === false) {
+            setDbDegraded(true);
+          } else {
+            setDbDegraded(false);
+          }
+        }
 
-      const [deviceList, dashboard] = await Promise.all([listDevices(), getDashboardSummary()]);
-      setDevices(deviceList.filter((d) => !d.isVirtual));
-      setSummary(dashboard);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t(locale, 'error'));
-    } finally {
-      setLoading(false);
-    }
-  }, [locale]);
+        const [deviceList, dashboard] = await Promise.all([listDevices(), getDashboardSummary()]);
+        setDevices(deviceList.filter((d) => !d.isVirtual));
+        setSummary(dashboard);
+        setError(null);
+      } catch (err) {
+        if (mode === 'silent') return;
+        setError(err instanceof Error ? err.message : t(locale, 'error'));
+      } finally {
+        if (mode === 'initial') setLoading(false);
+      }
+    },
+    [locale],
+  );
 
   useEffect(() => {
-    void load();
+    void load('initial');
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void load('silent');
+      }
+    }, 10_000);
+    return () => clearInterval(timer);
   }, [load]);
 
   return (
-    <Layout locale={locale} onToggleLocale={onToggleLocale} onRefresh={() => void load()}>
+    <Layout locale={locale} onToggleLocale={onToggleLocale} onRefresh={() => void load('initial')}>
+      <p className="live-pill">{t(locale, 'live')}</p>
       {loading && <p>{t(locale, 'loading')}</p>}
       {error && <p className="error">{error}</p>}
       {dbDegraded && !error && (

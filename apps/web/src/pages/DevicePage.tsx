@@ -30,41 +30,55 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!deviceId) return;
-    setLoading(true);
-    setError(null);
-    setNotFound(false);
-    try {
-      const [summary, appList, alertList, eventList] = await Promise.all([
-        getDeviceSummary(deviceId),
-        listDeviceApps(deviceId),
-        listDeviceAlerts(deviceId, false),
-        listDeviceEvents(deviceId),
-      ]);
-      setDevice(summary);
-      setApps(appList);
-      setAlerts(alertList);
-      setEvents(eventList);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t(locale, 'error');
-      if (message.toLowerCase().includes('not found') || message.includes('404')) {
-        setNotFound(true);
-      } else {
-        setError(message);
+  const load = useCallback(
+    async (mode: 'initial' | 'silent' = 'initial') => {
+      if (!deviceId) return;
+      if (mode === 'initial') {
+        setLoading(true);
+        setError(null);
+        setNotFound(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [deviceId, locale]);
+      try {
+        const [summary, appList, alertList, eventList] = await Promise.all([
+          getDeviceSummary(deviceId),
+          listDeviceApps(deviceId),
+          listDeviceAlerts(deviceId, false),
+          listDeviceEvents(deviceId),
+        ]);
+        setDevice(summary);
+        setApps(appList);
+        setAlerts(alertList);
+        setEvents(eventList);
+        setError(null);
+        setNotFound(false);
+      } catch (err) {
+        if (mode === 'silent') return;
+        const message = err instanceof Error ? err.message : t(locale, 'error');
+        if (message.toLowerCase().includes('not found') || message.includes('404')) {
+          setNotFound(true);
+        } else {
+          setError(message);
+        }
+      } finally {
+        if (mode === 'initial') setLoading(false);
+      }
+    },
+    [deviceId, locale],
+  );
 
   useEffect(() => {
-    void load();
+    void load('initial');
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void load('silent');
+      }
+    }, 10_000);
+    return () => clearInterval(timer);
   }, [load]);
 
   async function handleAlertAction(alertId: string, action: 'block' | 'allow' | 'ignore') {
     await alertAction(alertId, action);
-    await load();
+    await load('silent');
   }
 
   function appLabel(appId: string): string {
@@ -98,6 +112,7 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                 {device.platform} · {t(locale, 'lastSync')}: {formatDate(device.lastSyncAt, locale)}
               </p>
             </div>
+            <span className="live-pill">{t(locale, 'live')}</span>
           </section>
 
           <section className="summary-grid compact">
@@ -202,28 +217,34 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {apps.map((app) => (
-                      <tr key={app.id}>
-                        <td>
-                          <strong>{app.displayName}</strong>
-                          <div className="muted">{app.packageName}</div>
-                        </td>
-                        <td>
-                          <RiskBadge level={app.riskLevel} locale={locale} />
-                        </td>
-                        <td>{app.riskScore > 0 ? `${app.riskScore}` : '—'}</td>
-                        <td className="explanation-cell">
-                          {app.explanation?.trim() ? (
-                            app.explanation
-                          ) : (
-                            <span className="muted">{t(locale, 'noExplanation')}</span>
-                          )}
-                          {app.assessedAt && (
-                            <div className="muted">{formatDate(app.assessedAt, locale)}</div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {[...apps]
+                      .sort((a, b) => {
+                        const aTime = a.assessedAt ? new Date(a.assessedAt).getTime() : 0;
+                        const bTime = b.assessedAt ? new Date(b.assessedAt).getTime() : 0;
+                        return bTime - aTime;
+                      })
+                      .map((app) => (
+                        <tr key={app.id}>
+                          <td>
+                            <strong>{app.displayName}</strong>
+                            <div className="muted">{app.packageName}</div>
+                          </td>
+                          <td>
+                            <RiskBadge level={app.riskLevel} locale={locale} />
+                          </td>
+                          <td>{app.riskScore > 0 ? `${app.riskScore}` : '—'}</td>
+                          <td className="explanation-cell">
+                            {app.explanation?.trim() ? (
+                              app.explanation
+                            ) : (
+                              <span className="muted">{t(locale, 'noExplanation')}</span>
+                            )}
+                            {app.assessedAt && (
+                              <div className="muted">{formatDate(app.assessedAt, locale)}</div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>

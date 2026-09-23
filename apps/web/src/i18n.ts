@@ -36,8 +36,9 @@ const messages = {
     noTimeline: 'עדיין אין פעילות רשת מהמכשיר.',
     noExplanation: 'עדיין לא נרשמה פעילות רשת לאפליקציה הזו.',
     newDomain: 'דומיין חדש',
+    live: 'מתעדכן אוטומטית',
     alertScenario:
-      'התראה אמיתית: הפעל ניטור VPN וסנכרון ענן, פתח Chrome וגלוש אל https://www.google-analytics.com. אחרי כחצי דקה רענן. האתר נחשב מעקב מוכר, הציון עולה ל-30 ונוצרת התראה «חריג».',
+      'התראה אמיתית: הפעל ניטור VPN וסנכרון ענן, פתח Chrome וגלוש אל https://www.google-analytics.com. אחרי כחצי דקה העמוד מתעדכן לבד. האתר נחשב מעקב מוכר, הציון עולה ל-30 ונוצרת התראה «חריג».',
     lastSync: 'סנכרון אחרון',
     emulatorHint: 'להתקנת אפליקציות אמיתיות: הפעל Android Emulator (ראה docs/DEV-LAB.md)',
     loginTitle: 'התחברות ל-Guardian',
@@ -100,8 +101,9 @@ const messages = {
     noTimeline: 'No network activity from this device yet.',
     noExplanation: 'No network activity has been recorded for this app yet.',
     newDomain: 'New domain',
+    live: 'Updates automatically',
     alertScenario:
-      'Real alert: turn on VPN monitoring and cloud sync, open Chrome, and visit https://www.google-analytics.com. Refresh after about half a minute. That site is a known tracker, the score reaches 30, and an Unusual alert is created.',
+      'Real alert: turn on VPN monitoring and cloud sync, open Chrome, and visit https://www.google-analytics.com. The page updates by itself after about half a minute. That site is a known tracker, the score reaches 30, and an Unusual alert is created.',
     lastSync: 'Last sync',
     emulatorHint: 'To install real apps: run Android Emulator (see docs/DEV-LAB.md)',
     loginTitle: 'Sign in to Guardian',
