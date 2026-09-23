@@ -75,6 +75,11 @@ a {
   margin-bottom: 12px;
 }
 
+.banner.warning {
+  background: linear-gradient(90deg, #b4530922, #ef444422);
+  border-color: #f59e0b88;
+}
+
 .hint {
   margin: 0 0 20px;
   font-size: 0.95rem;

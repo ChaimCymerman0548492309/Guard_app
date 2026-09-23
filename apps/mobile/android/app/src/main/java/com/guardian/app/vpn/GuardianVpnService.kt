@@ -30,7 +30,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * DNS-only VPN. App traffic stays on the normal network, so Android does not
  * revoke the session for a broken tunnel. Only DNS questions are recorded.
  *
- * Private DNS and Chrome Secure DNS bypass this and will not show up.
+ * Plain DNS to this VPN and to public resolvers is recorded. Encrypted DNS to
+ * those resolvers is reset so the app falls back to a lookup we can name.
+ * Strict Private DNS still bypasses the tunnel until it is turned off.
  */
 class GuardianVpnService : VpnService() {
 
@@ -38,7 +40,7 @@ class GuardianVpnService : VpnService() {
         private const val TAG = "GuardianVpn"
         private const val CHANNEL_ID = "guardian_vpn"
         private const val NOTIFICATION_ID = 1001
-        private const val UPLOAD_INTERVAL_MS = 3 * 60 * 1000L
+        private const val UPLOAD_INTERVAL_MS = 60 * 1000L
         const val ACTION_START = "com.guardian.app.vpn.START"
         const val ACTION_STOP = "com.guardian.app.vpn.STOP"
 
@@ -216,11 +218,11 @@ class GuardianVpnService : VpnService() {
             val builder = Builder()
                 .setSession("Guardian")
                 .setMtu(1500)
-                .addAddress("10.8.0.1", 24)
+                .addAddress("10.8.0.1", 32)
                 .addDnsServer("10.8.0.1")
-                .addRoute("10.8.0.0", 24)
                 .allowFamily(OsConstants.AF_INET6)
                 .setBlocking(true)
+            addCapturedResolverRoutes(builder)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 builder.setMetered(false)
             }
@@ -250,6 +252,40 @@ class GuardianVpnService : VpnService() {
             status = VpnRuntimeStatus.ERROR
             teardownTunnel()
             stopSelf()
+        }
+    }
+
+    /**
+     * Keeps ordinary traffic on the physical network. Only the VPN DNS address
+     * and well-known public resolvers enter the tunnel, so a failed connection
+     * check does not revoke the session.
+     */
+    private fun addCapturedResolverRoutes(builder: Builder) {
+        listOf(
+            "10.8.0.1",
+            "1.1.1.1",
+            "1.0.0.1",
+            "8.8.8.8",
+            "8.8.4.4",
+            "9.9.9.9",
+            "149.112.112.112",
+            "208.67.222.222",
+            "208.67.220.220",
+        ).forEach { builder.addRoute(it, 32) }
+        try {
+            builder.addAddress("fd00:8::1", 128)
+            builder.addDnsServer("fd00:8::1")
+            listOf(
+                "fd00:8::1",
+                "2001:4860:4860::8888",
+                "2001:4860:4860::8844",
+                "2606:4700:4700::1111",
+                "2606:4700:4700::1001",
+                "2620:fe::fe",
+                "2620:fe::9",
+            ).forEach { builder.addRoute(it, 128) }
+        } catch (e: Exception) {
+            Log.w(TAG, "IPv6 DNS capture skipped", e)
         }
     }
 

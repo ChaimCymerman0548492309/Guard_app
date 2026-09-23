@@ -3,6 +3,7 @@ package com.guardian.app.vpn
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.net.VpnService
 import android.os.Build
@@ -148,7 +149,9 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
     }
 
     internal fun startVpnService(promise: Promise) {
-        requestBatteryExemption()
+        if (!openStrictPrivateDnsSettings()) {
+            requestBatteryExemption()
+        }
         try {
             val intent = Intent(reactContext, GuardianVpnService::class.java).apply {
                 action = GuardianVpnService.ACTION_START
@@ -161,6 +164,20 @@ class GuardianVpnModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("START_FAILED", e.message, e)
+        }
+    }
+
+    private fun openStrictPrivateDnsSettings(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+        return try {
+            val connectivity = reactContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val props = connectivity.getLinkProperties(connectivity.activeNetwork ?: return false) ?: return false
+            if (props.privateDnsServerName.isNullOrBlank()) return false
+            val activity = reactContext.currentActivity ?: return false
+            activity.startActivity(Intent("android.settings.PRIVATE_DNS_SETTINGS"))
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

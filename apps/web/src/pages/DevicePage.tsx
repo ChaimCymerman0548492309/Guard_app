@@ -20,6 +20,23 @@ interface DevicePageProps {
   onToggleLocale: () => void;
 }
 
+function isIpAddress(domain: string): boolean {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(domain) || domain.includes(':');
+}
+
+function collapseTimeline(events: NetworkEvent[]): { event: NetworkEvent; count: number }[] {
+  const rows: { event: NetworkEvent; count: number }[] = [];
+  for (const event of events) {
+    const last = rows[rows.length - 1];
+    if (last && last.event.appId === event.appId && last.event.domain === event.domain) {
+      last.count += 1;
+    } else {
+      rows.push({ event, count: 1 });
+    }
+  }
+  return rows;
+}
+
 export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
   const { deviceId = '' } = useParams();
   const [device, setDevice] = useState<DeviceSummary | null>(null);
@@ -134,6 +151,10 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
             </div>
           </section>
 
+          {events.every((event) => !event.domain || isIpAddress(event.domain)) && (
+            <p className="banner warning">{t(locale, 'monitoringBlind')}</p>
+          )}
+
           <p className="banner scenario-banner">{t(locale, 'alertScenario')}</p>
 
           <section className="panel">
@@ -185,7 +206,7 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
               <p className="muted">{t(locale, 'noTimeline')}</p>
             ) : (
               <ol className="timeline">
-                {events.map((event) => (
+                {collapseTimeline(events).map(({ event, count }) => (
                   <li key={event.id}>
                     <time dateTime={new Date(event.timestamp).toISOString()}>
                       {formatDate(event.timestamp, locale)}
@@ -193,7 +214,8 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                     <div className="timeline-body">
                       <strong>{appLabel(event.appId)}</strong>
                       <code>{event.domain}</code>
-                      {event.isNewDomain && (
+                      {count > 1 && <span className="muted">×{count}</span>}
+                      {event.isNewDomain && !isIpAddress(event.domain) && (
                         <span className="domain-pill">{t(locale, 'newDomain')}</span>
                       )}
                     </div>
