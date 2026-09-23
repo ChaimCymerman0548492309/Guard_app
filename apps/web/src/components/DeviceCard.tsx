@@ -28,7 +28,9 @@ export function DeviceCard({ device, locale }: DeviceCardProps) {
             {device.platform}
           </p>
         </div>
-        <span className={`status-pill status-${device.status}`}>{statusLabel(device.status, locale)}</span>
+        <span className={`status-pill status-${device.status}`}>
+          {statusLabel(device.status, locale)}
+        </span>
       </div>
 
       <div className="stats-row">
@@ -46,12 +48,16 @@ export function DeviceCard({ device, locale }: DeviceCardProps) {
         </div>
       </div>
 
-      <p className="muted">{t(locale, 'lastSync')}: {formatDate(device.lastSyncAt, locale)}</p>
+      <p className="muted">
+        {t(locale, 'lastSync')}: {formatDate(device.lastSyncAt, locale)}
+      </p>
 
       {device.riskCounts.suspicious > 0 && (
         <div className="device-alert-banner">
           <RiskBadge level={RiskLevel.SUSPICIOUS} locale={locale} />
-          <span>{device.riskCounts.suspicious} {t(locale, 'suspicious').toLowerCase()}</span>
+          <span>
+            {device.riskCounts.suspicious} {t(locale, 'suspicious').toLowerCase()}
+          </span>
         </div>
       )}
 

@@ -16,7 +16,10 @@ export function VpnStatusBar() {
 
   if (!isSupported) {
     return (
-      <View style={[styles.bar, styles.unsupported, rtl.borderStart('#9ca3af')]} accessibilityLiveRegion="polite">
+      <View
+        style={[styles.bar, styles.unsupported, rtl.borderStart('#9ca3af')]}
+        accessibilityLiveRegion="polite"
+      >
         <View style={[styles.dot, styles.dotGray]} />
         <Text style={[styles.text, rtl.text]}>{t('home.vpnUnsupported')}</Text>
       </View>
@@ -61,7 +64,9 @@ export function VpnStatusBar() {
       />
       <Text style={[styles.text, rtl.text]}>{label}</Text>
       {errorMessage && isError && (
-        <Text style={[styles.errorDetail, rtl.text]} numberOfLines={2}>{errorMessage}</Text>
+        <Text style={[styles.errorDetail, rtl.text]} numberOfLines={2}>
+          {errorMessage}
+        </Text>
       )}
     </View>
   );

@@ -18,8 +18,7 @@ export function OnboardingScreen() {
   const isMonitoringStep = step === 'monitoring';
   const vpnActive = vpnStatus.status === VpnStatus.ACTIVE;
 
-  const canAdvance =
-    !isMonitoringStep || isSimulator || vpnActive || !vpnStatus.isSupported;
+  const canAdvance = !isMonitoringStep || isSimulator || vpnActive || !vpnStatus.isSupported;
 
   const handleNext = () => {
     if (isLast) {
@@ -34,16 +33,10 @@ export function OnboardingScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, rtl.container]}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, rtl.container]}>
       <View style={styles.progressRow}>
         {STEPS.map((s, i) => (
-          <View
-            key={s}
-            style={[styles.progressDot, i <= stepIndex && styles.progressDotActive]}
-          />
+          <View key={s} style={[styles.progressDot, i <= stepIndex && styles.progressDotActive]} />
         ))}
       </View>
 
@@ -56,9 +49,7 @@ export function OnboardingScreen() {
         <View style={styles.card}>
           <Text style={[styles.cardTitle, rtl.text]}>{t('permissions.vpnTitle')}</Text>
           <Text style={[styles.cardBody, rtl.text]}>{t('permissions.vpnBody')}</Text>
-          {vpnStatus.errorMessage && (
-            <Text style={styles.errorText}>{vpnStatus.errorMessage}</Text>
-          )}
+          {vpnStatus.errorMessage && <Text style={styles.errorText}>{vpnStatus.errorMessage}</Text>}
           <TouchableOpacity
             style={[styles.vpnButton, vpnActive && styles.vpnButtonActive]}
             onPress={() => void startMonitoring()}

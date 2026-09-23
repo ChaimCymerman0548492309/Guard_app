@@ -9,10 +9,7 @@ import {
   TrustLevel,
   AlertAction,
 } from '@guardian/shared';
-import {
-  applyAlertAction,
-  generateAlertsFromAssessments,
-} from '../services/alert-service';
+import { applyAlertAction, generateAlertsFromAssessments } from '../services/alert-service';
 
 /**
  * Integration-level E2E for the critical monitoring flow (no device/SQLite required):

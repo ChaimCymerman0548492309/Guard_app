@@ -173,35 +173,35 @@ Tap **Run Photo Cleaner demo** on the home screen to replay the scenario (dev bu
 
 ## Scripts
 
-| Script / Command | Description |
-| ---------------- | ----------- |
-| `./scripts/dev.sh` | Install deps, generate Prisma client, create `.env` |
-| `./scripts/test.sh` | Full CI check: build, lint, typecheck, test |
-| `./scripts/android-build.sh` | Prebuild + run on Android device |
-| `./scripts/build-release-apk.sh` | Build release APK for direct phone install |
-| `python3 scripts/generate-icon.py` | Regenerate app icon PNG |
-| `pnpm dev:api` | Start Express API |
-| `pnpm dev:mobile` | Start Expo mobile app |
-| `pnpm db:migrate` | Apply Prisma migrations |
-| `docker compose up -d` | Start PostgreSQL + API |
+| Script / Command                   | Description                                         |
+| ---------------------------------- | --------------------------------------------------- |
+| `./scripts/dev.sh`                 | Install deps, generate Prisma client, create `.env` |
+| `./scripts/test.sh`                | Full CI check: build, lint, typecheck, test         |
+| `./scripts/android-build.sh`       | Prebuild + run on Android device                    |
+| `./scripts/build-release-apk.sh`   | Build release APK for direct phone install          |
+| `python3 scripts/generate-icon.py` | Regenerate app icon PNG                             |
+| `pnpm dev:api`                     | Start Express API                                   |
+| `pnpm dev:mobile`                  | Start Expo mobile app                               |
+| `pnpm db:migrate`                  | Apply Prisma migrations                             |
+| `docker compose up -d`             | Start PostgreSQL + API                              |
 
 ## API Endpoints
 
-| Method | Path | Description |
-| ------ | ---- | ----------- |
-| GET | `/health` | Health check |
-| GET | `/api/v1/apps` | List apps with risk |
-| GET | `/api/v1/apps/:id` | App details |
-| GET | `/api/v1/apps/:id/events` | App network events |
-| GET | `/api/v1/apps/:id/risk` | Latest risk assessment |
-| GET | `/api/v1/events` | List network events |
-| POST | `/api/v1/events/batch` | Ingest events from mobile |
-| GET | `/api/v1/alerts` | List alerts |
-| POST | `/api/v1/alerts/:id/block` | Block domain |
-| POST | `/api/v1/alerts/:id/allow` | Allow and acknowledge |
-| POST | `/api/v1/alerts/:id/ignore` | Dismiss without action |
-| GET | `/api/v1/dashboard/summary` | Dashboard counts |
-| GET | `/api/v1/openapi` | OpenAPI 3.0 spec |
+| Method | Path                        | Description               |
+| ------ | --------------------------- | ------------------------- |
+| GET    | `/health`                   | Health check              |
+| GET    | `/api/v1/apps`              | List apps with risk       |
+| GET    | `/api/v1/apps/:id`          | App details               |
+| GET    | `/api/v1/apps/:id/events`   | App network events        |
+| GET    | `/api/v1/apps/:id/risk`     | Latest risk assessment    |
+| GET    | `/api/v1/events`            | List network events       |
+| POST   | `/api/v1/events/batch`      | Ingest events from mobile |
+| GET    | `/api/v1/alerts`            | List alerts               |
+| POST   | `/api/v1/alerts/:id/block`  | Block domain              |
+| POST   | `/api/v1/alerts/:id/allow`  | Allow and acknowledge     |
+| POST   | `/api/v1/alerts/:id/ignore` | Dismiss without action    |
+| GET    | `/api/v1/dashboard/summary` | Dashboard counts          |
+| GET    | `/api/v1/openapi`           | OpenAPI 3.0 spec          |
 
 ## Documentation
 

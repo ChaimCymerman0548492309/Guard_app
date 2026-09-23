@@ -12,9 +12,7 @@ describe('Critical flow integration', () => {
   });
 
   it('end-to-end: dashboard → app risk → events → alert action', async () => {
-    const summary = await request(app)
-      .get('/api/v1/dashboard/summary')
-      .set(authHeader(token));
+    const summary = await request(app).get('/api/v1/dashboard/summary').set(authHeader(token));
     expect(summary.status).toBe(200);
     expect(summary.body.data.counts.suspicious).toBeGreaterThanOrEqual(1);
 
@@ -25,9 +23,7 @@ describe('Critical flow integration', () => {
     );
     expect(highRisk).toBeDefined();
 
-    const risk = await request(app)
-      .get(`/api/v1/apps/${highRisk.id}/risk`)
-      .set(authHeader(token));
+    const risk = await request(app).get(`/api/v1/apps/${highRisk.id}/risk`).set(authHeader(token));
     expect(risk.status).toBe(200);
 
     const events = await request(app)

@@ -1,12 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -33,8 +26,16 @@ function formatLastScan(date: Date | null, locale: string): string {
 export function HomeScreen() {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { counts, apps, alerts, timeline, isSimulator, runDemoScenario, refreshFromDb, lastScanAt } =
-    useGuardianStore();
+  const {
+    counts,
+    apps,
+    alerts,
+    timeline,
+    isSimulator,
+    runDemoScenario,
+    refreshFromDb,
+    lastScanAt,
+  } = useGuardianStore();
   const rtl = useRtl();
   const [refreshing, setRefreshing] = useState(false);
 

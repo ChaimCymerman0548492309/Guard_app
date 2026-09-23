@@ -1,10 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../db/database';
-import {
-  loadApps,
-  loadAlerts,
-  loadLatestAssessmentsPerApp,
-} from '../db/repositories';
+import { loadApps, loadAlerts, loadLatestAssessmentsPerApp } from '../db/repositories';
 import { isCloudSyncEnabled } from './settings-service';
 import { getCloudAuthHeader } from './cloud-auth-service';
 import * as Device from 'expo-device';
@@ -198,9 +194,7 @@ function shouldSendMetadata(pendingNetworkEvents: number): boolean {
   return false;
 }
 
-export async function syncPendingEvents(
-  fetchFn: typeof fetch = fetch,
-): Promise<SyncResult> {
+export async function syncPendingEvents(fetchFn: typeof fetch = fetch): Promise<SyncResult> {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
     return { synced: 0, skipped: true };

@@ -19,7 +19,11 @@ export function VpnStatsBar() {
   return (
     <View style={styles.bar} accessibilityLiveRegion="polite">
       <Text style={[styles.text, rtl.text]}>
-        {t('home.vpnStats', { packets: packetsProcessed, events: eventsEmitted, blocked: blockedDomains })}
+        {t('home.vpnStats', {
+          packets: packetsProcessed,
+          events: eventsEmitted,
+          blocked: blockedDomains,
+        })}
       </Text>
     </View>
   );

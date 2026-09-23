@@ -39,7 +39,9 @@ export function TimelineScreen() {
             <Text style={styles.eventTitle}>{item.title}</Text>
             <Text style={styles.explanation}>{item.description}</Text>
             <Text style={styles.timestamp}>
-              {new Date(item.timestamp).toLocaleString(i18n.language === 'he' ? 'he-IL' : undefined)}
+              {new Date(item.timestamp).toLocaleString(
+                i18n.language === 'he' ? 'he-IL' : undefined,
+              )}
             </Text>
           </View>
         )}

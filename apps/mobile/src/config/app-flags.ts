@@ -1,5 +1,3 @@
-declare const __DEV__: boolean | undefined;
-
 /** Product mode: real devices only (no simulated app data). */
 export function isDevSimulatorEnabled(): boolean {
   return false;

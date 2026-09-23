@@ -4,11 +4,7 @@ vi.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'en' }],
 }));
 
-import {
-  isOnboardingComplete,
-  setOnboardingComplete,
-  SETTINGS_KEYS,
-} from './settings-service';
+import { isOnboardingComplete, setOnboardingComplete, SETTINGS_KEYS } from './settings-service';
 
 const mockDb = { getFirstAsync: vi.fn(), runAsync: vi.fn() };
 

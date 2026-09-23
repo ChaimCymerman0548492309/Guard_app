@@ -71,12 +71,12 @@ Best when someone else built the app for you.
 
 ### Troubleshooting
 
-| Problem | Fix |
-| -------- | ----- |
+| Problem               | Fix                                                     |
+| --------------------- | ------------------------------------------------------- |
 | VPN permission denied | Settings → Monitoring setup → Start monitoring → tap OK |
-| App won't install | Enable "Install unknown apps" for your file source |
-| No apps listed | Grant VPN first; apps appear from your launcher |
-| Hebrew layout wrong | Change language in Settings, then restart the app |
+| App won't install     | Enable "Install unknown apps" for your file source      |
+| No apps listed        | Grant VPN first; apps appear from your launcher         |
+| Hebrew layout wrong   | Change language in Settings, then restart the app       |
 
 ---
 
@@ -143,9 +143,9 @@ Best when someone else built the app for you.
 
 ### פתרון בעיות
 
-| בעיה | פתרון |
-| ----- | ------ |
-| VPN נדחה | הגדרות ניטור → התחל ניטור → OK |
-| לא מתקין | אפשר התקנה ממקורות לא ידועים |
-| אין אפליקציות | הפעל VPN קודם |
-| עברית לא מיושרת | שנה שפה בהגדרות והפעל מחדש |
+| בעיה            | פתרון                          |
+| --------------- | ------------------------------ |
+| VPN נדחה        | הגדרות ניטור → התחל ניטור → OK |
+| לא מתקין        | אפשר התקנה ממקורות לא ידועים   |
+| אין אפליקציות   | הפעל VPN קודם                  |
+| עברית לא מיושרת | שנה שפה בהגדרות והפעל מחדש     |

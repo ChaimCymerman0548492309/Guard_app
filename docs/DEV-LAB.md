@@ -17,11 +17,11 @@ Then open:
 
 Three virtual devices are pre-seeded:
 
-| Device | ID | Description |
-| ------ | -- | ----------- |
+| Device             | ID                                     | Description                                        |
+| ------------------ | -------------------------------------- | -------------------------------------------------- |
 | Virtual Demo Phone | `00000000-0000-4000-8000-000000000001` | Online by default, 37 apps, Photo Cleaner scenario |
-| Android Emulator | `00000000-0000-4000-8000-000000000002` | Simulates an emulator slot |
-| Lab Test Device | `00000000-0000-4000-8000-000000000003` | Extra lab device |
+| Android Emulator   | `00000000-0000-4000-8000-000000000002` | Simulates an emulator slot                         |
+| Lab Test Device    | `00000000-0000-4000-8000-000000000003` | Extra lab device                                   |
 
 ---
 
@@ -118,15 +118,15 @@ pnpm dev:web
 
 ## API endpoints (devices)
 
-| Method | Path | Description |
-| ------ | ---- | ----------- |
-| GET | `/api/v1/devices` | List all devices |
-| GET | `/api/v1/devices/:id` | Device details |
-| GET | `/api/v1/devices/:id/summary` | Device dashboard summary |
-| GET | `/api/v1/devices/:id/apps` | Apps on device |
-| GET | `/api/v1/devices/:id/alerts` | Alerts for device |
-| POST | `/api/v1/devices/:id/demo` | Run Photo Cleaner demo |
-| POST | `/api/v1/devices/register` | Register a device (lab / sync) |
+| Method | Path                          | Description                    |
+| ------ | ----------------------------- | ------------------------------ |
+| GET    | `/api/v1/devices`             | List all devices               |
+| GET    | `/api/v1/devices/:id`         | Device details                 |
+| GET    | `/api/v1/devices/:id/summary` | Device dashboard summary       |
+| GET    | `/api/v1/devices/:id/apps`    | Apps on device                 |
+| GET    | `/api/v1/devices/:id/alerts`  | Alerts for device              |
+| POST   | `/api/v1/devices/:id/demo`    | Run Photo Cleaner demo         |
+| POST   | `/api/v1/devices/register`    | Register a device (lab / sync) |
 
 ---
 
@@ -162,9 +162,9 @@ pnpm dev:web
 
 ## Troubleshooting
 
-| Problem | Fix |
-| ------- | --- |
-| Dashboard empty / API error | Ensure API runs on port 3000 with `DEV_SIMULATOR=true` |
-| Mobile can't reach API from emulator | Use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` |
-| VPN not working in Expo Go | Use `./scripts/android-build.sh` for a dev build |
-| Port 5173 in use | Change port in `apps/web/vite.config.ts` |
+| Problem                              | Fix                                                    |
+| ------------------------------------ | ------------------------------------------------------ |
+| Dashboard empty / API error          | Ensure API runs on port 3000 with `DEV_SIMULATOR=true` |
+| Mobile can't reach API from emulator | Use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`         |
+| VPN not working in Expo Go           | Use `./scripts/android-build.sh` for a dev build       |
+| Port 5173 in use                     | Change port in `apps/web/vite.config.ts`               |

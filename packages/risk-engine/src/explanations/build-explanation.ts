@@ -5,8 +5,7 @@ const LEVEL_INTROS: Record<ExplanationLocale, Record<RiskLevel, string>> = {
   en: {
     [RiskLevel.SAFE]: 'This app appears to be behaving normally.',
     [RiskLevel.UNUSUAL]: 'This app showed some unusual activity.',
-    [RiskLevel.SUSPICIOUS]:
-      'This app showed concerning activity that needs your attention.',
+    [RiskLevel.SUSPICIOUS]: 'This app showed concerning activity that needs your attention.',
   },
   he: {
     [RiskLevel.SAFE]: 'נראה שהאפליקציה מתנהגת כרגיל.',

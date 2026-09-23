@@ -4,9 +4,7 @@ import { CREATE_TABLES_SQL } from './schema';
 let db: SQLite.SQLiteDatabase | null = null;
 
 async function migrateDatabase(database: SQLite.SQLiteDatabase): Promise<void> {
-  const columns = await database.getAllAsync<{ name: string }>(
-    'PRAGMA table_info(network_events)',
-  );
+  const columns = await database.getAllAsync<{ name: string }>('PRAGMA table_info(network_events)');
   if (!columns.some((column) => column.name === 'cloud_synced')) {
     await database.execAsync(
       'ALTER TABLE network_events ADD COLUMN cloud_synced INTEGER NOT NULL DEFAULT 0',

@@ -24,12 +24,13 @@ import {
   isAdmin,
   type AccessContext,
 } from './access-control.js';
-import {
-  getSimulatorAdminUserId,
-  getSimulatorCustomerUserId,
-} from './auth.js';
+import { getSimulatorAdminUserId, getSimulatorCustomerUserId } from './auth.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
-import { shouldUseSimulatorDatastore, isRealPersistenceActive, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
+import {
+  shouldUseSimulatorDatastore,
+  isRealPersistenceActive,
+  DATABASE_UNAVAILABLE_ERROR,
+} from './runtime-mode.js';
 import type { EventBatchPayload } from './sync-batch-schema.js';
 import { canUseDatabaseSync, ingestSyncBatchToDatabase } from './sync-batch-ingest.js';
 
@@ -121,7 +122,7 @@ function listSimulatorDevicesForUser(user: AuthUser): SimulatorDeviceState[] {
 }
 
 async function getDeviceOwnerId(deviceId: string): Promise<string | null> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     ensureSimulatorDevices();
     return simulatorDevices.get(deviceId)?.ownerUserId ?? null;
   }
@@ -221,7 +222,7 @@ function buildRecentAlerts(deviceId?: string) {
 }
 
 export async function listDevices(ctx: AccessContext): Promise<DeviceInfo[]> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     return listSimulatorDevicesForUser(ctx.user)
       .map(buildDeviceInfo)
       .sort((a, b) => {
@@ -289,7 +290,7 @@ export async function getDeviceSummary(
   const device = await getDeviceById(id, ctx);
   if (!device) return null;
 
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     return {
       ...device,
       recentAlerts: buildRecentAlerts(id).slice(0, 10),
@@ -323,7 +324,7 @@ export async function registerDevice(
   },
   ctx: AccessContext,
 ): Promise<DeviceInfo> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     const state = registerSimulatorDevice(input.id, ctx.user.id, input.name);
     if (input.platform) state.platform = input.platform;
     return buildDeviceInfo(state);
@@ -363,7 +364,7 @@ export async function listAppsWithRisk(
   if (deviceId && !(await assertDeviceAccess(deviceId, ctx))) {
     return [];
   }
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     if (deviceId) {
       await getDeviceById(deviceId, ctx);
     }
@@ -414,7 +415,7 @@ export async function getAppById(
   app: App;
   assessment?: RiskAssessment;
 } | null> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     const { apps, assessments } = fromSimulator();
     const app = apps.find((a) => a.id === id);
     if (!app) return null;
@@ -462,7 +463,7 @@ export async function getAppById(
 }
 
 export async function getDashboardSummary(ctx: AccessContext): Promise<DashboardSummary> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     const devices = await listDevices(ctx);
     const { counts, apps } = fromSimulator();
     return {
@@ -641,15 +642,15 @@ export async function runDeviceDemoScenario(
 export async function listEvents(
   ctx: AccessContext,
   options: {
-  limit: number;
-  appId?: string;
-  deviceId?: string;
-},
+    limit: number;
+    appId?: string;
+    deviceId?: string;
+  },
 ): Promise<NetworkEvent[]> {
   if (options.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
     return [];
   }
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     if (options.deviceId) {
       await getDeviceById(options.deviceId, ctx);
     }
@@ -691,7 +692,10 @@ export async function getAppEvents(
   return listEvents(ctx, { limit, appId });
 }
 
-export async function getAppRisk(appId: string, ctx: AccessContext): Promise<RiskAssessment | null> {
+export async function getAppRisk(
+  appId: string,
+  ctx: AccessContext,
+): Promise<RiskAssessment | null> {
   const result = await getAppById(appId, ctx);
   return result?.assessment ?? null;
 }
@@ -699,14 +703,14 @@ export async function getAppRisk(appId: string, ctx: AccessContext): Promise<Ris
 export async function listAlerts(
   ctx: AccessContext,
   options?: {
-  acknowledged?: boolean;
-  deviceId?: string;
-},
+    acknowledged?: boolean;
+    deviceId?: string;
+  },
 ): Promise<Alert[]> {
   if (options?.deviceId && !(await assertDeviceAccess(options.deviceId, ctx))) {
     return [];
   }
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     if (options?.deviceId) {
       await getDeviceById(options.deviceId, ctx);
     }

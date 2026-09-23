@@ -14,10 +14,10 @@ export function AboutScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, rtl.container]}>
-      <Text style={[styles.appName, rtl.text]} accessibilityRole="header">Guardian</Text>
-      <Text style={[styles.version, rtl.text]}>
-        {t('about.version', { version: APP_VERSION })}
+      <Text style={[styles.appName, rtl.text]} accessibilityRole="header">
+        Guardian
       </Text>
+      <Text style={[styles.version, rtl.text]}>{t('about.version', { version: APP_VERSION })}</Text>
       <Text style={[styles.description, rtl.text]}>{t('about.description')}</Text>
 
       <TouchableOpacity

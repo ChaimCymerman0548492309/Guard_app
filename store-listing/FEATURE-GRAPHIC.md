@@ -2,11 +2,11 @@
 
 ## Specifications
 
-| Property | Value |
-| -------- | ----- |
-| Dimensions | **1024 × 500 px** |
-| Format | PNG or JPEG (no alpha) |
-| Max file size | 1 MB |
+| Property      | Value                  |
+| ------------- | ---------------------- |
+| Dimensions    | **1024 × 500 px**      |
+| Format        | PNG or JPEG (no alpha) |
+| Max file size | 1 MB                   |
 
 ## Design guidance
 

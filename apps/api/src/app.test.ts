@@ -30,9 +30,7 @@ describe('API', () => {
   });
 
   it('GET /api/v1/dashboard/summary returns counts', async () => {
-    const res = await request(app)
-      .get('/api/v1/dashboard/summary')
-      .set(authHeader(adminToken));
+    const res = await request(app).get('/api/v1/dashboard/summary').set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.totalApps).toBe(37);
     expect(res.body.data.totalDevices).toBeGreaterThanOrEqual(3);
@@ -67,9 +65,7 @@ describe('API', () => {
   });
 
   it('GET /api/v1/apps/:id returns app details', async () => {
-    const res = await request(app)
-      .get('/api/v1/apps/app-photo-editor')
-      .set(authHeader(adminToken));
+    const res = await request(app).get('/api/v1/apps/app-photo-editor').set(authHeader(adminToken));
     expect(res.status).toBe(200);
     expect(res.body.data.displayName).toBe('Photo Editor');
   });

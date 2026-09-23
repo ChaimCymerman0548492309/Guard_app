@@ -6,14 +6,14 @@ End-to-end validation covers the critical user journey from monitoring setup thr
 
 ## Automated (CI)
 
-| Flow | Location | Status |
-| ---- | -------- | ------ |
-| API health + apps + dashboard | `apps/api/src/app.test.ts` | Automated |
-| Events list + batch ingest | `apps/api/src/app.test.ts` | Automated |
-| Alerts list + block/allow | `apps/api/src/app.test.ts` | Automated |
-| Critical path integration | `apps/api/src/integration.test.ts` | Automated |
-| Risk engine rules | `packages/risk-engine` | Automated |
-| Event pipeline + baselines | `apps/mobile/src/pipeline`, `services` | Automated |
+| Flow                          | Location                               | Status    |
+| ----------------------------- | -------------------------------------- | --------- |
+| API health + apps + dashboard | `apps/api/src/app.test.ts`             | Automated |
+| Events list + batch ingest    | `apps/api/src/app.test.ts`             | Automated |
+| Alerts list + block/allow     | `apps/api/src/app.test.ts`             | Automated |
+| Critical path integration     | `apps/api/src/integration.test.ts`     | Automated |
+| Risk engine rules             | `packages/risk-engine`                 | Automated |
+| Event pipeline + baselines    | `apps/mobile/src/pipeline`, `services` | Automated |
 
 ## Manual — Android Device
 

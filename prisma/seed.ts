@@ -27,7 +27,10 @@ async function main() {
 
 main()
   .then(async () => {
-    console.info('Admin user seeded:', (process.env.ADMIN_EMAIL ?? 'admin@guardian.local').toLowerCase());
+    console.info(
+      'Admin user seeded:',
+      (process.env.ADMIN_EMAIL ?? 'admin@guardian.local').toLowerCase(),
+    );
     await prisma.$disconnect();
     process.exit(0);
   })

@@ -1,10 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getApiBaseUrl, resetMetadataSyncThrottle } from './sync-service';
-import {
-  clearApiAuthSession,
-  getApiAuthToken,
-  setApiAuthSession,
-} from './settings-service';
+import { clearApiAuthSession, getApiAuthToken, setApiAuthSession } from './settings-service';
 
 export async function loginToCloudApi(
   db: SQLiteDatabase,

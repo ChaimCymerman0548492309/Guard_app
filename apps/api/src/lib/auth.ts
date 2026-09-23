@@ -78,8 +78,7 @@ export function verifyAccessToken(token: string): AuthUser | null {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
     if (typeof payload.sub !== 'string' || typeof payload.email !== 'string') return null;
-    const role =
-      payload.role === UserRoleEnum.ADMIN ? UserRoleEnum.ADMIN : UserRoleEnum.CUSTOMER;
+    const role = payload.role === UserRoleEnum.ADMIN ? UserRoleEnum.ADMIN : UserRoleEnum.CUSTOMER;
     return {
       id: payload.sub,
       email: payload.email,
@@ -94,7 +93,7 @@ export function verifyAccessToken(token: string): AuthUser | null {
 async function findUserByEmail(email: string): Promise<SimulatorUserRecord | null> {
   const normalized = email.trim().toLowerCase();
 
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     ensureSimulatorUsers();
     return SIMULATOR_USERS.get(normalized) ?? null;
   }
@@ -110,10 +109,7 @@ async function findUserByEmail(email: string): Promise<SimulatorUserRecord | nul
   };
 }
 
-export async function authenticateUser(
-  email: string,
-  password: string,
-): Promise<AuthUser | null> {
+export async function authenticateUser(email: string, password: string): Promise<AuthUser | null> {
   const user = await findUserByEmail(email);
   if (!user || !user.passwordHash) return null;
   const ok = await verifyPassword(password, user.passwordHash);
@@ -122,7 +118,7 @@ export async function authenticateUser(
 }
 
 export async function getUserById(id: string): Promise<AuthUser | null> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     ensureSimulatorUsers();
     for (const user of SIMULATOR_USERS.values()) {
       if (user.id === id) return toAuthUser(user);
@@ -144,7 +140,7 @@ export async function createUser(input: {
   const role = input.role ?? UserRoleEnum.CUSTOMER;
   const passwordHash = await hashPassword(input.password);
 
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     ensureSimulatorUsers();
     if (SIMULATOR_USERS.has(email)) {
       throw new Error('USER_EXISTS');
@@ -173,7 +169,7 @@ export async function createUser(input: {
 }
 
 export async function listUsers(): Promise<AuthUser[]> {
-  if ((await shouldUseSimulatorDatastore())) {
+  if (await shouldUseSimulatorDatastore()) {
     ensureSimulatorUsers();
     return [...SIMULATOR_USERS.values()].map(toAuthUser);
   }

@@ -6,8 +6,7 @@ import { sendError } from '../lib/response.js';
 export function authenticate(required = true) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const header = req.headers.authorization;
-    const token =
-      header?.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : undefined;
+    const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : undefined;
 
     if (!token) {
       if (required) {

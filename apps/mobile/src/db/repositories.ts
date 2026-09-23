@@ -179,7 +179,9 @@ export async function upsertAlert(db: SQLite.SQLiteDatabase, alert: Alert): Prom
   );
 }
 
-export async function loadLatestAssessmentsPerApp(db: SQLite.SQLiteDatabase): Promise<RiskAssessment[]> {
+export async function loadLatestAssessmentsPerApp(
+  db: SQLite.SQLiteDatabase,
+): Promise<RiskAssessment[]> {
   const rows = await db.getAllAsync<{
     id: string;
     app_id: string;

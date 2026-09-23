@@ -7,7 +7,13 @@ import type {
   TimelineEvent,
   VpnServiceStatus,
 } from '@guardian/shared';
-import { AlertAction, TrustLevel, VpnStatus, SimulatorScenario, PHOTO_CLEANER_APP_ID } from '@guardian/shared';
+import {
+  AlertAction,
+  TrustLevel,
+  VpnStatus,
+  SimulatorScenario,
+  PHOTO_CLEANER_APP_ID,
+} from '@guardian/shared';
 import { createSimulator, generateEvents } from '@guardian/simulator';
 import { getDatabase, clearDatabase } from '../db/database';
 import { computeRiskCounts, loadAlerts, upsertAlert, upsertApp } from '../db/repositories';

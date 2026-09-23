@@ -14,7 +14,10 @@ export function RiskBadge({ level, locale }: RiskBadgeProps) {
   const label = locale === 'en' ? getRiskBadgeLabel(normalized) : riskLabel(level, locale);
 
   return (
-    <span className="risk-badge" style={{ backgroundColor: `${color}22`, color, borderColor: color }}>
+    <span
+      className="risk-badge"
+      style={{ backgroundColor: `${color}22`, color, borderColor: color }}
+    >
       {label}
     </span>
   );

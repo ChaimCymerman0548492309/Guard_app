@@ -10,9 +10,7 @@ describe('Auth and tenant scoping', () => {
     const adminToken = await loginAsAdmin(app);
     const customerToken = await loginAsCustomer(app);
 
-    const adminDevices = await request(app)
-      .get('/api/v1/devices')
-      .set(authHeader(adminToken));
+    const adminDevices = await request(app).get('/api/v1/devices').set(authHeader(adminToken));
     const customerDevices = await request(app)
       .get('/api/v1/devices')
       .set(authHeader(customerToken));
@@ -37,14 +35,11 @@ describe('Auth and tenant scoping', () => {
   it('admin can create customer users', async () => {
     const adminToken = await loginAsAdmin(app);
     const email = `user-${Date.now()}@example.com`;
-    const res = await request(app)
-      .post('/api/v1/auth/users')
-      .set(authHeader(adminToken))
-      .send({
-        email,
-        password: 'password123',
-        name: 'New Customer',
-      });
+    const res = await request(app).post('/api/v1/auth/users').set(authHeader(adminToken)).send({
+      email,
+      password: 'password123',
+      name: 'New Customer',
+    });
     expect(res.status).toBe(201);
     expect(res.body.data.role).toBe('CUSTOMER');
   });

@@ -92,7 +92,8 @@ const messages = {
     loginSubtitle: 'Admin sees all devices · customers see only their own',
     loginButton: 'Sign in',
     loginError: 'Invalid email or password',
-    loginHint: 'Dev: admin@guardian.local / admin123 · customer: customer@example.com / customer123',
+    loginHint:
+      'Dev: admin@guardian.local / admin123 · customer: customer@example.com / customer123',
     email: 'Email',
     password: 'Password',
     logout: 'Log out',
@@ -111,7 +112,8 @@ const messages = {
       'On the phone: enable VPN monitoring, cloud sync, and sign in with the same account. Data appears here after network activity.',
     noAppsOnDevice: 'No apps on this device yet',
     deviceNotFound: 'Device not found or access denied',
-    serviceUnavailable: 'Server database is not connected. PostgreSQL is required for real device data.',
+    serviceUnavailable:
+      'Server database is not connected. PostgreSQL is required for real device data.',
   },
 } as const;
 

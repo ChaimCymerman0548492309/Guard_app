@@ -36,13 +36,13 @@ npx eas-cli build --platform android --profile preview
 
 Files in `store-listing/`:
 
-| Asset | Spec |
-| ----- | ---- |
+| Asset             | Spec                                                                  |
+| ----------------- | --------------------------------------------------------------------- |
 | Short description | 80 chars max — `short-description-en.txt`, `short-description-he.txt` |
-| Full description | 4000 chars max — `full-description-en.txt`, `full-description-he.txt` |
-| Feature graphic | 1024×500 PNG — see `store-listing/FEATURE-GRAPHIC.md` |
-| Phone screenshots | Min 2, 1080×1920 or 1440×2560 — see `store-listing/SCREENSHOTS.md` |
-| App icon | 512×512 PNG (high-res icon) — export from `assets/icon.png` |
+| Full description  | 4000 chars max — `full-description-en.txt`, `full-description-he.txt` |
+| Feature graphic   | 1024×500 PNG — see `store-listing/FEATURE-GRAPHIC.md`                 |
+| Phone screenshots | Min 2, 1080×1920 or 1440×2560 — see `store-listing/SCREENSHOTS.md`    |
+| App icon          | 512×512 PNG (high-res icon) — export from `assets/icon.png`           |
 
 ## Play Console form fields
 
@@ -55,12 +55,12 @@ Files in `store-listing/`:
 
 ### Permissions justification
 
-| Permission | Why |
-| ---------- | --- |
-| `BIND_VPN_SERVICE` | Core feature — per-app network monitoring |
+| Permission           | Why                                                       |
+| -------------------- | --------------------------------------------------------- |
+| `BIND_VPN_SERVICE`   | Core feature — per-app network monitoring                 |
 | `FOREGROUND_SERVICE` | Android requires foreground notification while VPN active |
-| `POST_NOTIFICATIONS` | High-risk security alerts |
-| `INTERNET` | Optional cloud sync only |
+| `POST_NOTIFICATIONS` | High-risk security alerts                                 |
+| `INTERNET`           | Optional cloud sync only                                  |
 
 See [docs/android-permissions.md](android-permissions.md) and [docs/privacy.md](privacy.md).
 

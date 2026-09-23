@@ -4,21 +4,15 @@ import { inferAppCategory, mapNativeAppToApp } from './installed-apps-mappers';
 
 describe('installed-apps-mappers', () => {
   it('infers photo category from package name', () => {
-    expect(inferAppCategory('com.google.android.apps.photos', 'Photos')).toBe(
-      AppCategory.PHOTO,
-    );
+    expect(inferAppCategory('com.google.android.apps.photos', 'Photos')).toBe(AppCategory.PHOTO);
   });
 
   it('infers messaging category from display name', () => {
-    expect(inferAppCategory('com.example.app', 'WhatsApp Messenger')).toBe(
-      AppCategory.MESSAGING,
-    );
+    expect(inferAppCategory('com.example.app', 'WhatsApp Messenger')).toBe(AppCategory.MESSAGING);
   });
 
   it('defaults to utility for unknown apps', () => {
-    expect(inferAppCategory('com.example.calculator', 'Calculator')).toBe(
-      AppCategory.UTILITY,
-    );
+    expect(inferAppCategory('com.example.calculator', 'Calculator')).toBe(AppCategory.UTILITY);
   });
 
   it('maps native app metadata to shared App type', () => {

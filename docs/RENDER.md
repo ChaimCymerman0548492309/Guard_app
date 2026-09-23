@@ -4,11 +4,11 @@
 
 ## מה נוצר
 
-| שירות | שם ב-Render | תפקיד |
-|--------|-------------|--------|
-| PostgreSQL | `guardian-db` | משתמשים, מכשירים, events |
-| Web (Docker) | `guardian-api` | `https://guardian-api-xxxx.onrender.com` |
-| Static Site | `guardian-web` | דשבורד — `https://guardian-web-xxxx.onrender.com` |
+| שירות        | שם ב-Render    | תפקיד                                             |
+| ------------ | -------------- | ------------------------------------------------- |
+| PostgreSQL   | `guardian-db`  | משתמשים, מכשירים, events                          |
+| Web (Docker) | `guardian-api` | `https://guardian-api-xxxx.onrender.com`          |
+| Static Site  | `guardian-web` | דשבורד — `https://guardian-web-xxxx.onrender.com` |
 
 ---
 
@@ -54,25 +54,25 @@ eas build --platform android --profile preview \
 
 ### בטלפון
 
-1. התקן APK  
-2. VPN / ניטור (onboarding)  
-3. **Settings → Cloud sync** ON  
-4. התחבר עם **חשבון לקוח**  
-5. בדשבורד (מכל רשת): login → רואים את המכשיר אחרי sync  
+1. התקן APK
+2. VPN / ניטור (onboarding)
+3. **Settings → Cloud sync** ON
+4. התחבר עם **חשבון לקוח**
+5. בדשבורד (מכל רשת): login → רואים את המכשיר אחרי sync
 
 ---
 
 ## משתני סביבה (API)
 
-| משתנה | הערה |
-|--------|------|
-| `DATABASE_URL` | מ-Render Postgres (אוטומטי) |
-| `JWT_SECRET` | נוצר אוטומטית ב-Blueprint |
-| `ADMIN_PASSWORD` | **אתה מגדיר** לפני deploy |
-| `ADMIN_EMAIL` | ברירת מחדל `admin@guardian.local` |
-| `DEV_SIMULATOR` | `false` — רק מכשירים אמיתיים |
-| `RUN_DB_SEED` | `true` — יוצר מנהל + trackers |
-| `CORS_ORIGIN` | `*` (אפשר לצמצם ל-URL של `guardian-web`) |
+| משתנה            | הערה                                     |
+| ---------------- | ---------------------------------------- |
+| `DATABASE_URL`   | מ-Render Postgres (אוטומטי)              |
+| `JWT_SECRET`     | נוצר אוטומטית ב-Blueprint                |
+| `ADMIN_PASSWORD` | **אתה מגדיר** לפני deploy                |
+| `ADMIN_EMAIL`    | ברירת מחדל `admin@guardian.local`        |
+| `DEV_SIMULATOR`  | `false` — רק מכשירים אמיתיים             |
+| `RUN_DB_SEED`    | `true` — יוצר מנהל + trackers            |
+| `CORS_ORIGIN`    | `*` (אפשר לצמצם ל-URL של `guardian-web`) |
 
 אחרי שינוי env ב-API → **Manual Deploy** / Redeploy.
 
@@ -86,32 +86,34 @@ New → **PostgreSQL** → שם `guardian-db` → העתק **Internal Database U
 
 ### API
 
-New → **Web Service** → Docker →  
-- Dockerfile: `apps/api/Dockerfile`  
-- Root directory: `.` (repo root)  
-- Health check: `/health`  
-- Env: כמו בטבלה למעלה, `DATABASE_URL` מה-DB  
+New → **Web Service** → Docker →
+
+- Dockerfile: `apps/api/Dockerfile`
+- Root directory: `.` (repo root)
+- Health check: `/health`
+- Env: כמו בטבלה למעלה, `DATABASE_URL` מה-DB
 
 ### Web
 
-New → **Static Site** →  
+New → **Static Site** →
+
 - Build:  
-  `corepack enable && pnpm install && pnpm --filter @guardian/shared build && pnpm --filter @guardian/ui build && pnpm --filter @guardian/web build`  
-- Publish: `apps/web/dist`  
-- **Rewrite:** `/*` → `/index.html`  
-- Env: `VITE_API_URL` = `https://<guardian-api>.onrender.com`  
+  `corepack enable && pnpm install && pnpm --filter @guardian/shared build && pnpm --filter @guardian/ui build && pnpm --filter @guardian/web build`
+- Publish: `apps/web/dist`
+- **Rewrite:** `/*` → `/index.html`
+- Env: `VITE_API_URL` = `https://<guardian-api>.onrender.com`
 
 ---
 
 ## בעיות נפוצות
 
-| בעיה | פתרון |
-|------|--------|
-| Login נכשל | וודא `ADMIN_PASSWORD` הוגדר ו-seed רץ (`RUN_DB_SEED=true`, redeploy API) |
-| דשבורד ריק / שגיאת רשת | `VITE_API_URL` חייב URL מלא של API; rebuild static site |
-| טלפון לא מסנכרן | `EXPO_PUBLIC_API_URL` = URL של **API**; Cloud sync + login; HTTPS בלבד |
-| 502 אחרי שינה | Free tier cold start — המתן ונסה שוב |
-| CORS | השאר `CORS_ORIGIN=*` או הגדר URL מדויק של `guardian-web` |
+| בעיה                   | פתרון                                                                    |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Login נכשל             | וודא `ADMIN_PASSWORD` הוגדר ו-seed רץ (`RUN_DB_SEED=true`, redeploy API) |
+| דשבורד ריק / שגיאת רשת | `VITE_API_URL` חייב URL מלא של API; rebuild static site                  |
+| טלפון לא מסנכרן        | `EXPO_PUBLIC_API_URL` = URL של **API**; Cloud sync + login; HTTPS בלבד   |
+| 502 אחרי שינה          | Free tier cold start — המתן ונסה שוב                                     |
+| CORS                   | השאר `CORS_ORIGIN=*` או הגדר URL מדויק של `guardian-web`                 |
 
 ---
 

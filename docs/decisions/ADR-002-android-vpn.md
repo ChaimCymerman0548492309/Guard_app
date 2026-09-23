@@ -23,15 +23,15 @@ Business logic (risk scoring, baselines, alerts) remains in TypeScript.
 
 ## Capabilities
 
-| Capability               | Supported       | Notes                                           |
-| ------------------------ | --------------- | ----------------------------------------------- |
-| Domain from DNS (UDP/53) | Yes             | QNAME extracted; answer payloads discarded      |
-| Byte counts per flow     | Yes             | Summed from IP packet sizes                     |
-| Protocol (TCP/UDP)       | Yes             | From IP header                                  |
-| App attribution          | Partial         | Requires Android 10+; fails for some flows      |
-| HTTPS payload inspection | **No**          | TLS encrypted — by design                       |
+| Capability               | Supported       | Notes                                                                          |
+| ------------------------ | --------------- | ------------------------------------------------------------------------------ |
+| Domain from DNS (UDP/53) | Yes             | QNAME extracted; answer payloads discarded                                     |
+| Byte counts per flow     | Yes             | Summed from IP packet sizes                                                    |
+| Protocol (TCP/UDP)       | Yes             | From IP header                                                                 |
+| App attribution          | Partial         | Requires Android 10+; fails for some flows                                     |
+| HTTPS payload inspection | **No**          | TLS encrypted — by design                                                      |
 | Per-domain blocking      | **Best-effort** | SharedPreferences-backed blocklist drops matching DNS/TCP packets in VPN layer |
-| iOS                      | **No**          | Network Extension not implemented               |
+| iOS                      | **No**          | Network Extension not implemented                                              |
 
 ## Limitations
 

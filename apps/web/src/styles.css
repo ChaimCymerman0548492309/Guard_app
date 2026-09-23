@@ -11,7 +11,13 @@
   --safe: #22c55e;
   --unusual: #f59e0b;
   --suspicious: #ef4444;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
   line-height: 1.5;
   background: radial-gradient(circle at top, #152238, var(--bg) 45%);
   color: var(--text);

@@ -25,14 +25,14 @@ pnpm db:generate
 
 ## Project structure
 
-| Path | Purpose |
-| ---- | ------- |
-| `apps/mobile` | Expo React Native + Kotlin VPN |
-| `apps/api` | Express REST API |
-| `packages/shared` | Shared types and schemas |
-| `packages/risk-engine` | Rule-based scoring |
-| `packages/simulator` | DEV_SIMULATOR data |
-| `prisma/` | PostgreSQL schema and migrations |
+| Path                   | Purpose                          |
+| ---------------------- | -------------------------------- |
+| `apps/mobile`          | Expo React Native + Kotlin VPN   |
+| `apps/api`             | Express REST API                 |
+| `packages/shared`      | Shared types and schemas         |
+| `packages/risk-engine` | Rule-based scoring               |
+| `packages/simulator`   | DEV_SIMULATOR data               |
+| `prisma/`              | PostgreSQL schema and migrations |
 
 ## Android native changes
 

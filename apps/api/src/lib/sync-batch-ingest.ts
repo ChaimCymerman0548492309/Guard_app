@@ -16,7 +16,10 @@ function normalizeTrustLevel(trust: string): string {
   return 'NEUTRAL';
 }
 
-async function upsertSyncedApp(deviceId: string, app: SyncApp): Promise<{ id: string; packageName: string }> {
+async function upsertSyncedApp(
+  deviceId: string,
+  app: SyncApp,
+): Promise<{ id: string; packageName: string }> {
   const row = await prisma.app.upsert({
     where: {
       deviceId_packageName: { deviceId, packageName: app.packageName },

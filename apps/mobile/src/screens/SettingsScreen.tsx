@@ -41,13 +41,7 @@ const LANGUAGE_OPTIONS: Array<{ code: 'en' | 'he'; label: string }> = [
 
 import type { TFunction } from 'i18next';
 
-function CloudAccountSection({
-  rtl,
-  t,
-}: {
-  rtl: { text: object; row: object };
-  t: TFunction;
-}) {
+function CloudAccountSection({ rtl, t }: { rtl: { text: object; row: object }; t: TFunction }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggedInAs, setLoggedInAs] = useState<string | null>(null);
@@ -63,7 +57,9 @@ function CloudAccountSection({
       <Text style={[styles.sectionTitle, rtl.text]}>{t('settings.cloudAccount')}</Text>
       {loggedInAs ? (
         <>
-          <Text style={[styles.hint, rtl.text]}>{t('settings.cloudLoggedIn', { email: loggedInAs })}</Text>
+          <Text style={[styles.hint, rtl.text]}>
+            {t('settings.cloudLoggedIn', { email: loggedInAs })}
+          </Text>
           <TouchableOpacity
             style={styles.exportButton}
             onPress={() => {
@@ -214,15 +210,15 @@ export function SettingsScreen() {
         />
       </View>
 
-      {cloudSyncOn && (
-        <CloudAccountSection rtl={rtl} t={t} />
-      )}
+      {cloudSyncOn && <CloudAccountSection rtl={rtl} t={t} />}
 
       <TouchableOpacity style={styles.exportButton} onPress={() => void handleExport()}>
         <Text style={styles.exportText}>{t('settings.export')}</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.sectionTitle, rtl.text, styles.legalSection]}>{t('settings.legal')}</Text>
+      <Text style={[styles.sectionTitle, rtl.text, styles.legalSection]}>
+        {t('settings.legal')}
+      </Text>
 
       <TouchableOpacity
         style={styles.linkRow}
@@ -262,11 +258,23 @@ const styles = StyleSheet.create({
   label: { fontSize: 15, color: colors.text, flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', marginVertical: 12 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  chip: { padding: 10, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: '#e5e7eb' },
+  chip: {
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text },
   hint: { fontSize: 12, color: colors.textSecondary, marginBottom: 8 },
-  exportButton: { marginTop: 24, backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
+  exportButton: {
+    marginTop: 24,
+    backgroundColor: colors.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
   exportText: { color: colors.white, fontWeight: '600' },
   legalSection: { marginTop: 32 },
   linkRow: { paddingVertical: 14, minHeight: 44, justifyContent: 'center' },

@@ -4,12 +4,12 @@ Guardian requests only the permissions required for local network monitoring and
 
 ## Declared permissions
 
-| Permission | Purpose | User-facing justification |
-| ---------- | ------- | ------------------------- |
-| `INTERNET` | Optional cloud sync and domain reputation lookups | Sync metadata to your configured API endpoint |
+| Permission                                              | Purpose                                                  | User-facing justification                            |
+| ------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| `INTERNET`                                              | Optional cloud sync and domain reputation lookups        | Sync metadata to your configured API endpoint        |
 | `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_SPECIAL_USE` | Keep VPN monitoring active while the app is backgrounded | Android requires a foreground service for active VPN |
-| `POST_NOTIFICATIONS` | High-risk security alerts | Notify you when an app behaves suspiciously |
-| `VIBRATE` | Alert feedback | Optional haptic feedback for alerts |
+| `POST_NOTIFICATIONS`                                    | High-risk security alerts                                | Notify you when an app behaves suspiciously          |
+| `VIBRATE`                                               | Alert feedback                                           | Optional haptic feedback for alerts                  |
 
 ## Permissions we deliberately avoid
 
@@ -23,10 +23,10 @@ Guardian requests only the permissions required for local network monitoring and
 
 ## Runtime permission flows
 
-| Flow | When | Behavior |
-| ---- | ---- | -------- |
-| VPN permission | User taps **Start monitoring** | Android system dialog via `VpnService.prepare()`; required for network metadata capture |
-| Notifications | First high-risk alert (Android 13+) | System notification permission prompt via `expo-notifications` |
+| Flow           | When                                | Behavior                                                                                |
+| -------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
+| VPN permission | User taps **Start monitoring**      | Android system dialog via `VpnService.prepare()`; required for network metadata capture |
+| Notifications  | First high-risk alert (Android 13+) | System notification permission prompt via `expo-notifications`                          |
 
 No runtime permission is needed for installed-app discovery — launcher queries work without user prompts on Android 11+.
 

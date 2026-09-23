@@ -2,13 +2,13 @@
 
 ## Phone screenshots (required)
 
-| Property | Value |
-| -------- | ----- |
-| Min count | **2** (recommend 4–8) |
-| Aspect ratio | 16:9 or 9:16 |
-| Min dimensions | 320 px on short side |
-| Recommended | **1080 × 1920** or **1440 × 2560** |
-| Format | PNG or JPEG |
+| Property       | Value                              |
+| -------------- | ---------------------------------- |
+| Min count      | **2** (recommend 4–8)              |
+| Aspect ratio   | 16:9 or 9:16                       |
+| Min dimensions | 320 px on short side               |
+| Recommended    | **1080 × 1920** or **1440 × 2560** |
+| Format         | PNG or JPEG                        |
 
 ## Suggested screens to capture
 

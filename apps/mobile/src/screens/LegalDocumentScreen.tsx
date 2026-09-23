@@ -22,7 +22,9 @@ export function LegalDocumentScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, rtl.container]}>
-      <Text style={[styles.body, rtl.text]} accessibilityRole="text">{content}</Text>
+      <Text style={[styles.body, rtl.text]} accessibilityRole="text">
+        {content}
+      </Text>
       {showOnlineLink && (
         <TouchableOpacity
           style={styles.linkButton}

@@ -33,7 +33,8 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   });
-  const body = (await response.json()) as ApiEnvelope<T> | { success: false; error: { message: string } };
+  const body = (await response.json()) as
+    ApiEnvelope<T> | { success: false; error: { message: string } };
   if (!response.ok || !('data' in body)) {
     const message = 'error' in body ? body.error.message : response.statusText;
     throw new Error(message || 'Request failed');
@@ -96,10 +97,7 @@ export function runDeviceDemo(deviceId: string): Promise<{ ok: true }> {
   return fetchJson(`/api/v1/devices/${deviceId}/demo`, { method: 'POST' });
 }
 
-export function alertAction(
-  alertId: string,
-  action: 'block' | 'allow' | 'ignore',
-): Promise<Alert> {
+export function alertAction(alertId: string, action: 'block' | 'allow' | 'ignore'): Promise<Alert> {
   return fetchJson(`/api/v1/alerts/${alertId}/${action}`, { method: 'POST' });
 }
 

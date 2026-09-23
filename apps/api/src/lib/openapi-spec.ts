@@ -167,31 +167,49 @@ export const OPENAPI_SPEC = {
       post: {
         summary: 'Register or update a device (lab / sync)',
         tags: ['Devices'],
-        responses: { '201': { description: 'Registered device' }, '400': { description: 'Validation error' } },
+        responses: {
+          '201': { description: 'Registered device' },
+          '400': { description: 'Validation error' },
+        },
       },
     },
     '/api/v1/devices/{id}': {
       get: {
         summary: 'Get device by ID',
         tags: ['Devices'],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '200': { description: 'Device details' }, '404': { description: 'Device not found' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'Device details' },
+          '404': { description: 'Device not found' },
+        },
       },
     },
     '/api/v1/devices/{id}/summary': {
       get: {
         summary: 'Device dashboard summary',
         tags: ['Devices'],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '200': { description: 'Device summary with recent alerts' }, '404': { description: 'Device not found' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'Device summary with recent alerts' },
+          '404': { description: 'Device not found' },
+        },
       },
     },
     '/api/v1/devices/{id}/apps': {
       get: {
         summary: 'List apps monitored on a device',
         tags: ['Devices'],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '200': { description: 'Apps with risk levels' }, '404': { description: 'Device not found' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'Apps with risk levels' },
+          '404': { description: 'Device not found' },
+        },
       },
     },
     '/api/v1/devices/{id}/alerts': {
@@ -202,15 +220,23 @@ export const OPENAPI_SPEC = {
           { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
           { name: 'acknowledged', in: 'query', schema: { type: 'boolean' } },
         ],
-        responses: { '200': { description: 'Alerts for device' }, '404': { description: 'Device not found' } },
+        responses: {
+          '200': { description: 'Alerts for device' },
+          '404': { description: 'Device not found' },
+        },
       },
     },
     '/api/v1/devices/{id}/demo': {
       post: {
         summary: 'Run Photo Cleaner demo scenario for a device (simulator mode)',
         tags: ['Devices'],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        responses: { '200': { description: 'Demo triggered' }, '404': { description: 'Device not found' } },
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'Demo triggered' },
+          '404': { description: 'Device not found' },
+        },
       },
     },
     '/api/v1/events': {
@@ -305,9 +331,7 @@ export const OPENAPI_SPEC = {
       get: {
         summary: 'Look up domain reputation (tracker database)',
         tags: ['Domains'],
-        parameters: [
-          { name: 'domain', in: 'path', required: true, schema: { type: 'string' } },
-        ],
+        parameters: [{ name: 'domain', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           '200': { description: 'Domain reputation (tracker flag, category, score)' },
           '400': { description: 'Invalid domain name' },

@@ -80,10 +80,10 @@ EXPO_PUBLIC_API_URL=https://guardian.yourdomain.com \
 
 ### 5. בטלפון
 
-1. התקן APK  
-2. VPN / ניטור — onboarding  
-3. **Settings → Cloud sync** ON  
-4. התחבר עם **חשבון לקוח** (מנהל יוצר ב-`/admin/users`)  
+1. התקן APK
+2. VPN / ניטור — onboarding
+3. **Settings → Cloud sync** ON
+4. התחבר עם **חשבון לקוח** (מנהל יוצר ב-`/admin/users`)
 5. המכשיר מסתנכרן — רואים בדשבורד מכל מקום
 
 ---
@@ -100,37 +100,37 @@ Render Dashboard → New → Blueprint → repo → הגדר ADMIN_PASSWORD → 
 
 ## אפשרות ג' — שירותים מנוהלים אחרים (בלי VPS)
 
-| רכיב | שירות לדוגמה |
-|------|----------------|
-| PostgreSQL | Neon, Supabase, Railway Postgres |
-| API | Railway, Render, Fly.io (Dockerfile `apps/api/Dockerfile`) |
-| Web | Vercel / Netlify — build `apps/web`, env `VITE_API_URL=https://...` |
+| רכיב       | שירות לדוגמה                                                        |
+| ---------- | ------------------------------------------------------------------- |
+| PostgreSQL | Neon, Supabase, Railway Postgres                                    |
+| API        | Railway, Render, Fly.io (Dockerfile `apps/api/Dockerfile`)          |
+| Web        | Vercel / Netlify — build `apps/web`, env `VITE_API_URL=https://...` |
 
 חשוב:
 
-- `DEV_SIMULATOR=false` ב-production  
-- `pnpm db:migrate` + `pnpm db:seed` על ה-API  
+- `DEV_SIMULATOR=false` ב-production
+- `pnpm db:migrate` + `pnpm db:seed` על ה-API
 - `CORS_ORIGIN=https://your-dashboard-url` (או `*` לבדיקה)
 
 ---
 
 ## מה **לא** עובד מרחוק
 
-| לא | למה |
-|----|-----|
-| `localhost:3000` בטלפון | localhost על הטלפון = הטלפון, לא המחשב |
-| `http://192.168.x.x` מרחוק | IP ביתי לא נגיש מחוץ ל-Wi‑Fi |
-| Expo Go + VPN אמיתי | צריך APK / dev build |
+| לא                         | למה                                    |
+| -------------------------- | -------------------------------------- |
+| `localhost:3000` בטלפון    | localhost על הטלפון = הטלפון, לא המחשב |
+| `http://192.168.x.x` מרחוק | IP ביתי לא נגיש מחוץ ל-Wi‑Fi           |
+| Expo Go + VPN אמיתי        | צריך APK / dev build                   |
 
 ---
 
 ## צ'ק-ליסט
 
-- [ ] API + DB בענן, `DEV_SIMULATOR=false`  
-- [ ] HTTPS על כתובת ציבורית  
-- [ ] seed / מנהל — שינוי סיסמה  
-- [ ] APK עם `EXPO_PUBLIC_API_URL` נכון  
-- [ ] לקוח: Cloud sync + login  
-- [ ] דשבורד: login → מכשיר + התראות אחרי sync  
+- [ ] API + DB בענן, `DEV_SIMULATOR=false`
+- [ ] HTTPS על כתובת ציבורית
+- [ ] seed / מנהל — שינוי סיסמה
+- [ ] APK עם `EXPO_PUBLIC_API_URL` נכון
+- [ ] לקוח: Cloud sync + login
+- [ ] דשבורד: login → מכשיר + התראות אחרי sync
 
 פרטי תפקידים והתחברות: [CUSTOMERS-AUTH.md](./CUSTOMERS-AUTH.md).

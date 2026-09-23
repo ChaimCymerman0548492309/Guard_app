@@ -79,13 +79,7 @@ devicesRouter.get('/:id/alerts', async (req, res) => {
 
 devicesRouter.post('/:id/demo', async (req, res) => {
   if (!(await shouldUseSimulatorDatastore())) {
-    sendError(
-      res,
-      REAL_DEVICES_ERROR.code,
-      REAL_DEVICES_ERROR.message,
-      req.requestId,
-      403,
-    );
+    sendError(res, REAL_DEVICES_ERROR.code, REAL_DEVICES_ERROR.message, req.requestId, 403);
     return;
   }
   const result = await runDeviceDemoScenario(req.params.id, accessContext(req));

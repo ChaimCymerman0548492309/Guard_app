@@ -8,8 +8,7 @@ export const alertsRouter: Router = Router();
 
 alertsRouter.get('/', async (req, res) => {
   const acknowledged = req.query.acknowledged;
-  const filter =
-    acknowledged === 'true' ? true : acknowledged === 'false' ? false : undefined;
+  const filter = acknowledged === 'true' ? true : acknowledged === 'false' ? false : undefined;
   const data = await listAlerts(accessContext(req), { acknowledged: filter });
   sendSuccess(res, data, req.requestId);
 });

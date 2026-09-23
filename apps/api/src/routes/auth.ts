@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { UserRole } from '@guardian/shared';
-import { authenticateUser, createUser, getUserById, listUsers, signAccessToken } from '../lib/auth.js';
+import {
+  authenticateUser,
+  createUser,
+  getUserById,
+  listUsers,
+  signAccessToken,
+} from '../lib/auth.js';
 import { sendError, sendSuccess } from '../lib/response.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 
@@ -50,31 +56,26 @@ authRouter.get('/users', authenticate(true), requireRole(UserRole.ADMIN), async 
   sendSuccess(res, users, req.requestId);
 });
 
-authRouter.post(
-  '/users',
-  authenticate(true),
-  requireRole(UserRole.ADMIN),
-  async (req, res) => {
-    const parsed = createUserSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 'VALIDATION_ERROR', parsed.error.message, req.requestId, 400);
+authRouter.post('/users', authenticate(true), requireRole(UserRole.ADMIN), async (req, res) => {
+  const parsed = createUserSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendError(res, 'VALIDATION_ERROR', parsed.error.message, req.requestId, 400);
+    return;
+  }
+
+  try {
+    const user = await createUser({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      name: parsed.data.name,
+      role: parsed.data.role ?? UserRole.CUSTOMER,
+    });
+    sendSuccess(res, user, req.requestId, 201);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'USER_EXISTS') {
+      sendError(res, 'CONFLICT', 'User with this email already exists', req.requestId, 409);
       return;
     }
-
-    try {
-      const user = await createUser({
-        email: parsed.data.email,
-        password: parsed.data.password,
-        name: parsed.data.name,
-        role: parsed.data.role ?? UserRole.CUSTOMER,
-      });
-      sendSuccess(res, user, req.requestId, 201);
-    } catch (err) {
-      if (err instanceof Error && err.message === 'USER_EXISTS') {
-        sendError(res, 'CONFLICT', 'User with this email already exists', req.requestId, 409);
-        return;
-      }
-      throw err;
-    }
-  },
-);
+    throw err;
+  }
+});
