@@ -68,12 +68,6 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
 
   useEffect(() => {
     void load('initial');
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void load('silent');
-      }
-    }, 10_000);
-    return () => clearInterval(timer);
   }, [load]);
 
   async function handleAlertAction(alertId: string, action: 'block' | 'allow' | 'ignore') {
@@ -112,7 +106,6 @@ export function DevicePage({ locale, onToggleLocale }: DevicePageProps) {
                 {device.platform} · {t(locale, 'lastSync')}: {formatDate(device.lastSyncAt, locale)}
               </p>
             </div>
-            <span className="live-pill">{t(locale, 'live')}</span>
           </section>
 
           <section className="summary-grid compact">

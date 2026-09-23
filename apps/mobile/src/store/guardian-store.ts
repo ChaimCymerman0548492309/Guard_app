@@ -26,7 +26,6 @@ import {
   countUnsyncedNetworkEvents,
   deriveSyncStatus,
   getApiBaseUrl,
-  METADATA_SYNC_INTERVAL_MS,
   syncPendingEvents,
   type SyncStatus,
 } from '../services/sync-service';
@@ -89,7 +88,6 @@ const SCENARIO_MAP: Record<string, SimulatorScenario> = {
 let pipeline: EventPipeline | null = null;
 let vpnSubscription: { remove: () => void } | null = null;
 let vpnStatsTimer: ReturnType<typeof setInterval> | null = null;
-let cloudSyncTimer: ReturnType<typeof setInterval> | null = null;
 
 async function refreshSyncState(
   set: (partial: Partial<GuardianState>) => void,
@@ -242,11 +240,6 @@ export const useGuardianStore = create<GuardianState>((set, get) => ({
       vpnStatsTimer = setInterval(() => {
         void vpn.getStatus().then((status) => set({ vpnStatus: localizeVpnStatus(status) }));
       }, 10_000);
-
-      if (cloudSyncTimer) clearInterval(cloudSyncTimer);
-      cloudSyncTimer = setInterval(() => {
-        void runCloudSync(set);
-      }, METADATA_SYNC_INTERVAL_MS);
 
       await refreshSyncState(set);
       void runCloudSync(set);

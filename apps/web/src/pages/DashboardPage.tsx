@@ -56,17 +56,10 @@ export function DashboardPage({ locale, onToggleLocale }: DashboardPageProps) {
 
   useEffect(() => {
     void load('initial');
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void load('silent');
-      }
-    }, 10_000);
-    return () => clearInterval(timer);
   }, [load]);
 
   return (
     <Layout locale={locale} onToggleLocale={onToggleLocale} onRefresh={() => void load('initial')}>
-      <p className="live-pill">{t(locale, 'live')}</p>
       {loading && <p>{t(locale, 'loading')}</p>}
       {error && <p className="error">{error}</p>}
       {dbDegraded && !error && (

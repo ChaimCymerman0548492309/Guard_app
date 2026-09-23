@@ -29,7 +29,7 @@ const DEVICE_ID_KEY = 'device_id';
 const BATCH_LIMIT = 100;
 const MAX_RETRIES = 3;
 const BASE_RETRY_DELAY_MS = 500;
-export const METADATA_SYNC_INTERVAL_MS = 30_000;
+const METADATA_SYNC_INTERVAL_MS = 30_000;
 
 let lastMetadataSyncAt = 0;
 
