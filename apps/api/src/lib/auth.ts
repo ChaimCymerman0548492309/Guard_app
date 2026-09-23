@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import type { AuthUser, UserRole } from '@guardian/shared';
 import { UserRole as UserRoleEnum } from '@guardian/shared';
-import { isDatabaseAvailable, prisma } from './prisma.js';
-import { shouldUseSimulatorDatastore, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
+import { prisma } from './prisma.js';
+import { shouldUseSimulatorDatastore } from './runtime-mode.js';
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-insecure-change-me';
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 12;

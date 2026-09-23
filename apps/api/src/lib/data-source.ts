@@ -29,7 +29,7 @@ import {
   getSimulatorCustomerUserId,
 } from './auth.js';
 import { isDatabaseAvailable, prisma } from './prisma.js';
-import { shouldUseSimulatorDatastore, isSimulatorEnabled, isRealPersistenceActive, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
+import { shouldUseSimulatorDatastore, isRealPersistenceActive, DATABASE_UNAVAILABLE_ERROR } from './runtime-mode.js';
 import type { EventBatchPayload } from './sync-batch-schema.js';
 import { canUseDatabaseSync, ingestSyncBatchToDatabase } from './sync-batch-ingest.js';
 

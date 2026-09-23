@@ -1,6 +1,6 @@
 import type { AccessContext } from './access-control.js';
 import { canAccessOwner } from './access-control.js';
-import { isDatabaseAvailable, prisma } from './prisma.js';
+import { prisma } from './prisma.js';
 import type { EventBatchPayload } from './sync-batch-schema.js';
 import { isRealPersistenceActive } from './runtime-mode.js';
 
