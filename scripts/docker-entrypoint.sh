@@ -1,10 +1,7 @@
 #!/usr/bin/env sh
 set -e
 cd /app
-if [ -n "$DATABASE_URL" ]; then
-  npx prisma migrate deploy --schema=prisma/schema.prisma || echo "Migration skipped (DB unavailable)"
-fi
-if [ "${RUN_DB_SEED:-false}" = "true" ] && [ -n "$DATABASE_URL" ]; then
-  pnpm db:seed || echo "Seed skipped or failed"
-fi
+# Bind the HTTP port immediately. Render fails the deploy if migrate/seed
+# run first and the process is not listening on 0.0.0.0:$PORT.
+export PREPARE_DATABASE_ON_BOOT=true
 exec node apps/api/dist/index.js

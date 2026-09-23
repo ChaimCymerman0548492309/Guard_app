@@ -26,11 +26,13 @@ async function main() {
 }
 
 main()
-  .then(() => {
+  .then(async () => {
     console.info('Admin user seeded:', (process.env.ADMIN_EMAIL ?? 'admin@guardian.local').toLowerCase());
+    await prisma.$disconnect();
+    process.exit(0);
   })
-  .catch((err) => {
+  .catch(async (err) => {
     console.error(err);
+    await prisma.$disconnect();
     process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+  });
