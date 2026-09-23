@@ -38,7 +38,7 @@ const messages = {
     newDomain: 'דומיין חדש',
     live: 'מתעדכן אוטומטית',
     alertScenario:
-      'התראה אמיתית: הפעל ניטור VPN וסנכרון ענן, פתח Chrome וגלוש אל https://www.google-analytics.com. אחרי כחצי דקה העמוד מתעדכן לבד. האתר נחשב מעקב מוכר, הציון עולה ל-30 ונוצרת התראה «חריג».',
+      'התראה אמיתית ברמה «חריג» (לא «חשוד»): כבה DNS פרטי וגם «DNS מאובטח» ב-Chrome, הפעל ניטור וסנכרון, וגלוש אל https://www.google-analytics.com. אחרי כחצי דקה הציון מגיע ל-30 ונוצרת התראה. «חשוד» דורש ציון 70.',
     lastSync: 'סנכרון אחרון',
     emulatorHint: 'להתקנת אפליקציות אמיתיות: הפעל Android Emulator (ראה docs/DEV-LAB.md)',
     loginTitle: 'התחברות ל-Guardian',
@@ -103,7 +103,7 @@ const messages = {
     newDomain: 'New domain',
     live: 'Updates automatically',
     alertScenario:
-      'Real alert: turn on VPN monitoring and cloud sync, open Chrome, and visit https://www.google-analytics.com. The page updates by itself after about half a minute. That site is a known tracker, the score reaches 30, and an Unusual alert is created.',
+      'A real Unusual alert, not Suspicious: turn off Private DNS and Chrome secure DNS, start monitoring and cloud sync, then visit https://www.google-analytics.com. After about half a minute the score reaches 30 and an alert appears. Suspicious requires a score of 70.',
     lastSync: 'Last sync',
     emulatorHint: 'To install real apps: run Android Emulator (see docs/DEV-LAB.md)',
     loginTitle: 'Sign in to Guardian',

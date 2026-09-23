@@ -24,12 +24,10 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Minimal VPN service that captures connection metadata only — never packet payloads.
+ * DNS-only VPN. App traffic stays on the normal network, so Android does not
+ * revoke the session for a broken tunnel. Only DNS questions are recorded.
  *
- * Limitations (see ADR-002):
- * - Domains inferred from DNS queries (UDP/53); DoH/DoT bypasses this
- * - App attribution via getConnectionOwnerUid (Android 10+), best-effort only
- * - HTTPS payloads remain encrypted; only metadata is recorded
+ * Private DNS and Chrome Secure DNS bypass this and will not show up.
  */
 class GuardianVpnService : VpnService() {
 
@@ -127,9 +125,10 @@ class GuardianVpnService : VpnService() {
     )
 
     private var vpnInterface: ParcelFileDescriptor? = null
-    private var relay: PacketRelay? = null
+    private var dnsProxy: DnsProxy? = null
     private val running = AtomicBoolean(false)
     private var workerThread: Thread? = null
+    private val recentQueries = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -180,9 +179,14 @@ class GuardianVpnService : VpnService() {
             val builder = Builder()
                 .setSession("Guardian")
                 .setMtu(1500)
-                .addAddress("10.0.0.2", 32)
-                .addRoute("0.0.0.0", 0)
+                .addAddress("10.8.0.1", 24)
+                .addDnsServer("10.8.0.1")
+                .addRoute("10.8.0.0", 24)
+                .allowFamily(OsConstants.AF_INET6)
                 .setBlocking(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setMetered(false)
+            }
             try {
                 builder.addDisallowedApplication(packageName)
             } catch (_: PackageManager.NameNotFoundException) {
@@ -213,8 +217,8 @@ class GuardianVpnService : VpnService() {
         running.set(false)
         workerThread?.interrupt()
         workerThread = null
-        relay?.close()
-        relay = null
+        dnsProxy?.close()
+        dnsProxy = null
         try {
             vpnInterface?.close()
         } catch (_: Exception) {
@@ -227,15 +231,20 @@ class GuardianVpnService : VpnService() {
     }
 
     /**
-     * Reads IP packets from the TUN interface and extracts metadata.
-     * Raw payloads are never stored — only domain (from DNS) and byte counts.
+     * Reads DNS questions from the TUN interface. Payloads are not stored.
+     * A bad packet is skipped so the monitor keeps running.
      */
     private fun processPackets() {
         val fd = vpnInterface?.fileDescriptor ?: return
         val input = FileInputStream(fd)
         val output = FileOutputStream(fd)
-        val forwarder = PacketRelay(this, output)
-        relay = forwarder
+        val proxy = DnsProxy(
+            vpn = this,
+            output = output,
+            isBlocked = { domain -> isDomainBlocked(domain) },
+            onQuery = { domain, srcIp, srcPort -> recordDnsQuery(domain, srcIp, srcPort) },
+        )
+        dnsProxy = proxy
         val packet = ByteBuffer.allocate(32767)
 
         while (running.get() && !Thread.currentThread().isInterrupted) {
@@ -244,24 +253,35 @@ class GuardianVpnService : VpnService() {
                 val length = input.read(packet.array())
                 if (length <= 0) continue
                 recordPacketProcessed()
-
-                val snapshot = packet.array().copyOf(length)
-                val metadata = parsePacketMetadata(snapshot, snapshot.size)
-                if (metadata?.blocked == true) {
-                    Log.d(TAG, "Dropped packet to blocked destination: ${metadata.domain ?: metadata.destIp}")
-                    continue
-                }
-                if (metadata?.domain != null) {
-                    emitEvent(metadata)
-                }
-                forwarder.forward(snapshot)
+                proxy.handle(packet.array().copyOf(length))
             } catch (e: Exception) {
-                if (running.get()) {
-                    Log.w(TAG, "Packet processing error", e)
-                }
-                break
+                if (!running.get() || Thread.currentThread().isInterrupted) break
+                Log.w(TAG, "Packet processing error", e)
             }
         }
+    }
+
+    private fun recordDnsQuery(domain: String, srcIp: String, srcPort: Int) {
+        val now = System.currentTimeMillis()
+        val key = "$srcIp:$domain"
+        val previous = recentQueries.put(key, now)
+        if (previous != null && now - previous < 20_000) return
+        if (recentQueries.size > 400) {
+            recentQueries.entries.removeIf { now - it.value > 60_000 }
+        }
+        emitEvent(
+            PacketMetadata(
+                domain = domain,
+                sourceIp = srcIp,
+                destIp = "10.8.0.1",
+                sourcePort = srcPort,
+                destPort = 53,
+                protocol = "UDP",
+                packetSize = domain.length,
+                isOutbound = true,
+                blocked = isDomainBlocked(domain),
+            ),
+        )
     }
 
     private data class PacketMetadata(
@@ -275,111 +295,6 @@ class GuardianVpnService : VpnService() {
         val isOutbound: Boolean,
         val blocked: Boolean
     )
-
-    private fun parsePacketMetadata(data: ByteArray, length: Int): PacketMetadata? {
-        if (length < 20) return null
-        val version = (data[0].toInt() shr 4) and 0xF
-        if (version != 4) return null
-
-        val protocolNum = data[9].toInt() and 0xFF
-        val protocol = when (protocolNum) {
-            6 -> "TCP"
-            17 -> "UDP"
-            else -> "OTHER"
-        }
-
-        val sourceIp = "${data[12].toInt() and 0xFF}.${data[13].toInt() and 0xFF}.${data[14].toInt() and 0xFF}.${data[15].toInt() and 0xFF}"
-        val destIp = "${data[16].toInt() and 0xFF}.${data[17].toInt() and 0xFF}.${data[18].toInt() and 0xFF}.${data[19].toInt() and 0xFF}"
-        var sourcePort = 0
-        var destPort = 0
-        val headerLen = (data[0].toInt() and 0xF) * 4
-
-        if ((protocolNum == 17 || protocolNum == 6) && length >= headerLen + 4) {
-            sourcePort = ((data[headerLen].toInt() and 0xFF) shl 8) or (data[headerLen + 1].toInt() and 0xFF)
-            destPort = ((data[headerLen + 2].toInt() and 0xFF) shl 8) or (data[headerLen + 3].toInt() and 0xFF)
-        }
-
-        var domain: String? = null
-        if (protocolNum == 17 && destPort == 53 && length > headerLen + 12) {
-            domain = parseDnsQuery(data, headerLen + 8, length)
-        }
-        if (domain == null && protocolNum == 6 && destPort == 443 && length > headerLen + 20) {
-            val tcpHeaderLen = ((data[headerLen + 12].toInt() ushr 4) and 0xF) * 4
-            val payloadOffset = headerLen + tcpHeaderLen
-            if (tcpHeaderLen >= 20 && payloadOffset < length) {
-                domain = parseTlsServerName(data, payloadOffset, length)
-            }
-        }
-
-        val identifier = domain ?: destIp
-        val blocked = isDomainBlocked(identifier)
-
-        return PacketMetadata(
-            domain = domain,
-            sourceIp = sourceIp,
-            destIp = destIp,
-            sourcePort = sourcePort,
-            destPort = destPort,
-            protocol = protocol,
-            packetSize = length,
-            isOutbound = true,
-            blocked = blocked
-        )
-    }
-
-    /** Server name from a TLS ClientHello. Works when DNS itself is encrypted. */
-    private fun parseTlsServerName(data: ByteArray, offset: Int, length: Int): String? {
-        if (offset + 5 >= length || data[offset] != 0x16.toByte()) return null
-        var pos = offset + 5
-        if (pos >= length || data[pos] != 0x01.toByte()) return null
-        pos += 4 + 2 + 32
-        if (pos >= length) return null
-        val sessionLen = data[pos].toInt() and 0xFF
-        pos += 1 + sessionLen
-        if (pos + 2 > length) return null
-        val cipherLen = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
-        pos += 2 + cipherLen
-        if (pos >= length) return null
-        val compressionLen = data[pos].toInt() and 0xFF
-        pos += 1 + compressionLen
-        if (pos + 2 > length) return null
-        val extensionsLen = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
-        pos += 2
-        val extensionsEnd = minOf(length, pos + extensionsLen)
-        while (pos + 4 <= extensionsEnd) {
-            val type = ((data[pos].toInt() and 0xFF) shl 8) or (data[pos + 1].toInt() and 0xFF)
-            val extLen = ((data[pos + 2].toInt() and 0xFF) shl 8) or (data[pos + 3].toInt() and 0xFF)
-            pos += 4
-            if (pos + extLen > length) return null
-            if (type == 0 && extLen >= 5) {
-                val nameLen = ((data[pos + 3].toInt() and 0xFF) shl 8) or (data[pos + 4].toInt() and 0xFF)
-                val nameStart = pos + 5
-                if (nameLen > 0 && nameStart + nameLen <= length) {
-                    return String(data, nameStart, nameLen, Charsets.US_ASCII)
-                }
-            }
-            pos += extLen
-        }
-        return null
-    }
-
-    /** Extract QNAME from DNS query — metadata only, no answer payload stored. */
-    private fun parseDnsQuery(data: ByteArray, offset: Int, length: Int): String? {
-        try {
-            val labels = mutableListOf<String>()
-            var pos = offset
-            while (pos < length) {
-                val labelLen = data[pos].toInt() and 0xFF
-                if (labelLen == 0) break
-                if (labelLen > 63 || pos + labelLen >= length) return null
-                labels.add(String(data, pos + 1, labelLen, Charsets.US_ASCII))
-                pos += labelLen + 1
-            }
-            return if (labels.isEmpty()) null else labels.joinToString(".")
-        } catch (_: Exception) {
-            return null
-        }
-    }
 
     private fun emitEvent(metadata: PacketMetadata) {
         val domain = metadata.domain ?: metadata.destIp
