@@ -51,6 +51,8 @@ jobs:
   android-compile:
     runs-on: ubuntu-latest
     needs: build-and-test
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +78,37 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Compile Android debug APK
+      - name: Build workspace packages
+        run: pnpm --filter @guardian/shared build && pnpm --filter @guardian/ui build && pnpm --filter @guardian/risk-engine build && pnpm --filter @guardian/simulator build
+
+      - name: Build installable Android APK
         working-directory: apps/mobile/android
-        run: ./gradlew :app:assembleDebug --no-daemon -x lint
+        env:
+          EXPO_PUBLIC_DEV_SIMULATOR: 'false'
+          EXPO_PUBLIC_API_URL: https://guard-app-pe2n.onrender.com
+          NODE_ENV: production
+        run: ./gradlew :app:assembleRelease --no-daemon -x lint
+
+      - name: Collect APK
+        run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk guardian.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardian-android
+          path: guardian.apk
+          if-no-files-found: error
+
+      - name: Publish APK on GitHub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: android-latest
+          name: Android APK
+          allowUpdates: true
+          replacesArtifacts: true
+          artifacts: guardian.apk
+          body: |
+            Installable Android APK from the latest main commit.
+            On the phone, allow installation from unknown sources, then open this file.
+          token: ${{ secrets.GITHUB_TOKEN }}
